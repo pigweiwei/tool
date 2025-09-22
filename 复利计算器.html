@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>复利计算器</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<style>
+html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;}
+body{display:flex;flex-direction:column;transition:background 0.25s,color 0.25s;}
+body.light{background:#f9f9f9;color:#111; --nav-color:#111; --form-bg:#f9f9f9; --form-text:#111; --nav-hover:rgba(0,0,0,0.06);
+  /* 浅色 & 深色都用蓝色背景，白字 */
+  --result-bg: rgba(0,123,255,0.9);
+  --result-color: #fff;
+}
+body.dark {background:#111;color:#fff; --nav-color:#fff; --form-bg:#2b2b2b; --form-text:#fff; --nav-hover:rgba(255,255,255,0.04);
+  /* 浅色 & 深色都用蓝色背景，白字 */
+  --result-bg: rgba(0,123,255,0.9);
+  --result-color: #fff;
+}
+
+/* Chart */
+.chart-container{height:70%;padding:20px;box-sizing:border-box;}
+canvas{width:100% !important;height:100% !important;display:block;border-radius:8px;}
+
+/* Form */
+.form{height:30%;width:100%;padding:10px 20px;box-sizing:border-box;border-top:1px solid var(--form-border,#ddd);
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+      background:var(--form-bg);color:var(--form-text);transition:background 0.25s,color 0.25s;}
+
+/* 横排输入区域 */
+.form .inputs-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 960px;
+}
+
+.inputs-row .input-group {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.inputs-row .input-group label {
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.inputs-row .input-group input[type=text] {
+  width: 100%;
+  max-width: 140px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  box-sizing:border-box;
+  outline: none;
+  text-align: center;
+}
+
+body.dark .inputs-row .input-group input[type=text] {
+  background:#1b1b1b;
+  border-color:#444;
+  color:#fff;
+}
+
+/* 竖直滚动条 */
+.scroll-bar-vertical {
+  width: 100%;
+  max-width: 140px;
+  height: 300px;
+  margin-top:6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  cursor: grab;
+  position: relative;
+  margin-left:auto;
+  margin-right:auto;
+  pointer-events: auto;
+  backdrop-filter: blur(6px) saturate(180%);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1);
+}
+.scroll-bar-vertical:active { cursor: grabbing; }
+
+.scroll-bar-vertical .fill {
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  height: 0%;
+  border-radius:8px;
+  pointer-events: none;
+  transition: background 0.25s, box-shadow 0.25s;
+  background: linear-gradient(145deg, rgba(79,173,247,0.8), rgba(0,123,255,0.6));
+  box-shadow: inset 0 2px 6px rgba(255,255,255,0.3), 0 1px 4px rgba(0,0,0,0.25);
+}
+
+/* Virtual numeric keyboard */
+.num-keyboard{
+  position:absolute;
+  background:#f5f5f5;
+  border:1px solid #ccc;
+  border-radius:8px;
+  display:grid;
+  grid-template-columns:repeat(3,60px);
+  gap:6px;
+  padding:6px;
+  box-sizing:border-box;
+  z-index:1200;
+  display:none;
+}
+.num-keyboard button{
+  aspect-ratio:1/1;
+  width:100%;
+  font-size:18px;
+  border-radius:6px;
+  border:none;
+  background:#fff;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .15s
+}
+.num-keyboard button:hover{background:#007bff;color:#fff}
+.num-keyboard button.zero{grid-column:span 2;height:60px}
+
+/* Perfect nav */
+.nav{position:fixed;right:0;top:50%;transform:translateY(-50%);width:40px;background:rgba(0,0,0,0.45);
+     border-radius:8px 0 0 8px;overflow:hidden;transition:width .25s,background .25s;z-index:1300}
+body.light .nav{background:rgba(0,0,0,0.06)}
+.nav:hover{width:180px}
+.nav ul{list-style:none;margin:0;padding:10px 0}
+.nav li{padding:0;margin:0;white-space:nowrap;cursor:pointer;transition:background .18s}
+.nav li:hover{background:var(--nav-hover)}
+.nav a, .nav a::before, .nav a::after { color:var(--nav-color); }
+.nav a{display:block;width:100%;height:100%;text-align:center;padding:10px 8px;text-decoration:none;box-sizing:border-box; font-weight:400;}
+.nav a::before{content:attr(data-short);display:inline-block;width:100%;text-align:center; font-size:14px;}
+.nav:hover a::before{content:attr(data-full); font-size:14px;}
+.nav a{line-height:1.2;display:flex;align-items:center;justify-content:center;height:40px}
+
+/* 倍数显示框 */
+#resultBox {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  background: var(--result-bg);
+  color: var(--result-color);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 1500;
+  pointer-events: none;
+  transition: background 0.25s, color 0.25s;
+}
+</style>
+</head>
+<body class="dark">
+
+<div class="chart-container"><canvas id="balanceChart"></canvas></div>
+
+<div class="form">
+<div class="inputs-row">
+  <div class="input-group">
+    <label>本金</label>
+    <input type="text" id="principal" placeholder="请输入本金" inputmode="numeric" value="1"/>
+    <div class="scroll-bar-vertical" id="principalScroll"><div class="fill"></div></div>
+  </div>
+
+  <div class="input-group">
+    <label>利率（%）</label>
+    <input type="text" id="rate" placeholder="请输入利率" inputmode="numeric" value="10"/>
+    <div class="scroll-bar-vertical" id="rateScroll"><div class="fill"></div></div>
+  </div>
+
+  <div class="input-group">
+    <label>期数</label>
+    <input type="text" id="periods" placeholder="请输入期数" inputmode="numeric" value="12"/>
+    <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
+  </div>
+</div>
+</div>
+
+<div class="num-keyboard" id="numKeyboard">
+  <button>7</button><button>8</button><button>9</button>
+  <button>4</button><button>5</button><button>6</button>
+  <button>1</button><button>2</button><button>3</button>
+  <button class="zero">0</button><button class="dot">.</button>
+</div>
+
+<nav class="nav" aria-label="主导航">
+  <ul>
+    <li><a href="#" id="nav-home" data-short="首" data-full="首页"></a></li>
+    <li><a href="盈亏比&胜率.html" id="nav-calc" data-short="盈" data-full="盈亏比&胜率"></a></li>
+    <li><a href="#" id="modeToggle" data-short="浅" data-full="浅色模式"></a></li>
+  </ul>
+</nav>
+
+<!-- 倍数结果 -->
+<div id="resultBox"></div>
+
+<script>
+function formatNumber(v){
+  return Number(v).toFixed(2).replace(/\B(?=(\d{4})+(?!\d))/g,',');
+}
+
+let chart=null;
+function calculate(){
+  const principal=parseFloat(document.getElementById('principal').value)||0;
+  const rate=(parseFloat(document.getElementById('rate').value)||0)/100;
+  const periods=parseInt(document.getElementById('periods').value)||0;
+  const balances=[], labels=[];
+  for(let i=1;i<=periods;i++){
+    balances.push(+(principal*Math.pow(1+rate,i)).toFixed(2));
+    labels.push('第 '+i+' 期');
+  }
+
+  if(chart) chart.destroy();
+  const ctx=document.getElementById('balanceChart').getContext('2d');
+  const maxBalance=balances.length?Math.max(...balances):100;
+  const suggestedMax=maxBalance*1.1;
+  const labelColor=document.body.classList.contains('dark')?'#fff':'#111';
+  const bgColor=document.body.classList.contains('dark')?'#2b2b2b':'#f9f9f9';
+  document.querySelector('.chart-container').style.background=bgColor;
+  ctx.canvas.style.background=bgColor;
+
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{label:'期末余额',data:balances,borderColor:'#007bff',backgroundColor:'rgba(0,123,255,0.12)',fill:false,tension:0.2,pointBackgroundColor:'#007bff'}]},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels:{align:'top',anchor:'end',color:labelColor,font:{size:12},offset:8,clamp:true,formatter:formatNumber}
+      },
+      scales:{
+        y:{beginAtZero:true,suggestedMax:suggestedMax,ticks:{callback:formatNumber,color:labelColor},grid:{color:document.body.classList.contains('dark')?'#444':'#ddd'}},
+        x:{ticks:{color:labelColor},grid:{color:document.body.classList.contains('dark')?'#444':'#ddd'}}
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  // 倍数计算并更新右下角
+  let multipleText = '';
+  if (balances.length > 0 && principal > 0) {
+    const last = balances[balances.length - 1];
+    const multiple = (last / principal).toFixed(2);
+    multipleText = `倍数：${multiple}x`;
+  } else {
+    multipleText = '倍数：--';
+  }
+  document.getElementById('resultBox').textContent = multipleText;
+}
+
+const inputs=Array.from(document.querySelectorAll('.form input[type=text]'));
+inputs.forEach(i => {
+  i.addEventListener('input', () => {
+    const start = i.selectionStart;
+    calculate();
+    updateScrollFill(i.id);
+    if (i.id === 'rate') {
+      i.value = i.value.replace(/[^0-9.]/g, '');
+    } else {
+      i.value = i.value.replace(/[^0-9]/g, '');
+    }
+    // 恢复光标位置
+    const newCursorPos = Math.min(start, i.value.length);
+    i.setSelectionRange(newCursorPos, newCursorPos);
+  });
+});
+
+function enableVerticalScrollBar(inputId, scrollId, min, max, step){
+  const input=document.getElementById(inputId);
+  const scroll=document.getElementById(scrollId);
+  const fill=scroll.querySelector('.fill');
+
+  function roundValue(val){return inputId==='rate'? Math.round(val*2)/2 : Math.round(val);}
+  function updateFill(){
+    let val=parseFloat(input.value)||0;
+    val=roundValue(val);
+    input.value=val;
+    const percent=Math.min(Math.max((val-min)/(max-min)*100,0),100);
+    fill.style.height=percent+'%';
+  }
+
+  scroll.addEventListener('wheel', e=>{
+    e.preventDefault();
+    let val=parseFloat(input.value)||0;
+    val += e.deltaY<0? step : -step;
+    val=Math.min(Math.max(val,min),max);
+    val=roundValue(val);
+    input.value=val;
+    input.dispatchEvent(new Event('input'));
+    updateFill();
+  });
+
+  let isDragging=false;
+  scroll.addEventListener('mousedown', e=>{
+    isDragging=true;
+    const rect=scroll.getBoundingClientRect();
+    const startY=e.clientY;
+    const startVal=parseFloat(input.value)||0;
+    function onMove(ev){
+      if(!isDragging) return;
+      const deltaY=ev.clientY-startY;
+      let newVal=startVal - deltaY/rect.height*(max-min);
+      newVal=Math.min(Math.max(newVal,min),max);
+      newVal=roundValue(newVal);
+      input.value=newVal;
+      input.dispatchEvent(new Event('input'));
+      updateFill();
+    }
+    function onUp(){isDragging=false; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp);}
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+
+  input.addEventListener('input', updateFill);
+  updateFill();
+}
+
+enableVerticalScrollBar('principal','principalScroll',1,99,1);
+enableVerticalScrollBar('rate','rateScroll',0.5,50,0.5);
+enableVerticalScrollBar('periods','periodsScroll',1,240,1);
+
+function updateScrollFill(inputId){
+  const input=document.getElementById(inputId);
+  const scroll=document.getElementById(inputId+'Scroll');
+  const fill=scroll.querySelector('.fill');
+  let min=0,max=100;
+  if(inputId==='principal'){min=1; max=99;}
+  if(inputId==='rate'){min=0.5; max=50;}
+  if(inputId==='periods'){min=1; max=240;}
+  let val=parseFloat(input.value)||0;
+  if(inputId==='rate') val=Math.round(val*2)/2;
+  else val=Math.round(val);
+  input.value=val;
+  const percent=Math.min(Math.max((val-min)/(max-min)*100,0),100);
+  fill.style.height=percent+'%';
+}
+
+/* ---------- Mode toggle ---------- */
+const modeToggle=document.getElementById('modeToggle');
+function initModeToggleAttrs(){
+  if(document.body.classList.contains('dark')){
+    modeToggle.setAttribute('data-short','浅');
+    modeToggle.setAttribute('data-full','浅色模式');
+  } else {
+    modeToggle.setAttribute('data-short','深');
+    modeToggle.setAttribute('data-full','深色模式');
+  }
+}
+initModeToggleAttrs();
+modeToggle.addEventListener('click',e=>{
+  e.preventDefault();
+  document.body.classList.toggle('dark');
+  document.body.classList.toggle('light');
+  initModeToggleAttrs();
+  calculate();
+});
+
+/* ---------- Virtual numeric keyboard ---------- */
+const keyboard=document.getElementById('numKeyboard');
+let activeInput=null;
+
+inputs.forEach(i=>{
+  i.addEventListener('click',()=>{
+    activeInput=i;
+    const scroll=document.getElementById(i.id+'Scroll');
+    const rect=scroll.getBoundingClientRect();
+    keyboard.style.top = (rect.top + window.scrollY) + 'px';
+    keyboard.style.left = (rect.right + window.scrollX + 6) + 'px';
+    keyboard.style.display='grid';
+  });
+});
+
+keyboard.addEventListener('click', e => {
+  if (!activeInput) return;
+  const btn = e.target;
+  if (btn.tagName !== 'BUTTON') return;
+
+  let val = '';
+  if (btn.classList.contains('dot')) {
+    if (!activeInput.value.includes('.') && activeInput.id === 'rate') val = '.'; // 仅允许利率输入小数点
+    else return;
+  } else if (btn.classList.contains('zero')) val = '0';
+  else val = btn.textContent;
+
+  const oldVal = activeInput.value;
+  const start = activeInput.selectionStart;
+  const end = activeInput.selectionEnd;
+
+  // 如果全选了文本，则替换为新值
+  let newVal;
+  if (start === 0 && end === oldVal.length) {
+    newVal = val;
+  } else {
+    // 在光标位置插入新值
+    newVal = oldVal.slice(0, start) + val + oldVal.slice(end);
+  }
+
+  // 验证输入值范围
+  let min = 0, max = 100;
+  if (activeInput.id === 'principal') { min = 1; max = 99; }
+  if (activeInput.id === 'rate') { min = 0.5; max = 50; }
+  if (activeInput.id === 'periods') { min = 1; max = 240; }
+  const parsedVal = parseFloat(newVal);
+  if (parsedVal < min || parsedVal > max) return; // 阻止超出范围的输入
+
+  // 更新输入框值
+  activeInput.value = newVal;
+
+  // 设置光标位置到新插入字符之后
+  const newCursorPos = start + val.length;
+  activeInput.setSelectionRange(newCursorPos, newCursorPos);
+
+  // 触发 input 事件以更新图表和滚动条
+  activeInput.dispatchEvent(new Event('input'));
+
+  // 强制在输入验证后恢复光标位置
+  setTimeout(() => {
+    activeInput.setSelectionRange(newCursorPos, newCursorPos);
+  }, 0);
+});
+
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#numKeyboard') && !e.target.closest('.form input')){
+    keyboard.style.display='none'; activeInput=null;
+  }
+});
+
+window.addEventListener('load', ()=>{
+  calculate();
+  inputs.forEach(i=>updateScrollFill(i.id));
+});
+</script>
+</body>
+</html>

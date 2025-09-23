@@ -41,15 +41,14 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   z-index:10;
 }
 
-/* 表单区域 - 方案2 */
+/* 表单区域 */
 .form { 
   display:flex; 
-  justify-content: space-between;  /* 三组均分，左右间距 = 中间间距 */
+  justify-content: space-between;  /* 左右间距 = 中间间距 */
   align-items:flex-start; 
-  padding: 0 var(--form-gap);       /* 左右边距 = gap */
-  max-width: calc(3 * var(--input-scroll-width) + 2 * var(--form-gap)); 
-  margin: 0 auto;                   /* 居中整个表单 */
+  padding: 0 var(--form-gap);      /* 左右边距 = gap */
   box-sizing: border-box;
+  flex:1;
 }
 
 /* 输入组 */

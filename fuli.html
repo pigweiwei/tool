@@ -13,7 +13,7 @@ body { display:flex; flex-direction:column; }
 /* 图表区域 */
 .chart-container {
   height:50%;
-  padding:10px 20px 10px 10px; /* 上10, 右20, 下10, 左10 */
+  padding:10px 10px 10px 10px; /* 上10, 右10, 下10, 左10 */
   box-sizing:border-box;
   position:relative;
 }
@@ -23,9 +23,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 /* 顶部倍率/终值 */
 #topValues {
   position:absolute;
-  top:5px; right:20px; /* 顶部预留5px，右侧20px */
+  top:5px; left:10px; /* 顶部5px，左侧10px */
   display:flex; gap:10px; font-size:14px; font-weight:bold; color:#007bff;
-  white-space:nowrap; /* 防止折行 */
+  white-space:nowrap;
   pointer-events:none;
   z-index:10;
 }
@@ -124,7 +124,7 @@ function calculate(){
           formatter: function(value){ return value.toFixed(2); }
         }
       },
-      layout:{padding:{top:20, right:20}}, // 顶部和右侧小预留
+      layout:{padding:{top:20, right:10}},
       scales:{
         y:{beginAtZero:true, ticks:{callback:formatNumber, color:'#111'}, grid:{color:'#ddd'}},
         x:{ticks:{color:'#111'}, grid:{color:'#ddd'}}

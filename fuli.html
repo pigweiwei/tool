@@ -99,7 +99,16 @@ function calculate(){
       maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
-        datalabels:{align:'top', anchor:'end', color:'#007bff', font:{size:14}, offset:4, formatter:formatNumber}
+        datalabels:{
+          color:'#007bff',
+          font:{size:14},
+          formatter:function(value, context){
+            // 交替上下显示
+            context.align = (context.dataIndex % 2 === 0) ? 'top' : 'bottom';
+            context.anchor = (context.dataIndex % 2 === 0) ? 'end' : 'start';
+            return value.toFixed(2);
+          }
+        }
       },
       scales:{
         y:{beginAtZero:true, ticks:{callback:formatNumber, color:'#111'}, grid:{color:'#ddd'}},

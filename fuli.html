@@ -117,8 +117,8 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 .right-nav {
   position: fixed;
   top:0;
-  right:-70%; /* 默认隐藏 */
-  width:70%;
+  right:-30%; /* 默认隐藏 */
+  width:30%;
   max-width:300px;
   height:100%;
   background:#2c2c2c;
@@ -153,25 +153,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   z-index:150;
 }
 .overlay.show { display:block; }
-
-/* 悬浮按钮 */
-.nav-toggle {
-  position: fixed;
-  bottom:20px;
-  right:20px;
-  width:50px; height:50px;
-  border-radius:25px;
-  background:#2c2c2c;
-  color:#1e90ff;
-  font-size:24px;
-  font-weight:bold;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:250;
-  box-shadow:0 2px 8px rgba(0,0,0,0.4);
-}
 </style>
 </head>
 <body>
@@ -221,10 +202,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 <!-- 遮罩层 -->
 <div class="overlay" id="overlay"></div>
 
-<!-- 悬浮按钮 -->
-<div class="nav-toggle" id="navToggle">☰</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script>
 // ==================== 复利计算器逻辑 ====================
 function formatNumber(v){ 
@@ -368,12 +345,16 @@ window.addEventListener('load', calculate);
 // ==================== 右侧导航逻辑 ====================
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
-const navToggle = document.getElementById('navToggle');
 
-function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
-function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
+function openNav(){ 
+  rightNav.classList.add('expanded'); 
+  overlay.classList.add('show'); 
+}
+function closeNav(){ 
+  rightNav.classList.remove('expanded'); 
+  overlay.classList.remove('show'); 
+}
 
-navToggle.addEventListener('click', openNav);
 overlay.addEventListener('click', closeNav);
 
 // 手势滑动

@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>右侧抽屉导航</title>
+<title>右侧抽屉导航测试</title>
 <style>
   body {
     margin: 0;
-    height: 200vh; /* 页面拉长，方便测试滑动 */
+    height: 200vh; /* 拉长页面方便测试 */
     background: #f5f5f5;
     font-family: Arial, sans-serif;
   }
@@ -16,7 +16,7 @@
   .right-nav {
     position: fixed;
     top: 0;
-    right: -200px; /* 默认隐藏在右侧 */
+    right: -200px; /* 默认隐藏 */
     width: 200px;
     height: 100%;
     background: #2c2c2c;
@@ -29,7 +29,7 @@
   }
 
   .right-nav.expanded {
-    right: 0; /* 展开时滑入 */
+    right: 0; /* 展开时显示 */
   }
 
   /* 遮罩层 */
@@ -54,7 +54,7 @@
   }
   .right-nav .nav-item:hover { background: #1e1e1e; }
 
-  /* 开关按钮（固定在右下角） */
+  /* 悬浮按钮（固定在右下角） */
   .nav-toggle {
     position: fixed;
     bottom: 20px;
@@ -140,11 +140,11 @@
   function handleGesture() {
     const threshold = 50; // 滑动阈值
     if (touchEndX - touchStartX > threshold) {
-      // 👉 从左向右滑（展开导航）
+      // 👉 右滑展开
       openNav();
     }
     if (touchStartX - touchEndX > threshold) {
-      // 👈 从右向左滑（收起导航）
+      // 👈 左滑收起
       closeNav();
     }
   }

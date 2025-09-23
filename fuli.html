@@ -243,24 +243,23 @@ function closeNav(){
   overlay.classList.remove('show');
   document.body.style.overflow='';
 }
+
+// 点击遮罩关闭导航
 overlay.addEventListener('click', closeNav);
 
-// 右侧手势捕获
+// 右侧边缘手势打开导航
 const gestureRight = document.getElementById('gestureRight');
 let startX=0, startY=0;
-
 gestureRight.addEventListener('touchstart', e=>{
   if(e.touches.length!==1) return;
   e.preventDefault();
   startX=e.touches[0].clientX;
   startY=e.touches[0].clientY;
-}, {passive:false});
-
+},{passive:false});
 gestureRight.addEventListener('touchmove', e=>{
   if(e.touches.length!==1) return;
   e.preventDefault();
-}, {passive:false});
-
+},{passive:false});
 gestureRight.addEventListener('touchend', e=>{
   const deltaX = startX - e.changedTouches[0].clientX;
   if(Math.abs(deltaX)>30){
@@ -269,7 +268,23 @@ gestureRight.addEventListener('touchend', e=>{
   startX=0; startY=0;
 });
 
-// 点击导航链接自动收回右侧导航
+// 在右侧导航栏本身滑动关闭导航
+let navStartX = 0;
+rightNav.addEventListener('touchstart', e=>{
+  if(e.touches.length!==1) return;
+  navStartX = e.touches[0].clientX;
+},{passive:false});
+rightNav.addEventListener('touchmove', e=>{
+  if(e.touches.length!==1) return;
+  e.preventDefault(); // 阻止页面滚动
+},{passive:false});
+rightNav.addEventListener('touchend', e=>{
+  const deltaX = e.changedTouches[0].clientX - navStartX; // 左→右滑 deltaX > 0
+  if(deltaX > 30) closeNav();
+  navStartX = 0;
+});
+
+// 点击导航链接自动收回导航
 document.querySelectorAll('.right-nav a').forEach(a=>{
   a.addEventListener('click', ()=>{ closeNav(); });
 });

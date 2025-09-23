@@ -16,7 +16,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 #topValues {
   position:absolute;
   top:5px;
-  left:0; /* 左侧不留白，直接和纵轴数字对齐 */
+  left:0;
   display:flex;
   gap:10px;
   font-size:14px;
@@ -130,9 +130,9 @@ function calculate(){
           formatter: function(value){ return formatNumber(value); }
         }
       },
-      layout:{padding:{top:30, right:30, left:50, bottom:10}},
+      layout:{padding:{top:30, right:42, left:42, bottom:10}}, // 左右间距约3字符
       scales:{
-        y:{beginAtZero:true, ticks:{callback:formatNumber,color:'#111'}, grid:{color:'#ddd'}},
+        y:{beginAtZero:true, ticks:{callback:formatNumber,color:'#111'}, grid:{color:'#ddd'}, position:'left'},
         x:{ticks:{color:'#111'}, grid:{color:'#ddd'}}
       }
     },

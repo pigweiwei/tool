@@ -21,14 +21,13 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 
 .form { flex:1; padding:20px; box-sizing:border-box; display:flex; flex-direction:row; gap:20px; justify-content:center; align-items:flex-start; }
 
-/* 输入组和滑条容器 */
 .input-group { display:flex; flex-direction:column; align-items:center; gap:8px; }
 .input-label { font-weight:500; font-size:16px; }
 .input-wrapper { display:flex; flex-direction:column; position:relative; }
 .input-wrapper input { padding:8px; font-size:16px; border-radius:8px; border:1px solid #ccc; text-align:center; width:80px; }
 
 .scroll-bar-vertical { width:80px; height:250px; background:rgba(0,0,0,0.05); border-radius:8px; position:relative; cursor:grab; overflow:hidden; touch-action:none; }
-.scroll-bar-vertical .fill { position:absolute; bottom:0; width:100%; height:0%; border-radius:8px; background: linear-gradient(to top, #007bff, #00bfff); transition: height 0.1s; }
+.scroll-bar-vertical .fill { position:absolute; bottom:0; width:100%; height:0%; border-radius:8px; background: linear-gradient(to top, #007bff, #00bfff); transition: height 0.05s; }
 </style>
 </head>
 <body>
@@ -87,7 +86,7 @@ function calculate(){
   const balances=[], labels=[];
   for(let i=1;i<=periods;i++){
     balances.push(+(principal*Math.pow(1+rate,i)).toFixed(2));
-    labels.push(i); // 期数只显示数字
+    labels.push(i);
   }
 
   if(chart) chart.destroy();
@@ -119,38 +118,43 @@ function calculate(){
   const input=document.getElementById(id);
   const scroll=document.getElementById(id+'Scroll');
   const fill=scroll.querySelector('.fill');
+  const min=parseFloat(input.min), max=parseFloat(input.max), step=parseFloat(input.step)||1;
 
-  function updateFill(){
+  function updateFill(){ 
     const val=parseFloat(input.value)||0;
-    const min=parseFloat(input.min)||0;
-    const max=parseFloat(input.max)||100;
     const percent=Math.min(Math.max((val-min)/(max-min)*100,0),100);
     fill.style.height=percent+'%';
   }
 
-  // 移动端触控滑条
+  let startVal=0, startY=0;
+
   scroll.addEventListener('touchstart', e=>{
-    e.preventDefault(); // 阻止页面滚动
-    const startY=e.touches[0].clientY;
-    const startVal=parseFloat(input.value)||0;
+    e.preventDefault();
+    startY = e.touches[0].clientY;
+    startVal = parseFloat(input.value)||min;
 
     function moveHandler(ev){
-      ev.preventDefault(); // 阻止页面滚动
+      ev.preventDefault();
       const deltaY = ev.touches[0].clientY - startY;
-      const min=parseFloat(input.min)||0;
-      const max=parseFloat(input.max)||100;
       let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
-      if(id==='rate') newVal=Math.round(newVal*2)/2;
-      else newVal=Math.round(newVal);
-      newVal=Math.min(Math.max(newVal,min),max);
-      input.value=newVal;
+      newVal = Math.min(Math.max(newVal,min),max); // 限制范围
+      input.value = newVal;
       calculate();
       updateFill();
     }
 
     function endHandler(){
-      document.removeEventListener('touchmove',moveHandler);
-      document.removeEventListener('touchend',endHandler);
+      // 松开时四舍五入到合法步长
+      let finalVal = parseFloat(input.value);
+      if(id==='rate') finalVal = Math.round(finalVal*2)/2;
+      else finalVal = Math.round(finalVal);
+      finalVal = Math.min(Math.max(finalVal,min),max);
+      input.value = finalVal;
+      calculate();
+      updateFill();
+
+      document.removeEventListener('touchmove', moveHandler);
+      document.removeEventListener('touchend', endHandler);
     }
 
     document.addEventListener('touchmove', moveHandler, {passive:false});
@@ -158,8 +162,6 @@ function calculate(){
   });
 
   input.addEventListener('input', ()=>{
-    if(id==='rate') input.value=Math.round(input.value*2)/2;
-    else input.value=Math.round(input.value);
     calculate();
     updateFill();
   });

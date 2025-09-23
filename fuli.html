@@ -142,7 +142,7 @@ function calculate(){
 
   const lastBalance=balances[balances.length-1];
   document.getElementById('finalValue').textContent='终值：'+formatNumber(lastBalance);
-  document.getElementById('resultBox').textContent='倍率：'+(lastBalance/principal).toFixed(1);
+  document.getElementById('resultBox').textContent='倍率：'+(lastBalance/principal).toFixed(1)+'X';
 }
 
 // 初始化滑条
@@ -209,3 +209,4 @@ window.addEventListener('load', calculate);
 
 </body>
 </html>
+

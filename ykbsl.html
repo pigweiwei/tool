@@ -35,13 +35,13 @@ html, body {
   height: 100%;
   position: relative;
   touch-action: none;
-  padding-bottom: 50px; /* 底部留空间显示数值 */
+  padding-bottom: 50px;
 }
 
 .bar {
   width: 40vw;
   max-height: calc(100% - 50px);
-  position: relative;
+  position: relative; /* 必须有相对定位 */
   border-radius: 20px 20px 0 0;
   display: flex;
   justify-content: center;
@@ -49,16 +49,16 @@ html, body {
   flex-direction: column;
   box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.2);
   backdrop-filter: blur(10px);
-  transition: height 0.05s linear;
   overflow: hidden;
+  background: rgba(0,123,255,0.35);
+  border:1px solid rgba(0,123,255,0.6);
 }
 
-#profitLoss { background: rgba(0,123,255,0.35); border:1px solid rgba(0,123,255,0.6); }
 #breakeven { background: rgba(40,167,69,0.35); border:1px solid rgba(40,167,69,0.6); }
 
 .bar-value {
   position: absolute;
-  top: 5px;           /* 柱子内部顶部 */
+  top: 5px; /* 始终柱子内部顶部 */
   left: 50%;
   transform: translateX(-50%);
   font-size: 16px;
@@ -66,6 +66,7 @@ html, body {
   color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   white-space: nowrap;
+  pointer-events: none;
 }
 
 .label {
@@ -104,29 +105,21 @@ let breakevenLogical = 100/(1+profitLogical);
 function calculateBreakeven(r){ return 100/(1+r); }
 
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
-  const container = bar.parentElement;
-  const containerHeight = container.clientHeight - 50; // 底部留空间
-  let minHeight = 5; 
-  if(!isPercent && targetVal > maxProfitRatio){
-    bar.style.height = containerHeight + 'px';
-    valueDisplay.textContent = '∞';
-    return;
-  }
+  const containerHeight = bar.parentElement.clientHeight - 50; 
+  let minHeight = 5;
   let targetHeight = isPercent ? containerHeight*targetVal/100 : containerHeight*targetVal/maxProfitRatio;
-  if(targetHeight < minHeight) targetHeight = minHeight;
+  if(targetHeight<minHeight) targetHeight=minHeight;
   bar.style.height = targetHeight + 'px';
-  valueDisplay.style.top = '5px'; // 保持柱子内部顶部
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
 // ---------- 简单拖动 ----------
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
-  let containerHeight=0;
+  const containerHeight = wrapper.clientHeight - 50;
 
   function startDrag(e){
     dragging = true;
-    containerHeight = wrapper.clientHeight - 50; 
     e.preventDefault();
   }
 
@@ -136,16 +129,13 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
 
   function moveDrag(e){
     if(!dragging) return;
-    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    let rect = wrapper.getBoundingClientRect();
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const rect = wrapper.getBoundingClientRect();
     let height = rect.bottom - clientY;
     if(height<0) height=0;
     if(height>containerHeight) height=containerHeight;
-
-    let value = isPercent ? (height/containerHeight*100) : (height/containerHeight*maxProfitRatio);
-
+    const value = isPercent ? (height/containerHeight*100) : (height/containerHeight*maxProfitRatio);
     animateBarHeight(bar, valueDisplay, value, isPercent);
-
     if(callback) callback(value);
   }
 
@@ -171,10 +161,12 @@ makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakev
   animateBarHeight(profitBar, profitValue, profitLogical, false);
 });
 
+// 初始显示
 window.addEventListener('load', ()=>{
   animateBarHeight(profitBar, profitValue, profitLogical, false);
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
 });
 </script>
+
 </body>
 </html>

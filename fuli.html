@@ -27,7 +27,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 .input-wrapper input { padding:8px; font-size:16px; border-radius:8px; border:1px solid #ccc; text-align:center; width:80px; }
 
 .scroll-bar-vertical { width:80px; height:250px; background:rgba(0,0,0,0.05); border-radius:8px; position:relative; cursor:grab; overflow:hidden; touch-action:none; }
-.scroll-bar-vertical .fill { position:absolute; bottom:0; width:100%; height:0%; border-radius:8px; background: linear-gradient(to top, #007bff, #00bfff); transition: height 0.05s; }
+.scroll-bar-vertical .fill { position:absolute; bottom:0; width:100%; height:0%; border-radius:8px; background: linear-gradient(to top, #007bff, #00bfff); /* 去掉 transition 保证实时跟随手指 */ }
 </style>
 </head>
 <body>
@@ -130,6 +130,7 @@ function calculate(){
 
   scroll.addEventListener('touchstart', e=>{
     e.preventDefault();
+    fill.style.transition = ""; // 移动时不缓动
     startY = e.touches[0].clientY;
     startVal = parseFloat(input.value)||min;
 
@@ -137,7 +138,7 @@ function calculate(){
       ev.preventDefault();
       const deltaY = ev.touches[0].clientY - startY;
       let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
-      newVal = Math.min(Math.max(newVal,min),max); // 限制范围
+      newVal = Math.min(Math.max(newVal,min),max);
       input.value = newVal;
       calculate();
       updateFill();
@@ -150,6 +151,9 @@ function calculate(){
       finalVal = Math.min(Math.max(finalVal,min),max);
       input.value = finalVal;
       calculate();
+
+      // 手指松开，平滑收尾
+      fill.style.transition = "height 0.1s";
       updateFill();
 
       document.removeEventListener('touchmove', moveHandler);

@@ -8,8 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <style>
 :root {
-  --input-scroll-width: 90px; /* 输入框和滑条统一宽度，原60px放大1.5倍 */
-  --scroll-height: 180px;     /* 滑条高度保持不变 */
+  --input-scroll-width: 90px; /* 输入框和滑条统一宽度 */
+  --scroll-height: 216px;     /* 滑条高度增加20% */
 }
 
 html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#f9f9f9; color:#111; height:100%; }
@@ -41,12 +41,12 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  gap:2px; /* 缩小间距，使输入框和滑条紧凑但不重叠 */
+  gap:2px;
 }
 .input-label { font-weight:500; font-size:16px; }
 .input-wrapper { display:flex; flex-direction:column; position:relative; }
 .input-wrapper input { 
-  padding:8px 0; /* 原6px略微增加匹配宽度 */
+  padding:8px 0; 
   font-size:16px; 
   border-radius:8px; 
   border:1px solid #ccc; 

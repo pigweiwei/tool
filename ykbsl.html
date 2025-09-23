@@ -121,15 +121,24 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-// 轻吸附逻辑
-function applySnapDisplay(value, step=0.5, threshold=0.05){
-  let nearest = Math.round(value/step)*step;
-  let delta = nearest - value;
-  if(Math.abs(delta) < threshold){
-    // 轻微偏移显示值，吸附感
-    return value + delta * 0.3; // 0.3 可调节吸附强度
+// 缓动吸附函数
+function animateToSnap(bar, valueDisplay, value, step=0.5, threshold=0.05, isPercent=false){
+  const nearest = Math.round(value/step)*step;
+  if(Math.abs(value - nearest) < threshold){
+    let current = parseFloat(valueDisplay.textContent);
+    function tick(){
+      current += (nearest - current) * 0.2; // 缓动速度，可调
+      animateBarHeight(bar, valueDisplay, current, isPercent);
+      if(Math.abs(nearest - current) > 0.01){
+        requestAnimationFrame(tick);
+      } else {
+        animateBarHeight(bar, valueDisplay, nearest, isPercent);
+      }
+    }
+    tick();
+  } else {
+    animateBarHeight(bar, valueDisplay, value, isPercent);
   }
-  return value;
 }
 
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
@@ -140,7 +149,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   function startDrag(e){
     dragging = true;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
-    startValue = parseFloat(valueDisplay.textContent);
+    startValue = profitLogical; // 初始化逻辑值
     e.preventDefault();
   }
 
@@ -158,12 +167,12 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     let value = startValue + (isPercent ? deltaY/containerHeight*100 : deltaY/containerHeight*maxProfitRatio);
     value = Math.min(Math.max(value,0), isPercent ? 100 : maxProfitRatio);
 
-    let displayValue = value;
     if(!isPercent){
-      displayValue = applySnapDisplay(value, 0.5, 0.05); // 仅影响显示
+      animateToSnap(bar, valueDisplay, value, 0.5, 0.05, false);
+    } else {
+      animateBarHeight(bar, valueDisplay, value, true);
     }
 
-    animateBarHeight(bar, valueDisplay, displayValue, isPercent);
     if(callback) callback(value);
     startValue = value;
   }
@@ -176,10 +185,9 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   wrapper.addEventListener('mousemove', moveDrag);
 }
 
-// 盈亏比，连续滑动 + 轻吸附
+// 盈亏比，连续滑动 + 缓动吸附
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
-  animateBarHeight(profitBar, profitValue, profitLogical, false);
   breakevenLogical = calculateBreakeven(Math.max(profitLogical,0.01));
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
 });
@@ -188,12 +196,12 @@ makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, 
 makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
   profitLogical = (100/b)-1;
-  animateBarHeight(profitBar, profitValue, profitLogical, false);
+  animateToSnap(profitBar, profitValue, profitLogical, 0.5, 0.05, false);
 });
 
 // 初始显示
 window.addEventListener('load', ()=>{
-  animateBarHeight(profitBar, profitValue, profitLogical, false);
+  animateToSnap(profitBar, profitValue, profitLogical, 0.5, 0.05, false);
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
 });
 </script>

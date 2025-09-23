@@ -17,18 +17,17 @@
   --input-border: #555;
   --scroll-bg: rgba(255,255,255,0.1);
   --scroll-fill: linear-gradient(to top, #1e90ff, #00bfff);
-  --chart-grid: #444;
 }
 
-/* 基本样式 */
+/* 页面基本样式 */
 html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background: var(--bg-color); color: var(--text-color); height:100%; }
-body { display:flex; flex-direction:column; }
+body { display:flex; flex-direction:column; overflow-x:hidden; }
 
 /* 图表区域 */
 .chart-container { height:50%; padding:0; box-sizing:border-box; position:relative; }
 canvas { width:100% !important; height:100% !important; display:block; border-radius:8px; }
 
-/* 顶部倍率/终值 居中 */
+/* 顶部倍率/终值 */
 #topValues {
   position:absolute;
   top:5px;
@@ -39,31 +38,21 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   font-size:14px;
   font-weight:bold;
   color:#1e90ff;
-  white-space:nowrap;
   pointer-events:none;
   z-index:10;
 }
 
 /* 表单区域 */
-.form { display:flex; justify-content: space-between; align-items:flex-start; padding: 0 var(--form-gap); box-sizing: border-box; flex:1; }
+.form { display:flex; justify-content: space-between; align-items:flex-start; padding: 0 var(--form-gap); flex:1; }
 
 /* 输入组 */
 .input-group { display:flex; flex-direction:column; align-items:center; width: var(--input-scroll-width); }
-
-/* 输入框 */
 .input-wrapper { display:flex; flex-direction:column; align-items:center; margin-bottom:5px; }
 .input-wrapper input { padding:8px 0; font-size:16px; border-radius:8px; border:1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); text-align:center; width: var(--input-scroll-width); box-sizing: border-box; }
 
 /* 滑条 */
 .scroll-bar-vertical { width: var(--input-scroll-width); height: var(--scroll-height); background: var(--scroll-bg); border-radius:8px; position:relative; cursor:grab; overflow:hidden; touch-action:none; }
 .scroll-bar-vertical .fill { position:absolute; bottom:0; width:100%; height:0%; background: var(--scroll-fill); }
-
-/* 移动端微调 */
-@media (max-width: 400px) {
-  :root { --input-scroll-width: 80px; }
-  .input-wrapper input, .scroll-bar-vertical { width: var(--input-scroll-width); }
-  .input-group { width: var(--input-scroll-width); }
-}
 
 /* 右侧导航 */
 .right-nav {
@@ -82,21 +71,12 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
   border-radius: 8px 0 0 8px;
 }
-
 .right-nav.expanded { right:0; }
-
 .right-nav .nav-item { color: #eee; padding: 15px; text-align: center; cursor: pointer; border-bottom: 1px solid #444; }
 .right-nav .nav-item:hover { background: #1e1e1e; }
 
 /* 遮罩层 */
-.overlay {
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background: rgba(0,0,0,0.3);
-  display:none;
-  z-index:150;
-}
+.overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); display:none; z-index:150; }
 .overlay.show { display:block; }
 </style>
 </head>
@@ -146,68 +126,32 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 <script>
 // ========== 复利计算器 ==========
 function formatNumber(v){ 
-  let str = v.toFixed(1); 
-  return str.replace(/\B(?=(\d{4})+(?!\d))/g, ','); 
+  return v.toFixed(1).replace(/\B(?=(\d{4})+(?!\d))/g, ','); 
 }
 
 let chart=null;
 function calculate(){
-  const pEl=document.getElementById('principal');
-  const rEl=document.getElementById('rate');
-  const nEl=document.getElementById('periods');
+  const p = parseFloat(document.getElementById('principal').value) || 0;
+  const r = parseFloat(document.getElementById('rate').value)/100 || 0;
+  const n = parseInt(document.getElementById('periods').value) || 0;
+  if(!p || !r || !n){ if(chart){chart.destroy(); chart=null;} return; }
 
-  if(!pEl.value || !rEl.value || !nEl.value){
-    if(chart){ try{chart.destroy();}catch(e){} }
-    const ctx=document.getElementById('balanceChart').getContext('2d');
-    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
-    document.getElementById('resultBox').textContent='倍率：--X';
-    document.getElementById('finalValue').textContent='终值：--';
-    return;
-  }
-
-  const principal=parseFloat(pEl.value);
-  const rate=parseFloat(rEl.value)/100;
-  const periods=parseInt(nEl.value);
   const balances=[], labels=[];
-  for(let i=1;i<=periods;i++){
-    balances.push(+(principal*Math.pow(1+rate,i)).toFixed(1));
-    labels.push(i);
-  }
+  for(let i=1;i<=n;i++){ balances.push(+(p*Math.pow(1+r,i)).toFixed(1)); labels.push(i); }
 
   if(chart) chart.destroy();
   const ctx=document.getElementById('balanceChart').getContext('2d');
-
   chart=new Chart(ctx,{
     type:'line',
-    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#1e90ff', backgroundColor:'rgba(30,144,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:'#1e90ff'}]},
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        datalabels:{
-          color:'#1e90ff',
-          font:{size:14},
-          anchor: 'end',
-          align: 'top',
-          formatter: function(value){ return formatNumber(value); }
-        }
-      },
-      layout:{padding:{top:30, right:30}},
-      scales:{
-        y:{beginAtZero:false, ticks:{callback:formatNumber,color:'#eee'}, grid:{color:'#444'}},
-        x:{ticks:{color:'#eee'}, grid:{color:'#444'}}
-      }
-    },
-    plugins:[ChartDataLabels]
+    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#1e90ff', fill:false, tension:0.2, pointBackgroundColor:'#1e90ff'}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, datalabels:{color:'#1e90ff', font:{size:14}, anchor:'end', align:'top', formatter:formatNumber}}, layout:{padding:{top:30, right:30}}, scales:{y:{beginAtZero:false, ticks:{callback:formatNumber,color:'#eee'}, grid:{color:'#444'}}, x:{ticks:{color:'#eee'}, grid:{color:'#444'}}}}, plugins:[ChartDataLabels]
   });
 
-  const lastBalance=balances[balances.length-1];
-  document.getElementById('finalValue').textContent='终值：'+formatNumber(lastBalance);
-  document.getElementById('resultBox').textContent='倍率：'+(lastBalance/principal).toFixed(1)+'X';
+  document.getElementById('finalValue').textContent='终值：'+formatNumber(balances[n-1]);
+  document.getElementById('resultBox').textContent='倍率：'+(balances[n-1]/p).toFixed(1)+'X';
 }
 
-// ========== 滚动条 ==========
+// 滑条初始化
 ['principal','rate','periods'].forEach(id=>{
   const input=document.getElementById(id);
   const scroll=document.getElementById(id+'Scroll');
@@ -220,49 +164,29 @@ function calculate(){
     fill.style.height=percent+'%';
   }
 
-  input.addEventListener('focus', ()=>{
-    input.value='';
-    calculate();
-    fill.style.height='0%';
-  });
+  input.addEventListener('focus', ()=>{ input.value=''; calculate(); fill.style.height='0%'; });
 
-  let startVal=0, startY=0, blocked=false;
+  let startY=0, startVal=0;
 
   scroll.addEventListener('touchstart', e=>{
     e.preventDefault();
-    const touchX = e.touches[0].clientX;
-    if(touchX > window.innerWidth*0.92){ // 右侧 8% 区域，阻止滑动
-      blocked = true;
-      return;
-    } else blocked = false;
-
-    fill.style.transition = ""; 
-    startY = e.touches[0].clientY;
-    startVal = parseFloat(input.value)||min;
+    startY=e.touches[0].clientY;
+    startVal=parseFloat(input.value)||min;
 
     function moveHandler(ev){
-      if(blocked) return;
       ev.preventDefault();
-      const deltaY = ev.touches[0].clientY - startY;
+      const deltaY = ev.touches[0].clientY-startY;
       let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
-      if(id==='rate') newVal = Math.round(newVal*2)/2;
-      else newVal = Math.round(newVal);
+      newVal = id==='rate'? Math.round(newVal*2)/2 : Math.round(newVal);
       newVal = Math.min(Math.max(newVal,min),max);
-      input.value = newVal;
-      calculate();
-      updateFill();
+      input.value=newVal; calculate(); updateFill();
     }
 
     function endHandler(){
-      if(blocked) return;
-      let finalVal = parseFloat(input.value);
-      if(id==='rate') finalVal = Math.round(finalVal*2)/2;
-      else finalVal = Math.round(finalVal);
+      let finalVal=parseFloat(input.value);
+      finalVal = id==='rate'? Math.round(finalVal*2)/2 : Math.round(finalVal);
       finalVal = Math.min(Math.max(finalVal,min),max);
-      input.value = finalVal;
-      calculate();
-      fill.style.transition = "height 0.1s";
-      updateFill();
+      input.value=finalVal; calculate(); fill.style.transition="height 0.1s"; updateFill();
       document.removeEventListener('touchmove', moveHandler);
       document.removeEventListener('touchend', endHandler);
     }
@@ -277,7 +201,7 @@ function calculate(){
 
 window.addEventListener('load', calculate);
 
-// ========== 右侧导航 ==========
+// ========== 右侧导航手势 ==========
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 
@@ -285,35 +209,36 @@ function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('s
 function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 overlay.addEventListener('click', closeNav);
 
-let touchStartX = null, touchStartY = 0;
+let touchStartX=null, touchStartY=0, isHorizontal=false;
 
 document.addEventListener('touchstart', e=>{
-  if(e.touches.length !== 1) return;
-  const startX = e.touches[0].clientX;
-  const startY = e.touches[0].clientY;
+  if(e.touches.length!==1) return;
+  const x=e.touches[0].clientX;
+  if(x < window.innerWidth*0.92) { touchStartX=null; return; } // 右侧8%区域
+  touchStartX = x;
+  touchStartY = e.touches[0].clientY;
+  isHorizontal = false;
+});
 
-  if(startX < window.innerWidth*0.92){ // 非右侧8%区域
-    touchStartX = null;
-    return;
+document.addEventListener('touchmove', e=>{
+  if(touchStartX===null) return;
+  const deltaX = e.touches[0].clientX - touchStartX;
+  const deltaY = e.touches[0].clientY - touchStartY;
+  if(!isHorizontal){
+    if(Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX)>10) isHorizontal=true;
   }
-  touchStartX = startX;
-  touchStartY = startY;
+  if(isHorizontal) e.preventDefault(); // 水平滑动时阻止页面上下滚动
 });
 
 document.addEventListener('touchend', e=>{
-  if(touchStartX === null) return;
-  if(e.changedTouches.length !== 1) return;
-
-  const touchEndX = e.changedTouches[0].clientX;
-  const touchEndY = e.changedTouches[0].clientY;
-  const deltaX = touchStartX - touchEndX;
-  const deltaY = touchStartY - touchEndY;
-
-  if(Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)){
-    if(deltaX > 0){ openNav(); }
-    else { closeNav(); }
+  if(touchStartX===null) return;
+  const deltaX = touchStartX - e.changedTouches[0].clientX;
+  const deltaY = touchStartY - e.changedTouches[0].clientY;
+  if(isHorizontal && Math.abs(deltaX) > 50){
+    if(deltaX>0) openNav(); else closeNav();
   }
-  touchStartX = null;
+  touchStartX=null;
+  isHorizontal=false;
 });
 </script>
 </body>

@@ -49,7 +49,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   box-sizing:border-box; 
   display:flex; 
   flex-direction:row; 
-  justify-content:space-between; /* 左右间距和中间间距一致 */
+  justify-content:space-between; 
   align-items:flex-start; 
   flex-wrap: nowrap; /* 禁止换行 */
 }
@@ -177,6 +177,8 @@ function calculate(){
 
   if(chart) chart.destroy();
   const ctx=document.getElementById('balanceChart').getContext('2d');
+
+  const minY = principal; // Y 轴最小值贴近本金
   chart=new Chart(ctx,{
     type:'line',
     data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#007bff', backgroundColor:'rgba(0,123,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:'#007bff'}]},
@@ -204,7 +206,12 @@ function calculate(){
       },
       layout:{padding:{top:30, right:30}},
       scales:{
-        y:{beginAtZero:true, ticks:{callback:formatNumber, color:'#111'}, grid:{color:'#ddd'}},
+        y:{
+          beginAtZero:false,
+          min:minY,
+          ticks:{callback:formatNumber,color:'#111'},
+          grid:{color:'#ddd'}
+        },
         x:{ticks:{color:'#111'}, grid:{color:'#ddd'}}
       }
     },

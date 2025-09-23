@@ -132,6 +132,9 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   if (targetHeight < minHeight) targetHeight = minHeight;
   bar.style.height = targetHeight + 'px';
   let valueTop = containerHeight - targetHeight - 20;
+  if ((isPercent && targetVal < 3) || (!isPercent && targetVal < 0.3)) {
+    valueTop = containerHeight - 40;
+  }
   valueTop = Math.max(valueTop, 0);
   valueDisplay.style.top = valueTop + 'px';
   valueDisplay.textContent = (typeof displayVal === 'string') ? displayVal : isPercent ? Math.round(displayVal) + '%' : displayVal.toFixed(2);

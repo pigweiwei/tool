@@ -349,9 +349,10 @@ function calculate(){
 
 window.addEventListener('load', calculate);
 
-// ==================== 右侧导航 ====================
+// ==================== 右侧导航（右侧5%滑动生效） ====================
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
+const screenWidth = window.innerWidth;
 
 function openNav(){ 
   rightNav.classList.add('expanded'); 
@@ -361,22 +362,32 @@ function closeNav(){
   rightNav.classList.remove('expanded'); 
   overlay.classList.remove('show'); 
 }
-
 overlay.addEventListener('click', closeNav);
 
-let touchStartX=0, touchStartY=0;
+let touchStartX = null, touchStartY = 0;
+
 document.addEventListener('touchstart', e=>{
-  if(e.touches.length!==1) return;
-  touchStartX=e.touches[0].clientX;
-  touchStartY=e.touches[0].clientY;
+  if(e.touches.length !== 1) return;
+  const startX = e.touches[0].clientX;
+  const startY = e.touches[0].clientY;
+
+  if(startX < screenWidth * 0.95){ // 非右侧5%区域
+    touchStartX = null;
+    return;
+  }
+  touchStartX = startX;
+  touchStartY = startY;
 });
 
 document.addEventListener('touchend', e=>{
-  if(e.changedTouches.length!==1) return;
-  let touchEndX=e.changedTouches[0].clientX;
-  let touchEndY=e.changedTouches[0].clientY;
-  let deltaX = touchStartX - touchEndX;
-  let deltaY = touchStartY - touchEndY;
+  if(touchStartX === null) return;
+  if(e.changedTouches.length !== 1) return;
+
+  const touchEndX = e.changedTouches[0].clientX;
+  const touchEndY = e.changedTouches[0].clientY;
+  const deltaX = touchStartX - touchEndX;
+  const deltaY = touchStartY - touchEndY;
+
   if(Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)){
     if(deltaX > 0){ // 左滑
       openNav();
@@ -384,6 +395,7 @@ document.addEventListener('touchend', e=>{
       closeNav();
     }
   }
+  touchStartX = null;
 });
 </script>
 </body>

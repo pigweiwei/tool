@@ -10,9 +10,16 @@
 :root {
   --input-scroll-width: 90px; /* 输入框和滑条统一宽度 */
   --scroll-height: 280px;     /* 滑条高度增加20% */
+  --form-padding: 20px;       /* 表单与屏幕边缘间距 */
+  --form-gap: 20px;           /* 输入组间距 */
+  --input-scroll-gap: 5px;    /* 输入框和滑条间距 */
 }
 
-html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#f9f9f9; color:#111; height:100%; }
+html, body {
+  margin:0; padding:0; 
+  font-family:Arial,Helvetica,sans-serif; 
+  background:#f9f9f9; color:#111; height:100%;
+}
 body { display:flex; flex-direction:column; }
 
 /* 图表区域 */
@@ -36,15 +43,31 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 }
 
 /* 表单区域 */
-.form { flex:1; padding:20px; box-sizing:border-box; display:flex; flex-direction:row; gap:20px; justify-content:center; align-items:flex-start; }
+.form { 
+  flex:1; 
+  padding: var(--form-padding); 
+  box-sizing:border-box; 
+  display:flex; 
+  flex-direction:row; 
+  justify-content:center; 
+  align-items:flex-start; 
+  gap: var(--form-gap);
+}
+
+/* 输入组 */
 .input-group { 
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  gap:2px;
 }
-.input-label { font-weight:500; font-size:16px; }
-.input-wrapper { display:flex; flex-direction:column; position:relative; }
+
+/* 输入框 */
+.input-wrapper { 
+  display:flex; 
+  flex-direction:column; 
+  align-items:center; 
+  margin-bottom: var(--input-scroll-gap);
+}
 .input-wrapper input { 
   padding:8px 0; 
   font-size:16px; 
@@ -53,10 +76,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   text-align:center; 
   width: var(--input-scroll-width); 
   box-sizing: border-box; 
-  margin-bottom:2px; 
 }
 
-/* 滑条宽度保持一致 */
+/* 滑条 */
 .scroll-bar-vertical { 
   width: var(--input-scroll-width); 
   height: var(--scroll-height); 
@@ -66,6 +88,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   cursor:grab; 
   overflow:hidden; 
   touch-action:none; 
+  margin-top: var(--input-scroll-gap);
 }
 .scroll-bar-vertical .fill { 
   position:absolute; 
@@ -247,7 +270,3 @@ window.addEventListener('load', calculate);
 
 </body>
 </html>
-
-
-
-

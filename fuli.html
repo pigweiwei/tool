@@ -8,9 +8,16 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <style>
 :root {
-  --input-scroll-width: 60px; /* 输入框和滚动条统一宽度变量 */
+  --input-scroll-width: 60px; 
+  --scroll-height: 180px;     
+  --primary-color: #007bff;
+  --secondary-color: #00bfff;
+  --input-border: #ccc;
+  --input-bg: #fff;
+  --scroll-bg: rgba(0,0,0,0.05);
 }
 
+/* 基本布局 */
 html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#f9f9f9; color:#111; height:100%; }
 body { display:flex; flex-direction:column; }
 
@@ -28,7 +35,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   gap:20px;
   font-size:14px;
   font-weight:bold;
-  color:#007bff;
+  color:var(--primary-color);
   white-space:nowrap;
   pointer-events:none;
   z-index:10;
@@ -40,7 +47,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  gap:2px; /* 缩小间距，使输入框和滑条紧凑但不重叠 */
+  gap:2px; 
 }
 .input-label { font-weight:500; font-size:16px; }
 .input-wrapper { display:flex; flex-direction:column; position:relative; }
@@ -48,18 +55,19 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   padding:6px 0; 
   font-size:16px; 
   border-radius:8px; 
-  border:1px solid #ccc; 
+  border:1px solid var(--input-border); 
   text-align:center; 
   width: var(--input-scroll-width); 
   box-sizing: border-box; 
-  margin-bottom:2px; /* 保留轻微间隙，不重叠滑条 */
+  margin-bottom:2px; 
+  background-color: var(--input-bg);
 }
 
-/* 滑条宽度保持一致 */
+/* 滑条 */
 .scroll-bar-vertical { 
   width: var(--input-scroll-width); 
-  height:250px; 
-  background:rgba(0,0,0,0.05); 
+  height: var(--scroll-height); 
+  background: var(--scroll-bg); 
   border-radius:8px; 
   position:relative; 
   cursor:grab; 
@@ -71,7 +79,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   bottom:0; 
   width:100%; 
   height:0%; 
-  background: linear-gradient(to top, #007bff, #00bfff); 
+  border-radius:8px; 
+  background: linear-gradient(to top, var(--primary-color), var(--secondary-color)); 
+  transition: height 0.1s; 
 }
 </style>
 </head>
@@ -146,14 +156,14 @@ function calculate(){
   const ctx=document.getElementById('balanceChart').getContext('2d');
   chart=new Chart(ctx,{
     type:'line',
-    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#007bff', backgroundColor:'rgba(0,123,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:'#007bff'}]},
+    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:var(--primary-color), backgroundColor:'rgba(0,123,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:var(--primary-color)}]},
     options:{
       responsive:true,
       maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
         datalabels:{
-          color:'#007bff',
+          color:var(--primary-color),
           font:{size:14},
           anchor: function(context){
             const len = context.chart.data.datasets[0].data.length;

@@ -26,6 +26,7 @@ html, body {
   height: 100vh;  /* 占满全屏高度 */
   gap: 20px;
 }
+
 .bar-wrapper {
   display: flex;
   flex-direction: column;
@@ -34,10 +35,12 @@ html, body {
   height: 100%;
   position: relative;
   touch-action: none;
+  padding-bottom: 50px; /* 底部留空间显示数值 */
 }
+
 .bar {
   width: 40vw;
-  max-height: 100%;
+  max-height: calc(100% - 50px); /* 减去底部数值区域 */
   position: relative;
   border-radius: 20px 20px 0 0;
   display: flex;
@@ -49,20 +52,20 @@ html, body {
   transition: height 0.05s linear;
   overflow: hidden;
 }
+
 #profitLoss { background: rgba(0,123,255,0.35); border:1px solid rgba(0,123,255,0.6); }
 #breakeven { background: rgba(40,167,69,0.35); border:1px solid rgba(40,167,69,0.6); }
 
 .bar-value {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative; /* 改为相对定位，不覆盖柱子 */
+  bottom: auto;
+  margin-bottom: 5px;
   font-size: 16px;
   font-weight: bold;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  z-index: 2;
-  transition: bottom 0.05s linear;
   color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
+
 .label {
   margin-top: 8px;
   font-size: 14px;
@@ -100,18 +103,16 @@ function calculateBreakeven(r){ return 100/(1+r); }
 
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   const container = bar.parentElement;
-  const maxHeight = container.clientHeight;
-  let minHeight = 10; // 底部贴底的最小高度
+  const containerHeight = container.clientHeight - 50; // 留出底部数值高度
+  let minHeight = 5; // 柱子最小高度
   if(!isPercent && targetVal > maxProfitRatio){
-    bar.style.height = maxHeight + 'px';
-    valueDisplay.style.bottom = maxHeight + 10 + 'px';
+    bar.style.height = containerHeight + 'px';
     valueDisplay.textContent = '∞';
     return;
   }
-  let targetHeight = isPercent ? maxHeight*targetVal/100 : maxHeight*targetVal/maxProfitRatio;
-  if(targetHeight < minHeight) targetHeight = minHeight; // 确保柱子底部紧贴
+  let targetHeight = isPercent ? containerHeight*targetVal/100 : containerHeight*targetVal/maxProfitRatio;
+  if(targetHeight < minHeight) targetHeight = minHeight;
   bar.style.height = targetHeight + 'px';
-  valueDisplay.style.bottom = targetHeight + 10 + 'px';
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
@@ -130,7 +131,6 @@ function makeDraggableInertia(wrapper, bar, valueDisplay, isPercent=false, callb
 
   function updateBar(){
     bar.style.height = targetHeight + 'px';
-    valueDisplay.style.bottom = targetHeight + 10 + 'px';
     valueDisplay.textContent = isPercent ? Math.round(targetValue)+'%' : targetValue.toFixed(2);
     if(callback) callback(targetValue);
     ticking=false;
@@ -138,7 +138,7 @@ function makeDraggableInertia(wrapper, bar, valueDisplay, isPercent=false, callb
 
   function startDrag(e){
     dragging = true;
-    containerHeight = wrapper.clientHeight;
+    containerHeight = wrapper.clientHeight - 50; // 留出底部空间
     lastY = e.touches ? e.touches[0].clientY : e.clientY;
     lastTime = Date.now();
     if(inertiaId) cancelAnimationFrame(inertiaId);

@@ -143,12 +143,17 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
   let startValue = 0;
+  let startX = 0;
   let startY = 0;
+  let dragDirection = null; // 'vertical' or 'horizontal'
   const containerHeight = wrapper.clientHeight - 50;
 
   function startDrag(e){
     dragging = true;
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragDirection = null;
+
     let currentText = valueDisplay.textContent;
     startValue = currentText === '♾️' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
     if (isNaN(startValue)) startValue = 0;
@@ -158,40 +163,61 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   function endDrag(){
     if(!dragging) return;
     dragging = false;
-    let currentText = valueDisplay.textContent;
-    if (currentText === '♾️') {
-      if (callback) callback(Infinity);
-    } else {
-      let currentValue = parseFloat(currentText);
-      if (!isPercent) {  // Snap only for profit-loss ratio (non-percent bar)
-        let snappedValue = Math.round(currentValue / 0.5) * 0.5;
-        animateBarHeight(bar, valueDisplay, snappedValue, isPercent);
-        if (callback) callback(snappedValue);
+
+    if (dragDirection === "vertical") {
+      let currentText = valueDisplay.textContent;
+      if (currentText === '♾️') {
+        if (callback) callback(Infinity);
+      } else {
+        let currentValue = parseFloat(currentText);
+        if (!isPercent) {  // 只对盈亏比进行 0.5 吸附
+          let snappedValue = Math.round(currentValue / 0.5) * 0.5;
+          animateBarHeight(bar, valueDisplay, snappedValue, isPercent);
+          if (callback) callback(snappedValue);
+        }
       }
     }
   }
 
   function moveDrag(e){
     if(!dragging) return;
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    let delta = startY - clientY; // 手指向上为正
-    let value;
-    if (isPercent) {
-      value = startValue + delta / containerHeight * 100;
-      value = Math.min(Math.max(value, 0), 100);
-    } else {
-      value = startValue + delta / containerHeight * maxProfitRatio;
-      value = Math.max(value, 0);
+
+    // 判断方向
+    if (dragDirection === null) {
+      let dx = clientX - startX;
+      let dy = clientY - startY;
+      if (Math.abs(dy) > Math.abs(dx)) {
+        dragDirection = "vertical";
+      } else {
+        dragDirection = "horizontal";
+      }
     }
-    animateBarHeight(bar, valueDisplay, value, isPercent);
-    if (callback) callback(value);
+
+    if (dragDirection === "vertical") {
+      let delta = startY - clientY; // 上为正
+      let value;
+      if (isPercent) {
+        value = startValue + delta / containerHeight * 100;
+        value = Math.min(Math.max(value, 0), 100);
+      } else {
+        value = startValue + delta / containerHeight * maxProfitRatio;
+        value = Math.max(value, 0);
+      }
+      animateBarHeight(bar, valueDisplay, value, isPercent);
+      if (callback) callback(value);
+    } else {
+      // 👉 横向滑动时，不处理，留给导航条
+    }
   }
 
   wrapper.addEventListener('touchstart', startDrag);
   wrapper.addEventListener('mousedown', startDrag);
   document.addEventListener('touchend', endDrag);
   document.addEventListener('mouseup', endDrag);
-  wrapper.addEventListener('touchmove', moveDrag);
+  wrapper.addEventListener('touchmove', moveDrag, { passive: false });
   wrapper.addEventListener('mousemove', moveDrag);
 }
 

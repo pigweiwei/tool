@@ -121,7 +121,7 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, step=null, callback=null){
+function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
   let startValue = 0;
   let startY = 0;
@@ -135,7 +135,14 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, step=null, c
   }
 
   function endDrag(){
+    if(!dragging) return;
     dragging = false;
+    if(!isPercent){  // Snap only for profit-loss ratio (non-percent bar)
+      let currentValue = parseFloat(valueDisplay.textContent);
+      let snappedValue = Math.round(currentValue / 0.5) * 0.5;
+      animateBarHeight(bar, valueDisplay, snappedValue, isPercent);
+      if(callback) callback(snappedValue);
+    }
   }
 
   function moveDrag(e){
@@ -150,13 +157,8 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, step=null, c
       value = startValue + delta/containerHeight*maxProfitRatio;
       value = Math.min(Math.max(value,0),maxProfitRatio);
     }
-
-    // 滑动视觉连续
     animateBarHeight(bar, valueDisplay, value, isPercent);
-
-    // 吸附到步进数值
-    let snapped = step ? Math.round(value/step)*step : value;
-    if(callback) callback(snapped);
+    if(callback) callback(value);
   }
 
   wrapper.addEventListener('touchstart', startDrag);
@@ -167,15 +169,15 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, step=null, c
   wrapper.addEventListener('mousemove', moveDrag);
 }
 
-// 盈亏比 0.5 步进
-makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, 0.5, r=>{
+// 盈亏比
+makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
   breakevenLogical = calculateBreakeven(Math.max(r,0.01));
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
 });
 
-// 胜率 连续滑动
-makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, null, b=>{
+// 胜率
+makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
   profitLogical = (100/b)-1;
   animateBarHeight(profitBar, profitValue, profitLogical, false);

@@ -10,8 +10,7 @@
 :root {
   --input-scroll-width: 90px; /* 输入框和滑条统一宽度 */
   --scroll-height: 280px;     /* 滑条高度增加20% */
-  --form-padding: 20px;       /* 表单与屏幕边缘间距 */
-  --form-gap: 20px;           /* 输入组间距 */
+  --form-padding: 20px;       /* 表单左右边距 */
   --input-scroll-gap: 5px;    /* 输入框和滑条间距 */
 }
 
@@ -45,13 +44,12 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 /* 表单区域 */
 .form { 
   flex:1; 
-  padding: var(--form-padding); 
+  padding: 0 var(--form-padding); /* 左右边距 */
   box-sizing:border-box; 
   display:flex; 
   flex-direction:row; 
-  justify-content:center; 
+  justify-content:space-between; /* 左右间距和中间间距一致 */
   align-items:flex-start; 
-  gap: var(--form-gap);
 }
 
 /* 输入组 */

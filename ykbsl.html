@@ -66,7 +66,7 @@ body {
   flex-direction: column;
   box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.2);
   backdrop-filter: blur(10px);
-  transition: all 0.3s;
+  transition: height 0.1s ease-out;
   overflow: hidden;
 }
 .bar-value {
@@ -89,6 +89,19 @@ body {
 }
 #profitLoss { background: var(--bar-profit-bg); border:1px solid var(--bar-profit-border);}
 #breakeven { background: var(--bar-breakeven-bg); border:1px solid var(--bar-breakeven-border);}
+.modeToggleBtn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.3);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  z-index: 1000;
+  user-select: none;
+}
+body.light .modeToggleBtn { background: rgba(0,0,0,0.1); color: #000; }
 </style>
 </head>
 <body class="dark">
@@ -106,13 +119,14 @@ body {
   </div>
 </div>
 
+<div class="modeToggleBtn" id="modeToggle">切换模式</div>
+
 <script>
 const profitBar = document.getElementById('profitLoss');
 const breakevenBar = document.getElementById('breakeven');
 const profitValue = document.getElementById('profitLossValue');
 const breakevenValue = document.getElementById('breakevenValue');
-const wrapperProfit = document.getElementById('wrapperProfit');
-const wrapperBreakeven = document.getElementById('wrapperBreakeven');
+const modeToggle = document.getElementById('modeToggle');
 
 const maxProfitRatio = 10;
 let profitLogical = 4;
@@ -121,8 +135,8 @@ let breakevenLogical = 100/(1+profitLogical);
 function calculateBreakeven(r){ return 100/(1+r); }
 
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
-  const container = bar.parentElement.getBoundingClientRect();
-  const maxHeight = container.height;
+  const container = bar.parentElement;
+  const maxHeight = container.clientHeight;
   if(!isPercent && targetVal > maxProfitRatio){
     bar.style.height = maxHeight + 'px';
     valueDisplay.style.bottom = maxHeight + 10 + 'px';
@@ -135,33 +149,55 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-// ---------- 移动端触控拖动 ----------
+// ---------- 流畅触控拖动 ----------
 function makeDraggableTouch(bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
-  bar.addEventListener('touchstart', e=>{ dragging=true; e.preventDefault(); });
+  let containerHeight=0;
+  let targetHeight=0;
+  let targetValue=0;
+  let ticking=false;
+
+  function updateBar(){
+    bar.style.height = targetHeight + 'px';
+    valueDisplay.style.bottom = targetHeight + 10 + 'px';
+    valueDisplay.textContent = isPercent ? Math.round(targetValue)+'%' : targetValue.toFixed(2);
+    if(callback) callback(targetValue);
+    ticking=false;
+  }
+
+  bar.addEventListener('touchstart', e=>{
+    dragging=true;
+    containerHeight = bar.parentElement.clientHeight;
+    e.preventDefault();
+  });
+
   document.addEventListener('touchend', ()=> dragging=false);
+
   document.addEventListener('touchmove', e=>{
     if(!dragging) return;
     const touch = e.touches[0];
-    const container = bar.parentElement.getBoundingClientRect();
-    let height = container.bottom - touch.clientY;
+    let height = bar.parentElement.getBoundingClientRect().bottom - touch.clientY;
     if(height<0) height=0;
-    if(height>container.height) height=container.height;
-    let val = isPercent ? Math.round(height/container.height*100) : (height/container.height*maxProfitRatio);
-    if(callback) callback(val);
+    if(height>containerHeight) height=containerHeight;
+
+    targetHeight = height;
+    targetValue = isPercent ? Math.round(height/containerHeight*100) : (height/containerHeight*maxProfitRatio);
+
+    if(!ticking){
+      window.requestAnimationFrame(updateBar);
+      ticking = true;
+    }
   });
 }
 
 makeDraggableTouch(profitBar, profitValue, false, r=>{
   profitLogical = r;
-  animateBarHeight(profitBar, profitValue, profitLogical, false);
   breakevenLogical = calculateBreakeven(Math.max(r,0.01));
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
 });
 
 makeDraggableTouch(breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
-  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
   profitLogical = (100/b)-1;
   animateBarHeight(profitBar, profitValue, profitLogical, false);
 });
@@ -169,6 +205,12 @@ makeDraggableTouch(breakevenBar, breakevenValue, true, b=>{
 window.addEventListener('load', ()=>{
   animateBarHeight(profitBar, profitValue, profitLogical, false);
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
+});
+
+// ---------- 深浅色切换 ----------
+modeToggle.addEventListener('click', ()=>{
+  document.body.classList.toggle('dark');
+  document.body.classList.toggle('light');
 });
 </script>
 </body>

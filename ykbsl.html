@@ -113,15 +113,28 @@ function calculateBreakeven(r){ return 100/(1+r); }
 
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50; 
+  const topOffset = 20; // 顶部留白
   let minHeight = 5;
-  let targetHeight = isPercent ? containerHeight*targetVal/100 : containerHeight*targetVal/maxProfitRatio;
-  if(targetHeight<minHeight) targetHeight=minHeight;
+  let targetHeight;
+
+  if(isPercent){
+    targetHeight = containerHeight * targetVal / 100;
+  } else {
+    targetHeight = containerHeight * targetVal / maxProfitRatio;
+  }
+
+  // 留白，不影响逻辑值
+  if(targetHeight > containerHeight - topOffset){
+    targetHeight = containerHeight - topOffset;
+  }
+  if(targetHeight < minHeight) targetHeight = minHeight;
+
   bar.style.height = targetHeight + 'px';
   valueDisplay.style.top = (containerHeight - targetHeight - 20) + 'px';
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
+function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null, snapStep=null){
   let dragging=false;
   let startValue = 0;
   let startY = 0;
@@ -137,9 +150,9 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   function endDrag(){
     if(!dragging) return;
     dragging = false;
-    if(!isPercent){  // Snap only for profit-loss ratio (non-percent bar)
+    if(snapStep){  // 盈亏比吸附步进
       let currentValue = parseFloat(valueDisplay.textContent);
-      let snappedValue = Math.round(currentValue / 0.5) * 0.5;
+      let snappedValue = Math.round(currentValue / snapStep) * snapStep;
       animateBarHeight(bar, valueDisplay, snappedValue, isPercent);
       if(callback) callback(snappedValue);
     }
@@ -174,7 +187,7 @@ makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, 
   profitLogical = r;
   breakevenLogical = calculateBreakeven(Math.max(r,0.01));
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
-});
+}, 0.5);  // 吸附 0.5 步进
 
 // 胜率
 makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{

@@ -28,97 +28,67 @@ body {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   background: var(--bg-gradient);
+  overflow-x: hidden;
   transition: all 0.3s;
 }
 
 .bar-container {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  width: 90%;
-  max-width: 400px;
-  gap: 30px;
-  margin-bottom: 50px;
+  justify-content: space-around;
+  align-items: flex-end;
+  width: 90vw;
+  height: 60vh;
+  gap: 20px;
 }
-
 .bar-wrapper {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  width: 100%;
+  height: 100%;
   position: relative;
 }
-
 .bar {
-  width: 100%;
-  max-height: 300px;
+  width: 40vw;
+  max-height: 100%;
   position: relative;
+  cursor: grab;
   border-radius: 20px 20px 0 0;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   flex-direction: column;
-  box-shadow: inset 0 -5px 15px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.2);
+  box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.2);
   backdrop-filter: blur(10px);
+  transition: all 0.3s;
   overflow: hidden;
-  touch-action: none; /* 移动端拖动优化 */
-  background: var(--bar-profit-bg);
-  border: 1px solid var(--bar-profit-border);
 }
-#breakeven { background: var(--bar-breakeven-bg); border:1px solid var(--bar-breakeven-border); }
-
-.bar::before {
-  content:'';
-  position:absolute;
-  top:0; left:0; right:0;
-  height:20%;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.6), rgba(255,255,255,0));
-  pointer-events:none;
-  z-index: 0;
-}
-
 .bar-value {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   z-index: 2;
+  transition: bottom 0.1s, color 0.3s;
   color: var(--bar-value-color);
 }
-
 .label {
-  margin-top: 10px;
-  font-size: 18px;
+  margin-top: 8px;
+  font-size: 14px;
   font-weight: bold;
   color: var(--label-color);
+  transition: color 0.3s;
 }
-
-/* 模式切换按钮 */
-.mode-btn {
-  position: fixed;
-  top: 40px;
-  right: 20px;
-  padding: 10px 15px;
-  border-radius: 20px;
-  background: rgba(0,0,0,0.3);
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.3s;
-}
-body.light .mode-btn { background: rgba(0,0,0,0.1); color:#000; }
-
+#profitLoss { background: var(--bar-profit-bg); border:1px solid var(--bar-profit-border);}
+#breakeven { background: var(--bar-breakeven-bg); border:1px solid var(--bar-breakeven-border);}
 </style>
 </head>
 <body class="dark">
@@ -136,14 +106,13 @@ body.light .mode-btn { background: rgba(0,0,0,0.1); color:#000; }
   </div>
 </div>
 
-<div class="mode-btn" id="modeToggle">浅色模式</div>
-
 <script>
 const profitBar = document.getElementById('profitLoss');
 const breakevenBar = document.getElementById('breakeven');
 const profitValue = document.getElementById('profitLossValue');
 const breakevenValue = document.getElementById('breakevenValue');
-const modeToggle = document.getElementById('modeToggle');
+const wrapperProfit = document.getElementById('wrapperProfit');
+const wrapperBreakeven = document.getElementById('wrapperBreakeven');
 
 const maxProfitRatio = 10;
 let profitLogical = 4;
@@ -153,38 +122,32 @@ function calculateBreakeven(r){ return 100/(1+r); }
 
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   const container = bar.parentElement.getBoundingClientRect();
-  const maxHeight = container.height*0.75;
-
+  const maxHeight = container.height;
   if(!isPercent && targetVal > maxProfitRatio){
     bar.style.height = maxHeight + 'px';
     valueDisplay.style.bottom = maxHeight + 10 + 'px';
     valueDisplay.textContent = '∞';
     return;
   }
-
   let targetHeight = isPercent ? maxHeight*targetVal/100 : maxHeight*targetVal/maxProfitRatio;
   bar.style.height = targetHeight + 'px';
   valueDisplay.style.bottom = targetHeight + 10 + 'px';
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
+// ---------- 移动端触控拖动 ----------
 function makeDraggableTouch(bar, valueDisplay, isPercent=false, callback=null){
-  let startY=0, startHeight=0;
-  bar.addEventListener('touchstart', e=>{
+  let dragging=false;
+  bar.addEventListener('touchstart', e=>{ dragging=true; e.preventDefault(); });
+  document.addEventListener('touchend', ()=> dragging=false);
+  document.addEventListener('touchmove', e=>{
+    if(!dragging) return;
     const touch = e.touches[0];
-    startY = touch.clientY;
-    startHeight = parseFloat(bar.style.height) || 0;
-    e.preventDefault();
-  });
-  bar.addEventListener('touchmove', e=>{
-    const touch = e.touches[0];
-    const delta = startY - touch.clientY;
     const container = bar.parentElement.getBoundingClientRect();
-    const maxHeight = container.height*0.75;
-    let newHeight = Math.min(Math.max(startHeight + delta, 0), maxHeight);
-    bar.style.height = newHeight + 'px';
-    valueDisplay.style.bottom = newHeight + 10 + 'px';
-    let val = isPercent ? Math.round(newHeight/maxHeight*100) : (newHeight/maxHeight*maxProfitRatio);
+    let height = container.bottom - touch.clientY;
+    if(height<0) height=0;
+    if(height>container.height) height=container.height;
+    let val = isPercent ? Math.round(height/container.height*100) : (height/container.height*maxProfitRatio);
     if(callback) callback(val);
   });
 }
@@ -201,18 +164,6 @@ makeDraggableTouch(breakevenBar, breakevenValue, true, b=>{
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
   profitLogical = (100/b)-1;
   animateBarHeight(profitBar, profitValue, profitLogical, false);
-});
-
-modeToggle.addEventListener('click', ()=>{
-  if(document.body.classList.contains('dark')){
-    document.body.classList.remove('dark');
-    document.body.classList.add('light');
-    modeToggle.textContent = '深色模式';
-  } else {
-    document.body.classList.remove('light');
-    document.body.classList.add('dark');
-    modeToggle.textContent = '浅色模式';
-  }
 });
 
 window.addEventListener('load', ()=>{

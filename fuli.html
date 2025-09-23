@@ -13,12 +13,18 @@ body { display:flex; flex-direction:column; }
 .chart-container { height:50%; padding:10px; box-sizing:border-box; }
 canvas { width:100% !important; height:100% !important; display:block; border-radius:8px; }
 
-.form { flex:1; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; justify-content:flex-start; gap:20px; }
-.input-group { display:flex; flex-direction:column; }
-.input-group label { margin-bottom:6px; font-weight:500; font-size:16px; }
-.input-group input { padding:12px; font-size:18px; border-radius:8px; border:1px solid #ccc; text-align:center; }
+.form { flex:1; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; gap:20px; }
 
-#resultBox { margin-top:20px; background: rgba(0,123,255,0.9); color:#fff; padding:12px; border-radius:8px; font-size:18px; font-weight:bold; text-align:center; }
+/* 输入组和滑条容器 */
+.input-group { display:flex; flex-direction:row; align-items:center; gap:12px; }
+.input-label { flex-shrink:0; width:60px; font-weight:500; font-size:16px; }
+.input-wrapper { flex:1; display:flex; flex-direction:column; position:relative; }
+.input-wrapper input { padding:12px; font-size:18px; border-radius:8px; border:1px solid #ccc; text-align:center; }
+
+.scroll-bar-vertical { width:30px; height:120px; background:rgba(0,0,0,0.05); border-radius:8px; position:relative; cursor:grab; flex-shrink:0; }
+.scroll-bar-vertical .fill { position:absolute; bottom:0; width:100%; height:0%; border-radius:8px; background:linear-gradient(145deg, rgba(79,173,247,0.8), rgba(0,123,255,0.6)); }
+
+#resultBox { margin-top:10px; background: rgba(0,123,255,0.9); color:#fff; padding:12px; border-radius:8px; font-size:18px; font-weight:bold; text-align:center; }
 </style>
 </head>
 <body>
@@ -29,18 +35,27 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 
 <div class="form">
   <div class="input-group">
-    <label>本金</label>
-    <input type="number" id="principal" placeholder="请输入本金" value="1" min="1" max="99"/>
+    <span class="input-label">本金</span>
+    <div class="input-wrapper">
+      <input type="number" id="principal" value="1" min="1" max="99"/>
+    </div>
+    <div class="scroll-bar-vertical" id="principalScroll"><div class="fill"></div></div>
   </div>
 
   <div class="input-group">
-    <label>利率（%）</label>
-    <input type="number" id="rate" placeholder="请输入利率" value="10" min="0.5" max="50" step="0.5"/>
+    <span class="input-label">利率(%)</span>
+    <div class="input-wrapper">
+      <input type="number" id="rate" value="10" min="0.5" max="50" step="0.5"/>
+    </div>
+    <div class="scroll-bar-vertical" id="rateScroll"><div class="fill"></div></div>
   </div>
 
   <div class="input-group">
-    <label>期数</label>
-    <input type="number" id="periods" placeholder="请输入期数" value="12" min="1" max="240"/>
+    <span class="input-label">期数</span>
+    <div class="input-wrapper">
+      <input type="number" id="periods" value="12" min="1" max="240"/>
+    </div>
+    <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
   </div>
 
   <div id="resultBox">倍数：--</div>
@@ -97,7 +112,48 @@ function calculate(){
 }
 
 ['principal','rate','periods'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', calculate);
+  const input=document.getElementById(id);
+  const scroll=document.getElementById(id+'Scroll');
+  const fill=scroll.querySelector('.fill');
+
+  // 更新填充高度
+  function updateFill(){
+    const val=parseFloat(input.value)||0;
+    const min=parseFloat(input.min)||0;
+    const max=parseFloat(input.max)||100;
+    const percent=Math.min(Math.max((val-min)/(max-min)*100,0),100);
+    fill.style.height=percent+'%';
+  }
+
+  // 滚动调整
+  scroll.addEventListener('touchstart', e=>{
+    const startY = e.touches[0].clientY;
+    const startVal = parseFloat(input.value)||0;
+    function moveHandler(ev){
+      const deltaY = ev.touches[0].clientY - startY;
+      const min=parseFloat(input.min)||0;
+      const max=parseFloat(input.max)||100;
+      let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
+      if(id==='rate') newVal=Math.round(newVal*2)/2;
+      else newVal=Math.round(newVal);
+      newVal=Math.min(Math.max(newVal,min),max);
+      input.value=newVal;
+      calculate();
+      updateFill();
+    }
+    function endHandler(){ document.removeEventListener('touchmove',moveHandler); document.removeEventListener('touchend',endHandler);}
+    document.addEventListener('touchmove',moveHandler);
+    document.addEventListener('touchend',endHandler);
+  });
+
+  input.addEventListener('input', ()=>{
+    if(id==='rate') input.value=Math.round(input.value*2)/2;
+    else input.value=Math.round(input.value);
+    calculate();
+    updateFill();
+  });
+
+  updateFill();
 });
 
 window.addEventListener('load', calculate);

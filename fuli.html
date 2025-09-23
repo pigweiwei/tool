@@ -1,13 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>复利计算器 + 右侧导航</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<style>
+/* 你的样式不变，这里省略，直接用你上面的 */
+</style>
+</head>
+<body>
+<!-- 图表和表单 -->
+<div class="chart-container">
+  <canvas id="balanceChart"></canvas>
+  <div id="topValues">
+    <div id="resultBox">倍率：--X</div>
+    <div id="finalValue">终值：--</div>
+  </div>
+</div>
+
+<div class="form">
+  <div class="input-group">
+    <span class="input-label">本金</span>
+    <div class="input-wrapper">
+      <input type="number" id="principal" value="1" min="1" max="99"/>
+    </div>
+    <div class="scroll-bar-vertical" id="principalScroll"><div class="fill"></div></div>
+  </div>
+
+  <div class="input-group">
+    <span class="input-label">利率(%)</span>
+    <div class="input-wrapper">
+      <input type="number" id="rate" value="10" min="0.5" max="50" step="0.5"/>
+    </div>
+    <div class="scroll-bar-vertical" id="rateScroll"><div class="fill"></div></div>
+  </div>
+
+  <div class="input-group">
+    <span class="input-label">期数</span>
+    <div class="input-wrapper">
+      <input type="number" id="periods" value="12" min="1" max="120"/>
+    </div>
+    <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
+  </div>
+</div>
+
+<!-- 右侧导航 -->
+<div class="right-nav" id="rightNav">
+  <div class="nav-item">首页</div>
+  <div class="nav-item">盈亏比&胜率</div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
 <script>
-// ==================== 复利计算器逻辑（保持原样） ====================
+// =============== 复利计算器核心逻辑（和你原来一致） ===============
 function formatNumber(v){ 
   let str = v.toFixed(1); 
   return str.replace(/\B(?=(\d{4})+(?!\d))/g, ','); 
 }
 
-// ... 省略前面 calculate() 等保持不变 ...
+let chart=null;
+function calculate(){
+  const pEl=document.getElementById('principal');
+  const rEl=document.getElementById('rate');
+  const nEl=document.getElementById('periods');
+  if(!pEl.value || !rEl.value || !nEl.value){
+    if(chart){ try{chart.destroy();}catch(e){} }
+    const ctx=document.getElementById('balanceChart').getContext('2d');
+    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+    document.getElementById('resultBox').textContent='倍率：--X';
+    document.getElementById('finalValue').textContent='终值：--';
+    return;
+  }
+  const principal=parseFloat(pEl.value);
+  const rate=parseFloat(rEl.value)/100;
+  const periods=parseInt(nEl.value);
+  const balances=[], labels=[];
+  for(let i=1;i<=periods;i++){
+    balances.push(+(principal*Math.pow(1+rate,i)).toFixed(1));
+    labels.push(i);
+  }
+  if(chart) chart.destroy();
+  const ctx=document.getElementById('balanceChart').getContext('2d');
+  const minY = principal; 
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#1e90ff', backgroundColor:'rgba(30,144,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:'#1e90ff'}]},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          color:'#1e90ff',
+          font:{size:14},
+          anchor:(context)=> ( (context.chart.data.datasets[0].data.length-1-context.dataIndex)%2===0 ? 'end':'start'),
+          align:(context)=> ( (context.chart.data.datasets[0].data.length-1-context.dataIndex)%2===0 ? 'top':'bottom'),
+          formatter:(value)=> formatNumber(value)
+        }
+      },
+      layout:{padding:{top:30, right:30}},
+      scales:{
+        y:{beginAtZero:false, min:minY, ticks:{callback:formatNumber,color:'#eee'}, grid:{color:'#444'}},
+        x:{ticks:{color:'#eee'}, grid:{color:'#444'}}
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+  const lastBalance=balances[balances.length-1];
+  document.getElementById('finalValue').textContent='终值：'+formatNumber(lastBalance);
+  document.getElementById('resultBox').textContent='倍率：'+(lastBalance/principal).toFixed(1)+'X';
+}
 
-// 滑条初始化（加了方向锁定）
+// =============== 滑条初始化，增加方向判定 ===============
 ['principal','rate','periods'].forEach(id=>{
   const input=document.getElementById(id);
   const scroll=document.getElementById(id+'Scroll');
@@ -29,44 +136,32 @@ function formatNumber(v){
   let startVal=0, startX=0, startY=0, dragDirection=null;
 
   scroll.addEventListener('touchstart', e=>{
-    e.preventDefault();
-    fill.style.transition = ""; 
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
-    startVal = parseFloat(input.value)||min;
     dragDirection = null;
+    startVal = parseFloat(input.value)||min;
 
     function moveHandler(ev){
-      ev.preventDefault();
-      const clientX = ev.touches[0].clientX;
-      const clientY = ev.touches[0].clientY;
-
-      if (dragDirection === null) {
-        let dx = clientX - startX;
-        let dy = clientY - startY;
-        if (Math.abs(dy) > Math.abs(dx)) {
-          dragDirection = "vertical";
-        } else {
-          dragDirection = "horizontal";
-        }
+      const dx = ev.touches[0].clientX - startX;
+      const dy = ev.touches[0].clientY - startY;
+      if(dragDirection===null){
+        dragDirection = (Math.abs(dy)>Math.abs(dx)) ? 'vertical' : 'horizontal';
       }
-
-      if (dragDirection === "vertical") {
-        const deltaY = clientY - startY;
-        let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
+      if(dragDirection==='vertical'){
+        ev.preventDefault();
+        let newVal = startVal - dy/(scroll.clientHeight)*(max-min);
         if(id==='rate') newVal = Math.round(newVal*2)/2;
         else newVal = Math.round(newVal);
         newVal = Math.min(Math.max(newVal,min),max);
         input.value = newVal;
         calculate();
         updateFill();
-      } else {
-        // 👉 横向滑动时，不处理，交给导航
       }
+      // 👉 如果是 horizontal，说明用户要左右滑动，此时不处理，让导航逻辑接管
     }
 
     function endHandler(){
-      if (dragDirection === "vertical") {
+      if(dragDirection==='vertical'){
         let finalVal = parseFloat(input.value);
         if(id==='rate') finalVal = Math.round(finalVal*2)/2;
         else finalVal = Math.round(finalVal);
@@ -80,7 +175,7 @@ function formatNumber(v){
       document.removeEventListener('touchend', endHandler);
     }
 
-    document.addEventListener('touchmove', moveHandler, {passive:false});
+    document.addEventListener('touchmove', moveHandler,{passive:false});
     document.addEventListener('touchend', endHandler);
   });
 
@@ -88,47 +183,41 @@ function formatNumber(v){
     calculate();
     updateFill();
   });
-
   updateFill();
 });
 
 window.addEventListener('load', calculate);
 
-// ==================== 右侧导航逻辑（保持原样） ====================
-const rightNav = document.getElementById('rightNav');
-const overlay = document.getElementById('overlay');
-
-function openNav(){ 
-  rightNav.classList.add('expanded'); 
-  overlay.classList.add('show'); 
-}
-function closeNav(){ 
-  rightNav.classList.remove('expanded'); 
-  overlay.classList.remove('show'); 
-}
-
+// =============== 右侧导航逻辑（加方向判定） ===============
+const rightNav=document.getElementById('rightNav');
+const overlay=document.getElementById('overlay');
+function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
+function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 overlay.addEventListener('click', closeNav);
 
-// 手势滑动
-let touchStartX=0, touchStartY=0;
+let navStartX=0, navStartY=0, navDirection=null;
 document.addEventListener('touchstart', e=>{
   if(e.touches.length!==1) return;
-  touchStartX=e.touches[0].clientX;
-  touchStartY=e.touches[0].clientY;
+  navStartX=e.touches[0].clientX;
+  navStartY=e.touches[0].clientY;
+  navDirection=null;
 });
-
+document.addEventListener('touchmove', e=>{
+  if(e.touches.length!==1) return;
+  if(navDirection===null){
+    let dx=e.touches[0].clientX-navStartX;
+    let dy=e.touches[0].clientY-navStartY;
+    navDirection=(Math.abs(dx)>Math.abs(dy))?'horizontal':'vertical';
+  }
+});
 document.addEventListener('touchend', e=>{
   if(e.changedTouches.length!==1) return;
-  let touchEndX=e.changedTouches[0].clientX;
-  let touchEndY=e.changedTouches[0].clientY;
-  let deltaX = touchStartX - touchEndX;
-  let deltaY = touchStartY - touchEndY;
-  if(Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)){
-    if(deltaX > 0){ // 左滑
-      openNav();
-    } else { // 右滑
-      closeNav();
-    }
+  if(navDirection!=='horizontal') return; // 只响应水平
+  let deltaX=navStartX-e.changedTouches[0].clientX;
+  if(Math.abs(deltaX)>50){
+    if(deltaX>0){ openNav(); } else { closeNav(); }
   }
 });
 </script>
+</body>
+</html>

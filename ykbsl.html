@@ -73,7 +73,7 @@ html, body {
   white-space: nowrap;
   pointer-events: none;
   z-index: 10;
-  transform: translateX(-50%); /* 仅水平居中 */
+  transform: translateX(-50%);
 }
 
 .label {
@@ -117,18 +117,21 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   let targetHeight = isPercent ? containerHeight*targetVal/100 : containerHeight*targetVal/maxProfitRatio;
   if(targetHeight<minHeight) targetHeight=minHeight;
   bar.style.height = targetHeight + 'px';
-
-  // 用 top 定位数值，悬浮在柱子上方 20px
   valueDisplay.style.top = (containerHeight - targetHeight - 20) + 'px';
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
+  let startValue = 0;
+  let startY = 0;
   const containerHeight = wrapper.clientHeight - 50;
 
   function startDrag(e){
     dragging = true;
+    startY = e.touches ? e.touches[0].clientY : e.clientY;
+    // 记录初始数值
+    startValue = parseFloat(valueDisplay.textContent);
     e.preventDefault();
   }
 
@@ -139,11 +142,15 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   function moveDrag(e){
     if(!dragging) return;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const rect = wrapper.getBoundingClientRect();
-    let height = rect.bottom - clientY;
-    if(height<0) height=0;
-    if(height>containerHeight) height=containerHeight;
-    const value = isPercent ? (height/containerHeight*100) : (height/containerHeight*maxProfitRatio);
+    let delta = startY - clientY; // 手指向上为正
+    let value;
+    if(isPercent){
+      value = startValue + delta/containerHeight*100;
+      value = Math.min(Math.max(value,0),100);
+    } else {
+      value = startValue + delta/containerHeight*maxProfitRatio;
+      value = Math.min(Math.max(value,0),maxProfitRatio);
+    }
     animateBarHeight(bar, valueDisplay, value, isPercent);
     if(callback) callback(value);
   }

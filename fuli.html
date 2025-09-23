@@ -20,7 +20,7 @@
 }
 
 /* 页面基本样式 */
-html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background: var(--bg-color); color: var(--text-color); height:100%; }
+html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background: var(--bg-color); color: var(--text-color); height:100%; overscroll-behavior: none; }
 body { display:flex; flex-direction:column; overflow-x:hidden; }
 
 /* 图表区域 */
@@ -226,17 +226,17 @@ gestureRight.addEventListener('touchstart', e=>{
 
 gestureRight.addEventListener('touchmove', e=>{
   if(e.touches.length!==1) return;
+  e.preventDefault(); // 总是阻止默认行为，防止任何滚动
   const deltaX = e.touches[0].clientX - startX;
   const deltaY = e.touches[0].clientY - startY;
   if(!isHorizontal){
-    if(Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX)>5) isHorizontal=true;
+    if(Math.abs(deltaX) > Math.abs(deltaY) * 0.5 && Math.abs(deltaX)>5) isHorizontal=true; // 放宽阈值
   }
-  if(isHorizontal) e.preventDefault(); // 阻止页面上下滚动
 });
 
 gestureRight.addEventListener('touchend', e=>{
   const deltaX = startX - e.changedTouches[0].clientX;
-  if(isHorizontal && Math.abs(deltaX)>50){
+  if(isHorizontal && Math.abs(deltaX)>30){ // 降低阈值到30
     if(deltaX>0) openNav(); else closeNav();
   }
   startX=0; startY=0; isHorizontal=false;

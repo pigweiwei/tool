@@ -20,7 +20,6 @@
   --chart-grid: #444;
 }
 
-/* 基本样式 */
 html, body {
   margin:0; padding:0; 
   font-family:Arial,Helvetica,sans-serif; 
@@ -30,11 +29,9 @@ html, body {
 }
 body { display:flex; flex-direction:column; }
 
-/* 图表区域 */
 .chart-container { height:50%; padding:0; box-sizing:border-box; position:relative; }
 canvas { width:100% !important; height:100% !important; display:block; border-radius:8px; }
 
-/* 顶部倍率/终值 居中 */
 #topValues {
   position:absolute;
   top:5px;
@@ -50,7 +47,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   z-index:10;
 }
 
-/* 表单区域 */
 .form { 
   display:flex; 
   justify-content: space-between;  
@@ -60,7 +56,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   flex:1;
 }
 
-/* 输入组 */
 .input-group { 
   display:flex; 
   flex-direction:column; 
@@ -68,7 +63,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   width: var(--input-scroll-width); 
 }
 
-/* 输入框 */
 .input-wrapper { 
   display:flex; 
   flex-direction:column; 
@@ -87,7 +81,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   box-sizing: border-box; 
 }
 
-/* 滑条 */
 .scroll-bar-vertical { 
   width: var(--input-scroll-width); 
   height: var(--scroll-height); 
@@ -106,25 +99,23 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   background: var(--scroll-fill); 
 }
 
-/* 移动端微调 */
 @media (max-width: 400px) {
   :root { --input-scroll-width: 80px; }
   .input-wrapper input, .scroll-bar-vertical { width: var(--input-scroll-width); }
   .input-group { width: var(--input-scroll-width); }
 }
 
-/* 右侧导航 */
 .right-nav {
   position: fixed;
   top:0;
-  right:-35%; /* 默认隐藏 */
+  right:-35%; 
   width:35%;
   max-width:300px;
   height:100%;
   background:#2c2c2c;
   display:flex;
   flex-direction: column;
-  justify-content: center;  /* 垂直居中 */
+  justify-content: center;  
   transition:right 0.3s ease;
   z-index:200;
   box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
@@ -142,7 +133,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 }
 .right-nav .nav-item:hover { background: #1e1e1e; }
 
-/* 遮罩层 */
 .overlay {
   position: fixed;
   top:0; left:0;
@@ -156,7 +146,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 </head>
 <body>
 
-<!-- 图表和表单 -->
 <div class="chart-container">
   <canvas id="balanceChart"></canvas>
   <div id="topValues">
@@ -191,17 +180,14 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   </div>
 </div>
 
-<!-- 右侧导航 -->
 <div class="right-nav" id="rightNav">
   <div class="nav-item">首页</div>
   <div class="nav-item">盈亏比&胜率</div>
 </div>
 
-<!-- 遮罩层 -->
 <div class="overlay" id="overlay"></div>
 
 <script>
-// ==================== 复利计算器逻辑 ====================
 function formatNumber(v){ 
   let str = v.toFixed(1); 
   return str.replace(/\B(?=(\d{4})+(?!\d))/g, ','); 
@@ -274,7 +260,6 @@ function calculate(){
   document.getElementById('resultBox').textContent='倍率：'+(lastBalance/principal).toFixed(1)+'X';
 }
 
-// 滑条初始化
 ['principal','rate','periods'].forEach(id=>{
   const input=document.getElementById(id);
   const scroll=document.getElementById(id+'Scroll');
@@ -293,17 +278,26 @@ function calculate(){
     fill.style.height='0%';
   });
 
-  let startVal=0, startY=0;
+  let startVal=0, startY=0, startX=0;
 
   scroll.addEventListener('touchstart', e=>{
     e.preventDefault();
     fill.style.transition = ""; 
     startY = e.touches[0].clientY;
+    startX = e.touches[0].clientX;
     startVal = parseFloat(input.value)||min;
 
     function moveHandler(ev){
       ev.preventDefault();
-      const deltaY = ev.touches[0].clientY - startY;
+      const currentX = ev.touches[0].clientX;
+      const currentY = ev.touches[0].clientY;
+      const deltaX = currentX - startX;
+      const deltaY = currentY - startY;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        return; // 横向滑动 → 不处理
+      }
+
       let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
       if(id==='rate') newVal = Math.round(newVal*2)/2;
       else newVal = Math.round(newVal);
@@ -340,7 +334,6 @@ function calculate(){
 
 window.addEventListener('load', calculate);
 
-// ==================== 右侧导航逻辑 ====================
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 
@@ -355,7 +348,6 @@ function closeNav(){
 
 overlay.addEventListener('click', closeNav);
 
-// 手势滑动
 let touchStartX=0, touchStartY=0;
 document.addEventListener('touchstart', e=>{
   if(e.touches.length!==1) return;
@@ -370,9 +362,9 @@ document.addEventListener('touchend', e=>{
   let deltaX = touchStartX - touchEndX;
   let deltaY = touchStartY - touchEndY;
   if(Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)){
-    if(deltaX > 0){ // 左滑
+    if(deltaX > 0){ 
       openNav();
-    } else { // 右滑
+    } else { 
       closeNav();
     }
   }
@@ -380,4 +372,3 @@ document.addEventListener('touchend', e=>{
 </script>
 </body>
 </html>
-

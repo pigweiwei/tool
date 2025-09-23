@@ -40,7 +40,7 @@ html, body {
 
 .bar {
   width: 40vw;
-  max-height: calc(100% - 50px); /* 减去底部数值区域 */
+  max-height: calc(100% - 50px);
   position: relative;
   border-radius: 20px 20px 0 0;
   display: flex;
@@ -119,49 +119,19 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-// ---------- 惯性滑动 ----------
-function makeDraggableInertia(wrapper, bar, valueDisplay, isPercent=false, callback=null){
+// ---------- 简单拖动 ----------
+function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
   let containerHeight=0;
-  let targetHeight=0;
-  let targetValue=0;
-  let ticking=false;
-
-  let lastY = 0;
-  let velocity = 0;
-  let lastTime = 0;
-  let inertiaId = null;
-
-  function updateBar(){
-    bar.style.height = targetHeight + 'px';
-    valueDisplay.textContent = isPercent ? Math.round(targetValue)+'%' : targetValue.toFixed(2);
-    if(callback) callback(targetValue);
-    ticking=false;
-  }
 
   function startDrag(e){
     dragging = true;
     containerHeight = wrapper.clientHeight - 50; 
-    lastY = e.touches ? e.touches[0].clientY : e.clientY;
-    lastTime = Date.now();
-    if(inertiaId) cancelAnimationFrame(inertiaId);
     e.preventDefault();
   }
 
   function endDrag(){
     dragging = false;
-    let decay = 0.95;
-    function step(){
-      if(Math.abs(velocity)<0.01) return;
-      targetHeight += velocity;
-      if(targetHeight<0) targetHeight=0;
-      if(targetHeight>containerHeight) targetHeight=containerHeight;
-      targetValue = isPercent ? (targetHeight/containerHeight*100) : (targetHeight/containerHeight*maxProfitRatio);
-      updateBar();
-      velocity *= decay;
-      inertiaId = requestAnimationFrame(step);
-    }
-    inertiaId = requestAnimationFrame(step);
   }
 
   function moveDrag(e){
@@ -172,17 +142,11 @@ function makeDraggableInertia(wrapper, bar, valueDisplay, isPercent=false, callb
     if(height<0) height=0;
     if(height>containerHeight) height=containerHeight;
 
-    let now = Date.now();
-    velocity = (height - targetHeight) / (now - lastTime) * 16;
-    lastTime = now;
+    let value = isPercent ? (height/containerHeight*100) : (height/containerHeight*maxProfitRatio);
 
-    targetHeight = height;
-    targetValue = isPercent ? (height/containerHeight*100) : (height/containerHeight*maxProfitRatio);
+    animateBarHeight(bar, valueDisplay, value, isPercent);
 
-    if(!ticking){
-      window.requestAnimationFrame(updateBar);
-      ticking = true;
-    }
+    if(callback) callback(value);
   }
 
   wrapper.addEventListener('touchstart', startDrag);
@@ -194,14 +158,14 @@ function makeDraggableInertia(wrapper, bar, valueDisplay, isPercent=false, callb
 }
 
 // 盈亏比
-makeDraggableInertia(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
+makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
   breakevenLogical = calculateBreakeven(Math.max(r,0.01));
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
 });
 
 // 胜率
-makeDraggableInertia(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
+makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
   profitLogical = (100/b)-1;
   animateBarHeight(profitBar, profitValue, profitLogical, false);

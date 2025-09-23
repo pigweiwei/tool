@@ -10,7 +10,7 @@
 :root {
   --input-scroll-width: 108px; 
   --scroll-height: 280px;     
-  --form-gap: 20px; /* 左右和中间间距 */
+  --form-gap: 20px; 
   --bg-color: #1e1e1e;
   --text-color: #eee;
   --input-bg: #2c2c2c;
@@ -128,7 +128,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   z-index: 100;
   box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
 }
-.right-nav.collapsed { width: 40px; }
+.right-nav.collapsed { width: 30px; } /* 缩小更窄 */
 .right-nav.expanded { width: 150px; }
 .right-nav .nav-item {
   color: #eee;
@@ -139,6 +139,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   overflow: hidden;
   text-overflow: ellipsis;
   border-bottom: 1px solid #444;
+  transition: all 0.3s;
 }
 .right-nav .nav-item:hover { background: #1e1e1e; }
 .right-nav .nav-toggle {
@@ -190,9 +191,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 
 <!-- 右侧悬浮导航 -->
 <div id="rightNav" class="right-nav collapsed">
-  <div class="nav-item">首页</div>
-  <div class="nav-item">设置</div>
-  <div class="nav-item">帮助</div>
+  <div class="nav-item" data-full="首页">首</div>
+  <div class="nav-item" data-full="设置">设</div>
+  <div class="nav-item" data-full="帮助">帮</div>
   <div class="nav-toggle">☰</div>
 </div>
 
@@ -258,12 +259,7 @@ function calculate(){
       },
       layout:{padding:{top:30, right:30}},
       scales:{
-        y:{
-          beginAtZero:false,
-          min:minY,
-          ticks:{callback:formatNumber,color:'#eee'},
-          grid:{color:'#444'}
-        },
+        y:{beginAtZero:false, min:minY, ticks:{callback:formatNumber,color:'#eee'}, grid:{color:'#444'}},
         x:{ticks:{color:'#eee'}, grid:{color:'#444'}}
       }
     },
@@ -342,20 +338,28 @@ function calculate(){
 
 window.addEventListener('load', calculate);
 
-// 右侧导航切换展开/收起
+// 右侧导航首字/全名切换
 const rightNav = document.getElementById('rightNav');
 const toggleBtn = rightNav.querySelector('.nav-toggle');
+const navItems = rightNav.querySelectorAll('.nav-item');
 
 toggleBtn.addEventListener('click', ()=>{
   if(rightNav.classList.contains('collapsed')){
     rightNav.classList.remove('collapsed');
     rightNav.classList.add('expanded');
+    navItems.forEach(item=>{
+      const full = item.dataset.full;
+      if(full) item.textContent = full;
+    });
   } else {
     rightNav.classList.remove('expanded');
     rightNav.classList.add('collapsed');
+    navItems.forEach(item=>{
+      const full = item.dataset.full;
+      if(full) item.textContent = full.charAt(0);
+    });
   }
 });
 </script>
-
 </body>
 </html>

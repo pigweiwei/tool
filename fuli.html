@@ -274,7 +274,7 @@ function calculate(){
   document.getElementById('resultBox').textContent='倍率：'+(lastBalance/principal).toFixed(1)+'X';
 }
 
-// ==================== 滚动条（纵向滑动才刷新） ====================
+// ==================== 滚动条 ====================
 ['principal','rate','periods'].forEach(id=>{
   const input=document.getElementById(id);
   const scroll=document.getElementById(id+'Scroll');
@@ -293,37 +293,24 @@ function calculate(){
     fill.style.height='0%';
   });
 
-  let startVal=0, startY=0, startX=0;
+  let startVal=0, startY=0;
 
   scroll.addEventListener('touchstart', e=>{
     e.preventDefault();
     fill.style.transition = ""; 
     startY = e.touches[0].clientY;
-    startX = e.touches[0].clientX;
     startVal = parseFloat(input.value)||min;
 
     function moveHandler(ev){
       ev.preventDefault();
-      const currentX = ev.touches[0].clientX;
-      const currentY = ev.touches[0].clientY;
-      const deltaX = currentX - startX;
-      const deltaY = currentY - startY;
-      const tolerance = 10; 
-
-      if(Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > tolerance){
-        return; // 横向滑动不刷新
-      }
-
+      const deltaY = ev.touches[0].clientY - startY;
       let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
       if(id==='rate') newVal = Math.round(newVal*2)/2;
       else newVal = Math.round(newVal);
       newVal = Math.min(Math.max(newVal,min),max);
-
-      if (newVal !== parseFloat(input.value)){
-        input.value = newVal;
-        calculate();
-        updateFill();
-      }
+      input.value = newVal;
+      calculate();
+      updateFill();
     }
 
     function endHandler(){

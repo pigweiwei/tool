@@ -121,7 +121,7 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
+function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null, step=0){
   let dragging=false;
   let startValue = 0;
   let startY = 0;
@@ -130,7 +130,6 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   function startDrag(e){
     dragging = true;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
-    // 记录初始数值
     startValue = parseFloat(valueDisplay.textContent);
     e.preventDefault();
   }
@@ -151,6 +150,12 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
       value = startValue + delta/containerHeight*maxProfitRatio;
       value = Math.min(Math.max(value,0),maxProfitRatio);
     }
+
+    // 如果有步长，按步长取整
+    if(step>0){
+      value = Math.round(value/step)*step;
+    }
+
     animateBarHeight(bar, valueDisplay, value, isPercent);
     if(callback) callback(value);
   }
@@ -163,21 +168,21 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   wrapper.addEventListener('mousemove', moveDrag);
 }
 
-// 盈亏比
+// 盈亏比，每次以0.5变化
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
-  breakevenLogical = calculateBreakeven(Math.max(r,0.01));
+  animateBarHeight(profitBar, profitValue, profitLogical, false);
+  breakevenLogical = calculateBreakeven(Math.max(profitLogical,0.01));
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
-});
+}, 0.5);
 
-// 胜率
+// 胜率，无步长限制
 makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
   profitLogical = (100/b)-1;
   animateBarHeight(profitBar, profitValue, profitLogical, false);
-});
+}, 0);
 
-// 初始显示
 window.addEventListener('load', ()=>{
   animateBarHeight(profitBar, profitValue, profitLogical, false);
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);

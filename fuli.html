@@ -9,11 +9,12 @@
 <style>
 :root {
   --input-scroll-width: 90px; /* 输入框和滑条统一宽度 */
-  --scroll-height: 280px;     /* 滑条高度增加20% */
+  --scroll-height: 280px;     /* 滑条高度 */
   --form-padding: 20px;       /* 表单左右边距 */
-  --input-scroll-gap: 5px;    /* 输入框和滑条间距 */
+  --input-scroll-gap: 5px;    /* 输入框和滑条垂直间距 */
 }
 
+/* 基本样式 */
 html, body {
   margin:0; padding:0; 
   font-family:Arial,Helvetica,sans-serif; 
@@ -44,12 +45,14 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 /* 表单区域 */
 .form { 
   flex:1; 
-  padding: 0 var(--form-padding); /* 左右边距 */
+  padding: 0 var(--form-padding); 
   box-sizing:border-box; 
   display:flex; 
   flex-direction:row; 
   justify-content:space-between; /* 左右间距和中间间距一致 */
   align-items:flex-start; 
+  flex-wrap: wrap; /* 屏幕窄时换行 */
+  gap: 10px; /* 换行时上下间距 */
 }
 
 /* 输入组 */
@@ -57,6 +60,8 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   display:flex; 
   flex-direction:column; 
   align-items:center; 
+  min-width: var(--input-scroll-width); 
+  flex: 1; /* 小屏幕可自动收缩 */
 }
 
 /* 输入框 */
@@ -94,6 +99,12 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   width:100%; 
   height:0%; 
   background: linear-gradient(to top, #007bff, #00bfff); 
+}
+
+/* 响应式微调 */
+@media (max-width: 500px) {
+  .form { justify-content: space-around; }
+  .input-wrapper input, .scroll-bar-vertical { width: 70px; }
 }
 </style>
 </head>

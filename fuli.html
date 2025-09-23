@@ -9,7 +9,7 @@
 <style>
 :root {
   --input-scroll-width: 86px;
-  --scroll-height: 280px;     
+  --scroll-height: 280px;
   --form-gap: 20px; 
   --bg-color: #1e1e1e;
   --text-color: #eee;
@@ -19,7 +19,6 @@
   --scroll-fill: linear-gradient(to top, #1e90ff, #00bfff);
 }
 
-/* 页面基本样式 */
 html, body { 
   margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; 
   background: var(--bg-color); color: var(--text-color); 
@@ -27,11 +26,9 @@ html, body {
 }
 body { display:flex; flex-direction:column; overflow-x:hidden; }
 
-/* 图表区域 */
 .chart-container { height:50%; padding:0; box-sizing:border-box; position:relative; }
 canvas { width:100% !important; height:100% !important; display:block; border-radius:8px; }
 
-/* 顶部倍率/终值 */
 #topValues {
   position:absolute;
   top:5px;
@@ -46,15 +43,12 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   z-index:10;
 }
 
-/* 表单区域 */
 .form { display:flex; justify-content: space-between; align-items:flex-start; padding: 0 var(--form-gap); flex:1; }
 
-/* 输入组 */
 .input-group { display:flex; flex-direction:column; align-items:center; width: var(--input-scroll-width); }
 .input-wrapper { display:flex; flex-direction:column; align-items:center; margin-bottom:5px; }
 .input-wrapper input { padding:8px 0; font-size:16px; border-radius:8px; border:1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); text-align:center; width: var(--input-scroll-width); box-sizing: border-box; }
 
-/* 滑条 */
 .scroll-bar-vertical { width: var(--input-scroll-width); height: var(--scroll-height); background: var(--scroll-bg); border-radius:8px; position:relative; cursor:grab; overflow:hidden; touch-action:none; }
 .scroll-bar-vertical .fill {
   position:absolute; bottom:0; width:100%; height:100%; background: var(--scroll-fill);
@@ -62,7 +56,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   will-change: transform;
 }
 
-/* 右侧导航 */
 .right-nav {
   position: fixed;
   top:0;
@@ -74,7 +67,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   display:flex;
   flex-direction: column;
   justify-content: center;
-  transition:right 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:right 0.3s ease;
   z-index:200;
   box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
   border-radius: 8px 0 0 8px;
@@ -85,11 +78,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 .right-nav .nav-item:hover { background: #1e1e1e; }
 .right-nav .nav-item a { color: inherit; text-decoration:none; display:block; width:100%; height:100%; }
 
-/* 遮罩层 */
 .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); display:none; z-index:150; touch-action: none; }
 .overlay.show { display:block; }
 
-/* 右侧手势捕获层 */
 .gesture-right { position: fixed; top:0; right:0; width:30px; height:100%; z-index:250; background:transparent; touch-action:none; }
 </style>
 </head>
@@ -138,8 +129,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 <div class="gesture-right" id="gestureRight"></div>
 
 <script>
-// ==================== 复利计算器 ====================
+// ==================== 复利计算器逻辑 ====================
 function formatNumber(v){ return v.toFixed(1).replace(/\B(?=(\d{4})+(?!\d))/g, ','); }
+
 let chart=null;
 function calculate(){
   const p = parseFloat(document.getElementById('principal').value) || 0;
@@ -162,11 +154,12 @@ function calculate(){
       options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, datalabels:{color:'#1e90ff', font:{size:14}, anchor:'end', align:'top', formatter:formatNumber}}, layout:{padding:{top:30, right:30}}, scales:{y:{beginAtZero:false, ticks:{callback:formatNumber,color:'#eee'}, grid:{color:'#444'}}, x:{ticks:{color:'#eee'}, grid:{color:'#444'}}}}, plugins:[ChartDataLabels]
     });
   }
+
   document.getElementById('finalValue').textContent='终值：'+formatNumber(balances[n-1]);
   document.getElementById('resultBox').textContent='倍率：'+(balances[n-1]/p).toFixed(1)+'X';
 }
 
-// ==================== 滑条 ====================
+// ==================== 滑条逻辑 ====================
 ['principal','rate','periods'].forEach(id=>{
   const input=document.getElementById(id);
   const scroll=document.getElementById(id+'Scroll');
@@ -178,13 +171,16 @@ function calculate(){
     const percent=Math.min(Math.max((val-min)/(max-min),0),1);
     fill.style.transform = `scaleY(${percent})`;
   }
+
   input.addEventListener('focus', ()=>{ input.value=''; updateFill(); });
 
   let startY=0, startVal=0;
+
   scroll.addEventListener('touchstart', e=>{
     e.preventDefault();
     startY=e.touches[0].clientY;
     startVal=parseFloat(input.value)||min;
+
     let throttleTimeout=null;
 
     function moveHandler(ev){
@@ -199,6 +195,7 @@ function calculate(){
         throttleTimeout=setTimeout(()=>{ calculate(); throttleTimeout=null; }, 50);
       }
     }
+
     function endHandler(){
       let finalVal=parseFloat(input.value);
       finalVal = id==='rate'? Math.round(finalVal*2)/2 : Math.round(finalVal);
@@ -209,60 +206,74 @@ function calculate(){
       document.removeEventListener('touchmove', moveHandler);
       document.removeEventListener('touchend', endHandler);
     }
+
     document.addEventListener('touchmove', moveHandler, {passive:false});
     document.addEventListener('touchend', endHandler);
   });
+
   input.addEventListener('input', ()=>{ updateFill(); calculate(); });
   updateFill();
 });
+
 window.addEventListener('load', calculate);
 
-// ==================== 右侧导航 ====================
+// ==================== 右侧导航逻辑 ====================
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 
-function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); document.body.style.overflow='hidden'; }
-function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); document.body.style.overflow=''; }
+function openNav(){
+  rightNav.classList.add('expanded');
+  overlay.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
+function closeNav(){
+  rightNav.classList.remove('expanded');
+  overlay.classList.remove('show');
+  document.body.style.overflow='';
+}
+
+// 点击遮罩关闭导航
 overlay.addEventListener('click', closeNav);
 
-// 边缘手势打开
-const gestureRight = document.getElementById('gestureRight');
-let startX=0;
-gestureRight.addEventListener('touchstart', e=>{ if(e.touches.length!==1) return; e.preventDefault(); startX=e.touches[0].clientX; }, {passive:false});
-gestureRight.addEventListener('touchmove', e=>{ if(e.touches.length!==1) return; e.preventDefault(); }, {passive:false});
-gestureRight.addEventListener('touchend', e=>{
-  const deltaX = startX - e.changedTouches[0].clientX;
-  if(deltaX>30) openNav();
-  startX=0;
+// 点击导航栏空白区域收回导航（排除点击 nav-item 内部）
+rightNav.addEventListener('click', (e) => {
+  if (!e.target.closest('.nav-item')) {
+    closeNav();
+  }
 });
 
-// 导航栏手势拖动
-let navStartX=0, navRightStart=0;
-rightNav.addEventListener('touchstart', e=>{
-  if(e.touches.length!==1) return;
-  navStartX=e.touches[0].clientX;
-  navRightStart = parseFloat(getComputedStyle(rightNav).right);
-}, {passive:false});
+// 点击导航链接自动收回导航
+document.querySelectorAll('.right-nav a').forEach(a=>{ a.addEventListener('click', closeNav); });
 
-rightNav.addEventListener('touchmove', e=>{
+// 右侧边缘手势打开导航
+const gestureRight = document.getElementById('gestureRight');
+let startX=0, startY=0;
+gestureRight.addEventListener('touchstart', e=>{
   if(e.touches.length!==1) return;
   e.preventDefault();
-  const delta = navStartX - e.touches[0].clientX;
-  let newRight = Math.min(Math.max(navRightStart + delta, -rightNav.offsetWidth), 0);
-  rightNav.style.transition='none';
-  rightNav.style.right = newRight + 'px';
-}, {passive:false});
-
-rightNav.addEventListener('touchend', e=>{
-  rightNav.style.transition='right 0.25s cubic-bezier(0.4,0,0.2,1)';
-  const delta = navStartX - e.changedTouches[0].clientX;
-  if(delta > rightNav.offsetWidth/3) openNav();
-  else closeNav();
-  navStartX=0; navRightStart=0;
+  startX=e.touches[0].clientX;
+  startY=e.touches[0].clientY;
+},{passive:false});
+gestureRight.addEventListener('touchmove', e=>{
+  if(e.touches.length!==1) return;
+  e.preventDefault();
+},{passive:false});
+gestureRight.addEventListener('touchend', e=>{
+  const deltaX = startX - e.changedTouches[0].clientX;
+  if(Math.abs(deltaX)>30){ deltaX>0 ? openNav() : closeNav(); }
+  startX=0; startY=0;
 });
 
-// 点击导航链接自动关闭
-document.querySelectorAll('.right-nav a').forEach(a=>{ a.addEventListener('click', closeNav); });
+// 导航栏内手势关闭
+let navStartX = 0;
+rightNav.addEventListener('touchstart', e=>{ if(e.touches.length!==1) return; navStartX = e.touches[0].clientX; },{passive:false});
+rightNav.addEventListener('touchmove', e=>{ if(e.touches.length!==1) return; e.preventDefault(); },{passive:false});
+rightNav.addEventListener('touchend', e=>{
+  const deltaX = e.changedTouches[0].clientX - navStartX;
+  if(deltaX > 30) closeNav();
+  navStartX = 0;
+});
 </script>
 </body>
 </html>

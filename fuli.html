@@ -57,7 +57,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   <div class="input-group">
     <span class="input-label">期数</span>
     <div class="input-wrapper">
-      <input type="number" id="periods" value="12" min="1" max="240"/>
+      <input type="number" id="periods" value="12" min="1" max="120"/>
     </div>
     <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
   </div>
@@ -144,7 +144,6 @@ function calculate(){
     }
 
     function endHandler(){
-      // 松开时四舍五入到合法步长
       let finalVal = parseFloat(input.value);
       if(id==='rate') finalVal = Math.round(finalVal*2)/2;
       else finalVal = Math.round(finalVal);

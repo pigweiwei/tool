@@ -128,17 +128,22 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   z-index: 100;
   box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
 }
-.right-nav.collapsed { width: 30px; } /* 缩小更窄 */
-.right-nav.collapsed .nav-item {
-  text-overflow: clip; /* 去掉省略号 */
-  white-space: normal;  /* 确保只显示首字 */
-  overflow: hidden;
+
+/* 默认收缩只显示切换按钮 */
+.right-nav.collapsed {
+  width: 40px;
 }
-.right-nav.expanded { width: 150px; }
-.right-nav.expanded .nav-item {
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
+.right-nav.collapsed .nav-items {
+  display: none; /* 隐藏导航项 */
+}
+
+/* 展开显示完整导航 */
+.right-nav.expanded {
+  width: 150px;
+}
+.right-nav.expanded .nav-items {
+  display: flex;
+  flex-direction: column;
 }
 
 .right-nav .nav-item {
@@ -149,6 +154,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   border-bottom: 1px solid #444;
   transition: all 0.3s;
 }
+
 .right-nav .nav-item:hover { background: #1e1e1e; }
 
 .right-nav .nav-toggle {
@@ -200,9 +206,11 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 
 <!-- 右侧悬浮导航 -->
 <div id="rightNav" class="right-nav collapsed">
-  <div class="nav-item" data-full="首页">首</div>
-  <div class="nav-item" data-full="设置">设</div>
-  <div class="nav-item" data-full="帮助">帮</div>
+  <div class="nav-items">
+    <div class="nav-item" data-full="首页">首页</div>
+    <div class="nav-item" data-full="设置">设置</div>
+    <div class="nav-item" data-full="帮助">帮助</div>
+  </div>
   <div class="nav-toggle">☰</div>
 </div>
 
@@ -347,26 +355,17 @@ function calculate(){
 
 window.addEventListener('load', calculate);
 
-// 右侧导航首字/全名切换
+// 右侧导航切换
 const rightNav = document.getElementById('rightNav');
 const toggleBtn = rightNav.querySelector('.nav-toggle');
-const navItems = rightNav.querySelectorAll('.nav-item');
 
 toggleBtn.addEventListener('click', ()=>{
   if(rightNav.classList.contains('collapsed')){
     rightNav.classList.remove('collapsed');
     rightNav.classList.add('expanded');
-    navItems.forEach(item=>{
-      const full = item.dataset.full;
-      if(full) item.textContent = full;
-    });
   } else {
     rightNav.classList.remove('expanded');
     rightNav.classList.add('collapsed');
-    navItems.forEach(item=>{
-      const full = item.dataset.full;
-      if(full) item.textContent = full.charAt(0);
-    });
   }
 });
 </script>

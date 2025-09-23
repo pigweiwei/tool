@@ -1,34 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>复利计算器</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<style>
 :root {
-  --input-scroll-width: 60px; 
-  --scroll-height: 180px;     
-  --primary-color: #007bff;
-  --secondary-color: #00bfff;
-  --input-border: #ccc;
-  --input-bg: #fff;
-  --scroll-bg: rgba(0,0,0,0.05);
+  --input-scroll-width: 60px; /* 输入框和滑条统一宽度变量 */
+  --scroll-height: 180px;     /* 微调滑条高度 */
 }
 
-/* 表单布局保持之前 */
+html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#f9f9f9; color:#111; height:100%; }
+body { display:flex; flex-direction:column; }
+
+/* 图表区域 */
+.chart-container { height:50%; padding:0; box-sizing:border-box; position:relative; }
+canvas { width:100% !important; height:100% !important; display:block; border-radius:8px; }
+
+/* 顶部倍率/终值 居中 */
+#topValues {
+  position:absolute;
+  top:5px;
+  left:50%;
+  transform: translateX(-50%);
+  display:flex;
+  gap:20px;
+  font-size:14px;
+  font-weight:bold;
+  color:#007bff;
+  white-space:nowrap;
+  pointer-events:none;
+  z-index:10;
+}
+
+/* 表单区域 */
+.form { flex:1; padding:20px; box-sizing:border-box; display:flex; flex-direction:row; gap:20px; justify-content:center; align-items:flex-start; }
 .input-group { 
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  gap:2px; 
+  gap:2px; /* 缩小间距，使输入框和滑条紧凑但不重叠 */
 }
+.input-label { font-weight:500; font-size:16px; }
+.input-wrapper { display:flex; flex-direction:column; position:relative; }
 .input-wrapper input { 
   padding:6px 0; 
   font-size:16px; 
   border-radius:8px; 
-  border:1px solid var(--input-border); 
+  border:1px solid #ccc; 
   text-align:center; 
   width: var(--input-scroll-width); 
-  margin-bottom:2px; 
-  background-color: var(--input-bg);
+  box-sizing: border-box; 
+  margin-bottom:2px; /* 保留轻微间隙，不重叠滑条 */
 }
+
+/* 滑条宽度保持一致 */
 .scroll-bar-vertical { 
   width: var(--input-scroll-width); 
   height: var(--scroll-height); 
-  background: var(--scroll-bg); 
+  background:rgba(0,0,0,0.05); 
   border-radius:8px; 
   position:relative; 
   cursor:grab; 
@@ -40,7 +72,178 @@
   bottom:0; 
   width:100%; 
   height:0%; 
-  border-radius:8px; 
-  background: linear-gradient(to top, var(--primary-color), var(--secondary-color)); 
-  transition: height 0.1s; 
+  background: linear-gradient(to top, #007bff, #00bfff); 
 }
+</style>
+</head>
+<body>
+
+<div class="chart-container">
+  <canvas id="balanceChart"></canvas>
+  <div id="topValues">
+    <div id="resultBox">倍率：--X</div>
+    <div id="finalValue">终值：--</div>
+  </div>
+</div>
+
+<div class="form">
+  <div class="input-group">
+    <span class="input-label">本金</span>
+    <div class="input-wrapper">
+      <input type="number" id="principal" value="1" min="1" max="99"/>
+    </div>
+    <div class="scroll-bar-vertical" id="principalScroll"><div class="fill"></div></div>
+  </div>
+
+  <div class="input-group">
+    <span class="input-label">利率(%)</span>
+    <div class="input-wrapper">
+      <input type="number" id="rate" value="10" min="0.5" max="50" step="0.5"/>
+    </div>
+    <div class="scroll-bar-vertical" id="rateScroll"><div class="fill"></div></div>
+  </div>
+
+  <div class="input-group">
+    <span class="input-label">期数</span>
+    <div class="input-wrapper">
+      <input type="number" id="periods" value="12" min="1" max="120"/>
+    </div>
+    <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
+  </div>
+</div>
+
+<script>
+// 格式化数字
+function formatNumber(v){ 
+  let str = v.toFixed(1); 
+  return str.replace(/\B(?=(\d{4})+(?!\d))/g, ','); 
+}
+
+let chart=null;
+function calculate(){
+  const pEl=document.getElementById('principal');
+  const rEl=document.getElementById('rate');
+  const nEl=document.getElementById('periods');
+
+  if(!pEl.value || !rEl.value || !nEl.value){
+    if(chart){ try{chart.destroy();}catch(e){} }
+    const ctx=document.getElementById('balanceChart').getContext('2d');
+    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+    document.getElementById('resultBox').textContent='倍率：--X';
+    document.getElementById('finalValue').textContent='终值：--';
+    return;
+  }
+
+  const principal=parseFloat(pEl.value);
+  const rate=parseFloat(rEl.value)/100;
+  const periods=parseInt(nEl.value);
+  const balances=[], labels=[];
+  for(let i=1;i<=periods;i++){
+    balances.push(+(principal*Math.pow(1+rate,i)).toFixed(1));
+    labels.push(i);
+  }
+
+  if(chart) chart.destroy();
+  const ctx=document.getElementById('balanceChart').getContext('2d');
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#007bff', backgroundColor:'rgba(0,123,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:'#007bff'}]},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          color:'#007bff',
+          font:{size:14},
+          anchor: function(context){
+            const len = context.chart.data.datasets[0].data.length;
+            const reverseIndex = len - 1 - context.dataIndex;
+            return (reverseIndex % 2 === 0) ? 'end' : 'start';
+          },
+          align: function(context){
+            const len = context.chart.data.datasets[0].data.length;
+            const reverseIndex = len - 1 - context.dataIndex;
+            return (reverseIndex % 2 === 0) ? 'top' : 'bottom';
+          },
+          clamp:false,
+          formatter: function(value){ return formatNumber(value); }
+        }
+      },
+      layout:{padding:{top:30, right:30}},
+      scales:{
+        y:{beginAtZero:true, ticks:{callback:formatNumber, color:'#111'}, grid:{color:'#ddd'}},
+        x:{ticks:{color:'#111'}, grid:{color:'#ddd'}}
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  const lastBalance=balances[balances.length-1];
+  document.getElementById('finalValue').textContent='终值：'+formatNumber(lastBalance);
+  document.getElementById('resultBox').textContent='倍率：'+(lastBalance/principal).toFixed(1)+'X';
+}
+
+// 初始化滑条
+['principal','rate','periods'].forEach(id=>{
+  const input=document.getElementById(id);
+  const scroll=document.getElementById(id+'Scroll');
+  const fill=scroll.querySelector('.fill');
+  const min=parseFloat(input.min), max=parseFloat(input.max);
+
+  function updateFill(){ 
+    const val=parseFloat(input.value)||0;
+    const percent=Math.min(Math.max((val-min)/(max-min)*100,0),100);
+    fill.style.height=percent+'%';
+  }
+
+  let startVal=0, startY=0;
+
+  scroll.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    fill.style.transition = ""; 
+    startY = e.touches[0].clientY;
+    startVal = parseFloat(input.value)||min;
+
+    function moveHandler(ev){
+      ev.preventDefault();
+      const deltaY = ev.touches[0].clientY - startY;
+      let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
+      if(id==='rate') newVal = Math.round(newVal*2)/2;
+      else newVal = Math.round(newVal);
+      newVal = Math.min(Math.max(newVal,min),max);
+      input.value = newVal;
+      calculate();
+      updateFill();
+    }
+
+    function endHandler(){
+      let finalVal = parseFloat(input.value);
+      if(id==='rate') finalVal = Math.round(finalVal*2)/2;
+      else finalVal = Math.round(finalVal);
+      finalVal = Math.min(Math.max(finalVal,min),max);
+      input.value = finalVal;
+      calculate();
+      fill.style.transition = "height 0.1s";
+      updateFill();
+      document.removeEventListener('touchmove', moveHandler);
+      document.removeEventListener('touchend', endHandler);
+    }
+
+    document.addEventListener('touchmove', moveHandler, {passive:false});
+    document.addEventListener('touchend', endHandler);
+  });
+
+  input.addEventListener('input', ()=>{
+    calculate();
+    updateFill();
+  });
+
+  updateFill();
+});
+
+window.addEventListener('load', calculate);
+</script>
+
+</body>
+</html>

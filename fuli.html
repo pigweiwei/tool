@@ -1,309 +1,286 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>复利计算器</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>盈亏比&保本胜率</title>
 <style>
-html,body {
-  margin:0;
-  padding:0;
-  height:100%;
-  font-family:Arial,Helvetica,sans-serif;
+body.light {
+  --bg-gradient: linear-gradient(135deg, #e0e0e0, #f5f5f5);
+  --bar-profit-bg: rgba(0,123,255,0.5);
+  --bar-profit-border: rgba(0,123,255,0.8);
+  --bar-breakeven-bg: rgba(40,167,69,0.5);
+  --bar-breakeven-border: rgba(40,167,69,0.8);
+  --label-color: #333;
+  --bar-value-color: #000;
 }
+body.dark {
+  --bg-gradient: linear-gradient(135deg, #1a1a1a, #2b2b2b);
+  --bar-profit-bg: rgba(0,123,255,0.35);
+  --bar-profit-border: rgba(0,123,255,0.6);
+  --bar-breakeven-bg: rgba(40,167,69,0.35);
+  --bar-breakeven-border: rgba(40,167,69,0.6);
+  --label-color: #eee;
+  --bar-value-color: #fff;
+}
+
 body {
-  display:flex;
-  flex-direction:column;
-  transition:background 0.25s,color 0.25s;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  background: var(--bg-gradient);
+  transition: all 0.3s;
 }
 
-/* ====== 页面布局 ====== */
-.chart-container {
-  flex: 1;
-  padding: 20px;
-}
-.form {
-  flex: 1;
-  padding: 20px;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
-  align-items:center;
+.bar-container {
+  margin-left: 70px; /* 留出导航条空间 */
+  width: calc(100% - 70px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 50px;
 }
 
-/* 输入行 */
-.inputs-row {
-  display:flex;
-  gap:20px;
-  margin-bottom:20px;
-}
-.input-group {
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-}
-.input-group label {
-  margin-bottom:4px;
-}
-.input-group input[type=text] {
-  padding:6px 30px 6px 6px;
-  font-size:14px;
-  width:120px;
-}
-.input-group input[type=range] {
-  width:120px;
+.bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  position: relative;
 }
 
-/* 清空按钮 */
-.clear-btn {
-  margin-left:-25px;
-  cursor:pointer;
-  color:red;
+.bar {
+  width: 100%;
+  max-height: 300px;
+  position: relative;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  box-shadow: inset 0 -5px 15px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.2);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  touch-action: none;
+}
+#profitLoss { background: var(--bar-profit-bg); border:1px solid var(--bar-profit-border);}
+#breakeven { background: var(--bar-breakeven-bg); border:1px solid var(--bar-breakeven-border); }
+
+.bar::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:20%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.6), rgba(255,255,255,0));
+  pointer-events:none;
+  z-index: 0;
 }
 
-/* 滚动条 */
-.scroll-bar-vertical {
-  writing-mode: bt-lr;
-  -webkit-appearance: slider-vertical;
-  width:20px;
-  height:240px;
-  margin-top:10px;
+.bar-value {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  z-index: 2;
+  color: var(--bar-value-color);
 }
 
-/* 虚拟键盘 */
-.num-keyboard {
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap:6px;
-  margin-top:10px;
-}
-.num-keyboard button {
-  padding:10px;
-  font-size:18px;
-  cursor:pointer;
-  border-radius:6px;
-  border:1px solid #ccc;
-  background:#f0f0f0;
-}
-.num-keyboard button.zero {
-  grid-column: span 3;
+.label {
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--label-color);
 }
 
-/* 结果显示 */
-#resultBox {
-  position:fixed;
-  bottom:10px;
-  right:10px;
-  background:blue;
-  color:#fff;
-  padding:6px 12px;
-  border-radius:6px;
-  font-size:14px;
-}
-
-/* ====== 导航条（保持你的版本） ====== */
+/* 移动端悬浮导航条 */
 .nav {
-  position:fixed;
-  left:0;
-  top:0;
-  bottom:0;
-  width:40px;
-  background:#222;
-  color:#fff;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  transition: width 0.3s;
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px; /* 初始小宽度 */
+  background: rgba(0,0,0,0.4);
+  border-radius: 0 8px 8px 0;
+  overflow: hidden;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s, background 0.3s;
 }
-.nav:hover {
-  width:160px;
-}
-.nav-item {
-  margin:20px 0;
-  text-align:center;
-}
-.nav-item span[data-short] {
-  display:block;
-}
-.nav:hover .nav-item span[data-full] {
-  display:block;
-}
-.nav .nav-item span[data-full] {
-  display:none;
-}
+body.light .nav { background: rgba(0,0,0,0.1); }
 
-/* ====== 响应式手机适配 ====== */
-@media (max-width: 768px) {
-  .chart-container {
-    height: 55%;
-    padding: 10px;
-  }
-  .form {
-    height: 45%;
-    padding: 10px;
-  }
-  .inputs-row {
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-  }
-  .input-group input[type=text] {
-    width: 100%;
-    max-width: 300px;
-  }
-  .input-group input[type=range] {
-    width: 100%;
-    max-width: 300px;
-  }
-  .scroll-bar-vertical {
-    height: 160px;
-    max-width: 100%;
-  }
-  .num-keyboard {
-    gap: 4px;
-    padding: 4px;
-  }
-  .num-keyboard button {
-    font-size: 16px;
-    min-width: 50px;
-  }
-  #resultBox {
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-  .nav {
-    width: 32px;
-  }
-  .nav:hover {
-    width: 120px;
-  }
+.nav.expanded { width: 180px; }
+
+.nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 10px 0;
 }
+.nav li {
+  height: 50px;
+  position: relative;
+  cursor: pointer;
+}
+.nav li a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  line-height: 50px;
+  text-align: center;
+  text-decoration: none;
+  color: #fff;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.nav.expanded li a::before { content: attr(data-full); }
+.nav li a::before { content: attr(data-short); display: block; }
+body.light .nav li a { color: #000; }
+
+/* 模式切换按钮 */
+.mode-btn {
+  position: fixed;
+  top: 40px;
+  right: 20px;
+  padding: 10px 15px;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.3);
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s;
+}
+body.light .mode-btn { background: rgba(0,0,0,0.1); color:#000; }
+
 </style>
 </head>
-<body class="light">
+<body class="dark">
 
-<div class="nav">
-  <div class="nav-item"><span data-short>复</span><span data-full>复利计算</span></div>
-  <div class="nav-item"><span data-short>图</span><span data-full>趋势图表</span></div>
-</div>
-
-<div class="chart-container">
-  <canvas id="myChart"></canvas>
-</div>
-
-<div class="form">
-  <div class="inputs-row">
-    <div class="input-group">
-      <label>本金</label>
-      <input type="text" id="principal" value="1000"><span class="clear-btn" onclick="clearInput('principal')">✖</span>
-      <input type="range" id="principalRange" min="100" max="10000" value="1000">
-    </div>
-    <div class="input-group">
-      <label>利率 (%)</label>
-      <input type="text" id="rate" value="5"><span class="clear-btn" onclick="clearInput('rate')">✖</span>
-      <input type="range" id="rateRange" min="1" max="20" value="5">
-    </div>
-    <div class="input-group">
-      <label>期数</label>
-      <input type="text" id="periods" value="10"><span class="clear-btn" onclick="clearInput('periods')">✖</span>
-      <input type="range" id="periodsRange" min="1" max="50" value="10">
-    </div>
+<div class="bar-container">
+  <div class="bar-wrapper" id="wrapperProfit">
+    <div class="bar" id="profitLoss"></div>
+    <span class="bar-value" id="profitLossValue"></span>
+    <div class="label">盈亏比</div>
   </div>
-  <input type="range" class="scroll-bar-vertical" id="scrollBar" min="1" max="50" value="10">
-  <div class="num-keyboard">
-    <button onclick="pressNum('1')">1</button>
-    <button onclick="pressNum('2')">2</button>
-    <button onclick="pressNum('3')">3</button>
-    <button onclick="pressNum('4')">4</button>
-    <button onclick="pressNum('5')">5</button>
-    <button onclick="pressNum('6')">6</button>
-    <button onclick="pressNum('7')">7</button>
-    <button onclick="pressNum('8')">8</button>
-    <button onclick="pressNum('9')">9</button>
-    <button class="zero" onclick="pressNum('0')">0</button>
+  <div class="bar-wrapper" id="wrapperBreakeven">
+    <div class="bar" id="breakeven"></div>
+    <span class="bar-value" id="breakevenValue"></span>
+    <div class="label">保本胜率</div>
   </div>
 </div>
 
-<div id="resultBox">倍数: 1x</div>
+<div class="nav" id="nav">
+  <ul>
+    <li><a href="#" data-short="首" data-full="首页"></a></li>
+    <li><a href="复利计算器.html" data-short="复" data-full="复利计算器"></a></li>
+    <li><a href="#" id="modeToggleNav" data-short="浅" data-full="浅色模式"></a></li>
+  </ul>
+</div>
+
+<div class="mode-btn" id="modeToggle">浅色模式</div>
 
 <script>
-let chartCtx = document.getElementById('myChart').getContext('2d');
-let chart = new Chart(chartCtx, {
-  type:'line',
-  data:{
-    labels:[],
-    datasets:[{
-      label:'本金增长',
-      data:[],
-      borderColor:'blue',
-      fill:false
-    }]
-  },
-  options:{
-    responsive:true,
-    maintainAspectRatio:false
+const profitBar = document.getElementById('profitLoss');
+const breakevenBar = document.getElementById('breakeven');
+const profitValue = document.getElementById('profitLossValue');
+const breakevenValue = document.getElementById('breakevenValue');
+const modeToggle = document.getElementById('modeToggle');
+const nav = document.getElementById('nav');
+const modeToggleNav = document.getElementById('modeToggleNav');
+
+const maxProfitRatio = 10;
+let profitLogical = 4;
+let breakevenLogical = 100/(1+profitLogical);
+
+function calculateBreakeven(r){ return 100/(1+r); }
+
+function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
+  const container = bar.parentElement.getBoundingClientRect();
+  const maxHeight = container.height*0.75;
+
+  if(!isPercent && targetVal > maxProfitRatio){
+    bar.style.height = maxHeight + 'px';
+    valueDisplay.style.bottom = maxHeight + 10 + 'px';
+    valueDisplay.textContent = '∞';
+    return;
+  }
+
+  let targetHeight = isPercent ? maxHeight*targetVal/100 : maxHeight*targetVal/maxProfitRatio;
+  bar.style.height = targetHeight + 'px';
+  valueDisplay.style.bottom = targetHeight + 10 + 'px';
+  valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
+}
+
+function makeDraggableTouch(bar, valueDisplay, isPercent=false, callback=null){
+  let startY=0, startHeight=0;
+  bar.addEventListener('touchstart', e=>{
+    const touch = e.touches[0];
+    startY = touch.clientY;
+    startHeight = parseFloat(bar.style.height) || 0;
+    e.preventDefault();
+  });
+  bar.addEventListener('touchmove', e=>{
+    const touch = e.touches[0];
+    const delta = startY - touch.clientY;
+    const container = bar.parentElement.getBoundingClientRect();
+    const maxHeight = container.height*0.75;
+    let newHeight = Math.min(Math.max(startHeight + delta, 0), maxHeight);
+    bar.style.height = newHeight + 'px';
+    valueDisplay.style.bottom = newHeight + 10 + 'px';
+    let val = isPercent ? Math.round(newHeight/maxHeight*100) : (newHeight/maxHeight*maxProfitRatio);
+    if(callback) callback(val);
+  });
+}
+
+makeDraggableTouch(profitBar, profitValue, false, r=>{
+  profitLogical = r;
+  animateBarHeight(profitBar, profitValue, profitLogical, false);
+  breakevenLogical = calculateBreakeven(Math.max(r,0.01));
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
+});
+
+makeDraggableTouch(breakevenBar, breakevenValue, true, b=>{
+  breakevenLogical = b;
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
+  profitLogical = (100/b)-1;
+  animateBarHeight(profitBar, profitValue, profitLogical, false);
+});
+
+// 导航条点击展开/收起
+nav.addEventListener('click', ()=>{
+  nav.classList.toggle('expanded');
+});
+
+// 模式切换
+modeToggle.addEventListener('click', ()=>{
+  if(document.body.classList.contains('dark')){
+    document.body.classList.remove('dark');
+    document.body.classList.add('light');
+    modeToggle.textContent = '深色模式';
+    modeToggleNav.textContent = '深色模式';
+  } else {
+    document.body.classList.remove('light');
+    document.body.classList.add('dark');
+    modeToggle.textContent = '浅色模式';
+    modeToggleNav.textContent = '浅色模式';
   }
 });
 
-function updateChart() {
-  let principal = parseFloat(document.getElementById('principal').value)||0;
-  let rate = parseFloat(document.getElementById('rate').value)||0;
-  let periods = parseInt(document.getElementById('periods').value)||0;
-
-  let data = [];
-  let labels = [];
-  let value = principal;
-  for (let i=1;i<=periods;i++) {
-    value = value*(1+rate/100);
-    data.push(value);
-    labels.push(i);
-  }
-  chart.data.labels = labels;
-  chart.data.datasets[0].data = data;
-  chart.update();
-
-  if(principal>0) {
-    let multiple = (value/principal).toFixed(2);
-    document.getElementById('resultBox').innerText = "倍数: " + multiple + "x";
-  }
-}
-function clearInput(id) {
-  document.getElementById(id).value="";
-  updateChart();
-}
-function pressNum(num) {
-  let active = document.activeElement;
-  if(active && active.tagName==="INPUT" && active.type==="text") {
-    active.value = active.value + num;
-    updateChart();
-  }
-}
-
-/* 绑定滚动条和输入框 */
-document.getElementById('principalRange').oninput = e=>{
-  document.getElementById('principal').value = e.target.value;
-  updateChart();
-};
-document.getElementById('rateRange').oninput = e=>{
-  document.getElementById('rate').value = e.target.value;
-  updateChart();
-};
-document.getElementById('periodsRange').oninput = e=>{
-  document.getElementById('periods').value = e.target.value;
-  document.getElementById('scrollBar').value = e.target.value;
-  updateChart();
-};
-document.getElementById('scrollBar').oninput = e=>{
-  document.getElementById('periods').value = e.target.value;
-  document.getElementById('periodsRange').value = e.target.value;
-  updateChart();
-};
-
-updateChart();
+window.addEventListener('load', ()=>{
+  animateBarHeight(profitBar, profitValue, profitLogical, false);
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
+});
 </script>
 </body>
 </html>

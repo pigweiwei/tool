@@ -14,7 +14,8 @@ html, body {
   font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* 顶部对齐，但用 padding 控制底部 */
+  padding-bottom: 5vh;     /* 底部留少量空间 */
   overflow: hidden;
 }
 
@@ -23,7 +24,7 @@ html, body {
   justify-content: space-around;
   align-items: flex-end;
   width: 90vw;
-  height: 80vh;
+  height: 90vh;  /* 增加高度让柱子贴近底部 */
   gap: 20px;
 }
 .bar-wrapper {
@@ -93,7 +94,7 @@ const profitValue = document.getElementById('profitLossValue');
 const breakevenValue = document.getElementById('breakevenValue');
 
 const maxProfitRatio = 10;
-let profitLogical = 4;
+let profitLogical = 2;  // 初始高度更低
 let breakevenLogical = 100/(1+profitLogical);
 
 function calculateBreakeven(r){ return 100/(1+r); }
@@ -169,7 +170,7 @@ function makeDraggableInertia(wrapper, bar, valueDisplay, isPercent=false, callb
     if(height>containerHeight) height=containerHeight;
 
     let now = Date.now();
-    velocity = (height - targetHeight) / (now - lastTime) * 16; // 近似帧率16ms
+    velocity = (height - targetHeight) / (now - lastTime) * 16;
     lastTime = now;
 
     targetHeight = height;

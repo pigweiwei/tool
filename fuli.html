@@ -13,12 +13,12 @@ body { display:flex; flex-direction:column; }
 .chart-container { height:50%; padding:10px; box-sizing:border-box; }
 canvas { width:100% !important; height:100% !important; display:block; border-radius:8px; }
 
-.form { flex:1; padding:10px 20px; box-sizing:border-box; display:flex; flex-direction:column; justify-content:flex-start; }
-.input-group { display:flex; flex-direction:column; margin-bottom:16px; }
+.form { flex:1; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; justify-content:flex-start; gap:20px; }
+.input-group { display:flex; flex-direction:column; }
 .input-group label { margin-bottom:6px; font-weight:500; font-size:16px; }
 .input-group input { padding:12px; font-size:18px; border-radius:8px; border:1px solid #ccc; text-align:center; }
 
-#resultBox { margin-top:12px; background: rgba(0,123,255,0.9); color:#fff; padding:10px; border-radius:8px; font-size:18px; font-weight:bold; text-align:center; }
+#resultBox { margin-top:20px; background: rgba(0,123,255,0.9); color:#fff; padding:12px; border-radius:8px; font-size:18px; font-weight:bold; text-align:center; }
 </style>
 </head>
 <body>
@@ -32,14 +32,17 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
     <label>本金</label>
     <input type="number" id="principal" placeholder="请输入本金" value="1" min="1" max="99"/>
   </div>
+
   <div class="input-group">
     <label>利率（%）</label>
     <input type="number" id="rate" placeholder="请输入利率" value="10" min="0.5" max="50" step="0.5"/>
   </div>
+
   <div class="input-group">
     <label>期数</label>
     <input type="number" id="periods" placeholder="请输入期数" value="12" min="1" max="240"/>
   </div>
+
   <div id="resultBox">倍数：--</div>
 </div>
 

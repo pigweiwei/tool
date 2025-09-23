@@ -124,10 +124,11 @@ function calculate(){
           font:{size:14},
           anchor: function(context){ return (context.dataIndex % 2 === 0) ? 'end' : 'start'; },
           align: function(context){ return (context.dataIndex % 2 === 0) ? 'top' : 'bottom'; },
+          clamp:false, // <- 允许超出图表显示
           formatter: function(value){ return formatNumber(value); }
         }
       },
-      layout:{padding:{top:30, right:30}}, // 顶部和右侧大约3个字符宽度
+      layout:{padding:{top:30, right:30}}, // 顶部和右侧约3字符宽
       scales:{
         y:{beginAtZero:true, ticks:{callback:formatNumber, color:'#111'}, grid:{color:'#ddd'}},
         x:{ticks:{color:'#111'}, grid:{color:'#ddd'}}

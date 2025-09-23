@@ -231,6 +231,13 @@ function calculate(){
     fill.style.height=percent+'%';
   }
 
+  // 点击输入框自动清空
+  input.addEventListener('focus', ()=>{
+    input.value='';
+    calculate();
+    fill.style.height='0%';
+  });
+
   let startVal=0, startY=0;
 
   scroll.addEventListener('touchstart', e=>{

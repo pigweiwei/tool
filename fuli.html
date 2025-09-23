@@ -46,10 +46,11 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   flex:1; 
   display:flex; 
   flex-direction:row; 
-  justify-content:space-between; /* 左右和中间间距一致 */
+  justify-content:flex-start;   /* 靠左排列 */
   align-items:flex-start; 
   flex-wrap: nowrap; 
-  padding: 0 var(--form-gap); /* 左右边距 */
+  padding: 0 var(--form-gap);   /* 左右边距 */
+  gap: var(--form-gap);          /* 控制输入组间距 */
   box-sizing: border-box;
 }
 
@@ -59,7 +60,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   flex-direction:column; 
   align-items:center; 
   width: var(--input-scroll-width); 
-  flex: 0 0 auto; 
 }
 
 /* 输入框 */
@@ -89,7 +89,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   cursor:grab; 
   overflow:hidden; 
   touch-action:none; 
-  /* 垂直方向和输入框对齐 */
 }
 .scroll-bar-vertical .fill { 
   position:absolute; 

@@ -117,20 +117,20 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   let minHeight = 5;
   let targetHeight;
 
+  // 计算逻辑高度
   if(isPercent){
     targetHeight = containerHeight * targetVal / 100;
   } else {
     targetHeight = containerHeight * targetVal / maxProfitRatio;
   }
 
-  // 留白，不影响逻辑值
-  if(targetHeight > containerHeight - topOffset){
-    targetHeight = containerHeight - topOffset;
-  }
   if(targetHeight < minHeight) targetHeight = minHeight;
 
-  bar.style.height = targetHeight + 'px';
-  valueDisplay.style.top = (containerHeight - targetHeight - 20) + 'px';
+  // 显示高度减去顶部留白
+  const displayHeight = targetHeight - topOffset > 0 ? targetHeight - topOffset : targetHeight;
+
+  bar.style.height = displayHeight + 'px';
+  valueDisplay.style.top = (containerHeight - displayHeight - 20) + 'px';
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 

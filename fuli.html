@@ -112,6 +112,44 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   .input-wrapper input, .scroll-bar-vertical { width: var(--input-scroll-width); }
   .input-group { width: var(--input-scroll-width); }
 }
+
+/* 右侧悬浮导航 */
+.right-nav {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  background: #2c2c2c;
+  border-radius: 8px 0 0 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s;
+  z-index: 100;
+  box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
+}
+.right-nav.collapsed { width: 40px; }
+.right-nav.expanded { width: 150px; }
+.right-nav .nav-item {
+  color: #eee;
+  padding: 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid #444;
+}
+.right-nav .nav-item:hover { background: #1e1e1e; }
+.right-nav .nav-toggle {
+  color: #1e90ff;
+  font-weight: bold;
+  padding: 10px;
+  cursor: pointer;
+  text-align: center;
+  border-top: 1px solid #444;
+  background: #2c2c2c;
+}
 </style>
 </head>
 <body>
@@ -148,6 +186,14 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
     </div>
     <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
   </div>
+</div>
+
+<!-- 右侧悬浮导航 -->
+<div id="rightNav" class="right-nav collapsed">
+  <div class="nav-item">首页</div>
+  <div class="nav-item">设置</div>
+  <div class="nav-item">帮助</div>
+  <div class="nav-toggle">☰</div>
 </div>
 
 <script>
@@ -295,6 +341,20 @@ function calculate(){
 });
 
 window.addEventListener('load', calculate);
+
+// 右侧导航切换展开/收起
+const rightNav = document.getElementById('rightNav');
+const toggleBtn = rightNav.querySelector('.nav-toggle');
+
+toggleBtn.addEventListener('click', ()=>{
+  if(rightNav.classList.contains('collapsed')){
+    rightNav.classList.remove('collapsed');
+    rightNav.classList.add('expanded');
+  } else {
+    rightNav.classList.remove('expanded');
+    rightNav.classList.add('collapsed');
+  }
+});
 </script>
 
 </body>

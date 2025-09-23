@@ -129,19 +129,28 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
 }
 .right-nav.collapsed { width: 30px; } /* 缩小更窄 */
+.right-nav.collapsed .nav-item {
+  text-overflow: clip; /* 去掉省略号 */
+  white-space: normal;  /* 确保只显示首字 */
+  overflow: hidden;
+}
 .right-nav.expanded { width: 150px; }
+.right-nav.expanded .nav-item {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 .right-nav .nav-item {
   color: #eee;
   padding: 12px 10px;
   text-align: center;
   cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   border-bottom: 1px solid #444;
   transition: all 0.3s;
 }
 .right-nav .nav-item:hover { background: #1e1e1e; }
+
 .right-nav .nav-toggle {
   color: #1e90ff;
   font-weight: bold;

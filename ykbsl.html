@@ -14,8 +14,7 @@ html, body {
   font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* 顶部对齐，但用 padding 控制底部 */
-  padding-bottom: 5vh;     /* 底部留少量空间 */
+  align-items: flex-start;
   overflow: hidden;
 }
 
@@ -24,7 +23,7 @@ html, body {
   justify-content: space-around;
   align-items: flex-end;
   width: 90vw;
-  height: 90vh;  /* 增加高度让柱子贴近底部 */
+  height: 100vh;  /* 占满全屏高度 */
   gap: 20px;
 }
 .bar-wrapper {
@@ -94,7 +93,7 @@ const profitValue = document.getElementById('profitLossValue');
 const breakevenValue = document.getElementById('breakevenValue');
 
 const maxProfitRatio = 10;
-let profitLogical = 2;  // 初始高度更低
+let profitLogical = 2;  // 初始高度低
 let breakevenLogical = 100/(1+profitLogical);
 
 function calculateBreakeven(r){ return 100/(1+r); }
@@ -102,6 +101,7 @@ function calculateBreakeven(r){ return 100/(1+r); }
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   const container = bar.parentElement;
   const maxHeight = container.clientHeight;
+  let minHeight = 10; // 底部贴底的最小高度
   if(!isPercent && targetVal > maxProfitRatio){
     bar.style.height = maxHeight + 'px';
     valueDisplay.style.bottom = maxHeight + 10 + 'px';
@@ -109,12 +109,13 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
     return;
   }
   let targetHeight = isPercent ? maxHeight*targetVal/100 : maxHeight*targetVal/maxProfitRatio;
+  if(targetHeight < minHeight) targetHeight = minHeight; // 确保柱子底部紧贴
   bar.style.height = targetHeight + 'px';
   valueDisplay.style.bottom = targetHeight + 10 + 'px';
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-// ---------- 支持惯性滑动 ----------
+// ---------- 惯性滑动 ----------
 function makeDraggableInertia(wrapper, bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
   let containerHeight=0;
@@ -146,7 +147,6 @@ function makeDraggableInertia(wrapper, bar, valueDisplay, isPercent=false, callb
 
   function endDrag(){
     dragging = false;
-    // 启动惯性
     let decay = 0.95;
     function step(){
       if(Math.abs(velocity)<0.01) return;

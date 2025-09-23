@@ -3,220 +3,424 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>复利计算器</title>
+<title>复利计算器（左侧悬浮导航）</title>
+<!-- Chart.js + DataLabels -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <style>
-body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #121212;
-  color: #e0e0e0;
+:root{
+  --bg-color: #1e1e1e;
+  --text-color: #eee;
+  --accent: #1e90ff;
+  --input-bg: #2c2c2c;
+  --input-border: #555;
+  --grid: #444;
+
+  --nav-collapsed-w: 40px;
+  --nav-expanded-w: 150px;
+
+  --input-scroll-width: 108px;
+  --scroll-height: 280px;
+  --form-gap: 20px;
 }
 
-/* 顶部倍率 */
-#topValues {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding: 10px;
-  font-size: 16px;
-  color: #90caf9;
+/* 全局 */
+html,body{height:100%;margin:0;padding:0;background:var(--bg-color);color:var(--text-color);font-family:Arial,Helvetica,sans-serif;box-sizing:border-box;}
+*{box-sizing:inherit}
+
+/* 顶部（图表区域内的）倍率显示（保持绝对定位于图表） */
+.chart-container{height:50%;position:relative;padding:0;}
+canvas{width:100% !important;height:100% !important;display:block;border-radius:8px;}
+
+/* 顶部倍率/终值 居中（用于对齐参考） */
+#topValues{
+  position:absolute;
+  top:5px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:20px;
+  font-size:14px;
+  font-weight:700;
+  color:var(--accent);
+  pointer-events:none;
+  z-index:10;
 }
 
-/* 左侧悬浮导航 */
-.left-nav {
+/* 表单区域（保持之前的布局） */
+.form{
+  display:flex;
+  justify-content: space-between;
+  align-items:flex-start;
+  padding: 0 var(--form-gap);
+  box-sizing:border-box;
+  flex:1;
+  min-height: calc(50% - 20px);
+}
+
+/* 输入组 */
+.input-group{ display:flex; flex-direction:column; align-items:center; width:var(--input-scroll-width); }
+.input-wrapper{ display:flex; flex-direction:column; align-items:center; margin-bottom:5px; }
+.input-wrapper input{ padding:8px 0; font-size:16px; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); text-align:center; width:var(--input-scroll-width); box-sizing:border-box; }
+
+/* 滑条 */
+.scroll-bar-vertical{ width:var(--input-scroll-width); height:var(--scroll-height); background: rgba(255,255,255,0.06); border-radius:8px; position:relative; cursor:grab; overflow:hidden; touch-action:none; }
+.scroll-bar-vertical .fill{ position:absolute; bottom:0; width:100%; height:0%; background: linear-gradient(to top, var(--accent), #00bfff); }
+
+/* 图表上方的容器高度保留（避免覆盖） */
+.chart-wrap{ height:50%; padding: 10px; }
+
+/* 响应式微调 */
+@media (max-width:400px){
+  :root{ --input-scroll-width:80px; }
+  .input-wrapper input, .scroll-bar-vertical { width: var(--input-scroll-width); }
+  .input-group{ width: var(--input-scroll-width); }
+}
+
+/* -------- 左侧悬浮导航（中间对齐） -------- */
+.left-nav{
   position: fixed;
-  top: 50%; 
+  top: 50%;
   left: 0;
   transform: translateY(-50%);
+  width: var(--nav-collapsed-w);
   background: #2c2c2c;
   border-radius: 0 8px 8px 0;
+  display:flex;
+  flex-direction:column;
+  transition: width 0.25s ease, padding 0.25s ease;
+  z-index:120;
+  box-shadow: 2px 2px 10px rgba(0,0,0,0.6);
+  justify-content: center; /* 折叠时让按钮居中 */
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s;
-  z-index: 100;
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
-  width: 40px; /* 默认收缩宽度 */
 }
 
-.left-nav.expanded {
-  width: 120px; /* 展开宽度 */
+/* 展开时 */
+.left-nav.expanded{
+  width: var(--nav-expanded-w);
+  justify-content: space-between; /* 展开时 items 顶部，toggle 底部 */
+  padding: 8px 0;
 }
 
-.left-nav .toggle-btn {
-  cursor: pointer;
+/* 导航项容器 */
+.left-nav .nav-items{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+/* 折叠状态隐藏项 */
+.left-nav.collapsed .nav-items{ display:none; }
+
+/* 单个导航项样式（展开时可见） */
+.left-nav .nav-item{
+  color: var(--text-color);
+  padding: 10px 12px;
+  text-align:left;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,0.03);
+}
+.left-nav .nav-item:hover{ background: #1a1a1a; }
+
+/* 切换按钮（始终可见） */
+.left-nav .nav-toggle{
+  color: var(--accent);
+  font-weight:700;
   padding: 10px;
-  text-align: center;
-  background: #1e1e1e;
-  color: #90caf9;
-  font-size: 20px;
-  user-select: none;
+  cursor:pointer;
+  text-align:center;
+  background: transparent;
+  user-select:none;
 }
 
-.left-nav .nav-item {
-  padding: 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  transition: all 0.3s;
-}
+/* 在折叠时让 toggle 居中显示（覆盖整个高度）*/
+.left-nav.collapsed{ padding: 0; }
+.left-nav.collapsed .nav-toggle{ align-self:center; }
 
-.left-nav.collapsed .nav-item {
-  width: 40px; 
-  text-overflow: clip; /* 避免出现点 */
-  text-align: center;
-}
-
-.left-nav.collapsed .nav-item::first-letter {
-  display: inline-block;
-}
-
-.left-nav.expanded .nav-item {
-  width: 120px;
-}
-
-/* 输入区 */
-.controls {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding: 10px;
-}
-
-.controls input[type="number"] {
-  width: 90px;
-  padding: 5px;
-  border-radius: 5px;
-  border: 1px solid #555;
-  background: #1e1e1e;
-  color: #e0e0e0;
-}
-
-.controls input[type="range"] {
-  width: 90px;
-}
-
-/* 图表 */
-.chart-container {
-  width: 100%;
-  height: 400px;
-  padding: 10px;
+/* 小屏幕处理：缩小宽度 */
+@media (max-width:600px){
+  :root{ --nav-collapsed-w:36px; --nav-expanded-w:140px; }
 }
 </style>
 </head>
 <body>
 
-<div id="topValues">
-  <div>倍率: <span id="rateVal">1.0</span></div>
-  <div>本金: <span id="principalVal">1000</span></div>
-  <div>收益: <span id="profitVal">0</span></div>
-</div>
-
-<div class="controls">
-  <div>
-    <input type="number" id="rateInput" value="1" min="1" step="0.1">
-    <input type="range" id="rateRange" value="1" min="1" max="5" step="0.1">
-  </div>
-  <div>
-    <input type="number" id="principalInput" value="1000" min="100" step="100">
-    <input type="range" id="principalRange" value="1000" min="100" max="10000" step="100">
-  </div>
-  <div>
-    <input type="number" id="periodInput" value="10" min="1" step="1">
-    <input type="range" id="periodRange" value="10" min="1" max="50" step="1">
+<!-- 图表区 -->
+<div class="chart-wrap">
+  <div class="chart-container">
+    <canvas id="balanceChart"></canvas>
+    <div id="topValues">
+      <div id="resultBox">倍率：--X</div>
+      <div id="finalValue">终值：--</div>
+    </div>
   </div>
 </div>
 
-<div class="chart-container">
-  <canvas id="myChart"></canvas>
+<!-- 表单区 -->
+<div class="form" id="formArea">
+  <div class="input-group">
+    <span class="input-label">本金</span>
+    <div class="input-wrapper">
+      <input type="number" id="principal" value="1" min="1" max="99999999" />
+    </div>
+    <div class="scroll-bar-vertical" id="principalScroll"><div class="fill"></div></div>
+  </div>
+
+  <div class="input-group">
+    <span class="input-label">利率(%)</span>
+    <div class="input-wrapper">
+      <input type="number" id="rate" value="10" min="0.5" max="50" step="0.5"/>
+    </div>
+    <div class="scroll-bar-vertical" id="rateScroll"><div class="fill"></div></div>
+  </div>
+
+  <div class="input-group">
+    <span class="input-label">期数</span>
+    <div class="input-wrapper">
+      <input type="number" id="periods" value="12" min="1" max="120"/>
+    </div>
+    <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
+  </div>
 </div>
 
-<!-- 左侧导航 -->
-<div class="left-nav collapsed" id="leftNav">
-  <div class="toggle-btn" onclick="toggleNav()">☰</div>
-  <div class="nav-item">倍率</div>
-  <div class="nav-item">本金</div>
-  <div class="nav-item">收益</div>
+<!-- 左侧悬浮导航 -->
+<div id="leftNav" class="left-nav collapsed" aria-hidden="false">
+  <div class="nav-items" aria-hidden="true">
+    <div class="nav-item" data-key="home">首页</div>
+    <div class="nav-item" data-key="settings">设置</div>
+    <div class="nav-item" data-key="help">帮助</div>
+  </div>
+  <div class="nav-toggle" id="navToggle" title="展开导航">☰</div>
 </div>
 
 <script>
-function toggleNav() {
-  document.getElementById("leftNav").classList.toggle("expanded");
-  document.getElementById("leftNav").classList.toggle("collapsed");
+/* ----------------- 页面逻辑：复利计算、图表、滑条、输入框行为 ----------------- */
+
+/* 格式化数字 */
+function formatNumber(v){ 
+  let str = v.toFixed(1);
+  // 每 4 位分组（原实现使用 4 位规则），保留小数点一位
+  return str.replace(/\B(?=(\d{4})+(?!\d))/g, ',');
 }
 
-/* 输入框点击清空 */
-document.querySelectorAll('.controls input[type="number"]').forEach(input => {
-  input.addEventListener('focus', () => {
-    input.value = "";
-  });
-});
+/* Chart 变量 */
+let chart = null;
 
-/* 图表初始化 */
-const ctx = document.getElementById('myChart').getContext('2d');
-const chart = new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: [],
-    datasets: [{
-      label: '本金变化',
-      data: [],
-      borderColor: '#90caf9',
-      backgroundColor: 'rgba(144,202,249,0.2)',
-      fill: true,
-      tension: 0.3
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      datalabels: {
-        color: '#fff'
+/* 主要计算与绘图 */
+function calculate(){
+  const pEl = document.getElementById('principal');
+  const rEl = document.getElementById('rate');
+  const nEl = document.getElementById('periods');
+
+  if(!pEl.value || !rEl.value || !nEl.value){
+    if(chart){ try{ chart.destroy(); }catch(e){} }
+    const ctx = document.getElementById('balanceChart').getContext('2d');
+    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+    document.getElementById('resultBox').textContent='倍率：--X';
+    document.getElementById('finalValue').textContent='终值：--';
+    return;
+  }
+
+  const principal = parseFloat(pEl.value);
+  const rate = parseFloat(rEl.value)/100;
+  const periods = parseInt(nEl.value,10);
+
+  const balances = [], labels = [];
+  for(let i=1;i<=periods;i++){
+    balances.push(+(principal * Math.pow(1+rate, i)).toFixed(1));
+    labels.push(i);
+  }
+
+  if(chart) chart.destroy();
+  const ctx = document.getElementById('balanceChart').getContext('2d');
+
+  const minY = principal;
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '期末余额',
+        data: balances,
+        borderColor: varOr('#1e90ff'),
+        backgroundColor: 'rgba(30,144,255,0.12)',
+        fill: false,
+        tension: 0.2,
+        pointBackgroundColor: varOr('#1e90ff')
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend:{ display:false },
+        datalabels: {
+          color: varOr('#1e90ff'),
+          font:{ size:12 },
+          anchor: function(context){
+            const len = context.chart.data.datasets[0].data.length;
+            const reverseIndex = len - 1 - context.dataIndex;
+            return (reverseIndex % 2 === 0) ? 'end' : 'start';
+          },
+          align: function(context){
+            const len = context.chart.data.datasets[0].data.length;
+            const reverseIndex = len - 1 - context.dataIndex;
+            return (reverseIndex % 2 === 0) ? 'top' : 'bottom';
+          },
+          clamp:false,
+          formatter: function(value){ return formatNumber(value); }
+        }
+      },
+      layout:{ padding: { top: 30, right: 30 } },
+      scales: {
+        y: {
+          beginAtZero: false,
+          min: minY,
+          ticks: { callback: formatNumber, color: getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '#eee' },
+          grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--grid') || '#444' }
+        },
+        x: { ticks:{ color: getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '#eee' }, grid:{ color: getComputedStyle(document.documentElement).getPropertyValue('--grid') || '#444' } }
       }
     },
-    scales: {
-      y: {
-        beginAtZero: false
-      }
+    plugins: [ChartDataLabels]
+  });
+
+  const lastBalance = balances[balances.length-1];
+  document.getElementById('finalValue').textContent = '终值：' + formatNumber(lastBalance);
+  document.getElementById('resultBox').textContent = '倍率：' + (lastBalance / principal).toFixed(1) + 'X';
+}
+
+/* 小 helper：读取 CSS 变量或返回默认 */
+function varOr(def){ return function(){ return def; }(); }
+
+/* 初始化滑条和输入框交互（touch 拖动 + 同步） */
+['principal','rate','periods'].forEach(id=>{
+  const input = document.getElementById(id);
+  const scroll = document.getElementById(id + 'Scroll');
+  const fill = scroll.querySelector('.fill');
+  const min = parseFloat(input.min), max = parseFloat(input.max);
+
+  function updateFill(){
+    const val = parseFloat(input.value) || 0;
+    const percent = Math.min(Math.max((val - min) / (max - min) * 100, 0), 100);
+    fill.style.height = percent + '%';
+  }
+
+  // 点击输入框自动清空（你要求的）
+  input.addEventListener('focus', ()=>{
+    input.value = '';
+    calculate();
+    fill.style.height = '0%';
+  });
+
+  // 支持拖动（touch）
+  let startVal = 0, startY = 0;
+  scroll.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    fill.style.transition = '';
+    startY = e.touches[0].clientY;
+    startVal = parseFloat(input.value) || min;
+
+    function moveHandler(ev){
+      ev.preventDefault();
+      const deltaY = ev.touches[0].clientY - startY;
+      let newVal = startVal - deltaY / (scroll.clientHeight) * (max - min);
+      if(id === 'rate') newVal = Math.round(newVal*2)/2;
+      else newVal = Math.round(newVal);
+      newVal = Math.min(Math.max(newVal, min), max);
+      input.value = newVal;
+      calculate();
+      updateFill();
     }
+
+    function endHandler(){
+      let finalVal = parseFloat(input.value);
+      if(id === 'rate') finalVal = Math.round(finalVal*2)/2;
+      else finalVal = Math.round(finalVal);
+      finalVal = Math.min(Math.max(finalVal, min), max);
+      input.value = finalVal;
+      calculate();
+      fill.style.transition = 'height 0.12s';
+      updateFill();
+      document.removeEventListener('touchmove', moveHandler);
+      document.removeEventListener('touchend', endHandler);
+    }
+
+    document.addEventListener('touchmove', moveHandler, {passive:false});
+    document.addEventListener('touchend', endHandler);
+  });
+
+  // 输入时同步
+  input.addEventListener('input', ()=>{
+    calculate();
+    updateFill();
+  });
+
+  updateFill();
+});
+
+/* 页面加载初次计算 */
+window.addEventListener('load', calculate);
+
+/* ---------------- 左侧导航逻辑（折叠/展开 & 内容不被遮挡） ---------------- */
+const leftNav = document.getElementById('leftNav');
+const navToggle = document.getElementById('navToggle');
+const navItems = leftNav.querySelector('.nav-items');
+
+/* 设置初始 body 左内边距，避免遮挡（与折叠宽度一致）*/
+function setBodyPaddingForNav(collapsed){
+  const collapsedW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-collapsed-w')) || 40;
+  const expandedW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-expanded-w')) || 150;
+  document.body.style.paddingLeft = (collapsed ? collapsedW : expandedW) + 'px';
+}
+/* 初始化按折叠状态设置内边距 */
+setBodyPaddingForNav(true);
+
+/* 切换导航 */
+navToggle.addEventListener('click', ()=>{
+  const isCollapsed = leftNav.classList.contains('collapsed');
+  if(isCollapsed){
+    leftNav.classList.remove('collapsed');
+    leftNav.classList.add('expanded');
+    // 展开后显示 items
+    navItems.style.display = 'flex';
+    // 调整 body padding
+    setBodyPaddingForNav(false);
+  } else {
+    leftNav.classList.remove('expanded');
+    leftNav.classList.add('collapsed');
+    // 折叠时隐藏 items（用 display none 以避免 tab/读取问题）
+    navItems.style.display = 'none';
+    setBodyPaddingForNav(true);
   }
 });
 
-function updateChart() {
-  const rate = parseFloat(document.getElementById('rateInput').value) || 1;
-  const principal = parseFloat(document.getElementById('principalInput').value) || 0;
-  const period = parseInt(document.getElementById('periodInput').value) || 0;
-
-  document.getElementById('rateVal').textContent = rate;
-  document.getElementById('principalVal').textContent = principal;
-
-  let labels = [], data = [], total = principal;
-  for (let i=1; i<=period; i++) {
-    total *= rate;
-    labels.push(i);
-    data.push(total);
-  }
-  document.getElementById('profitVal').textContent = (total - principal).toFixed(2);
-
-  chart.data.labels = labels;
-  chart.data.datasets[0].data = data;
-  chart.update();
-}
-
-['rateInput','rateRange','principalInput','principalRange','periodInput','periodRange'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', e=>{
-    if (id.includes('Input')) {
-      document.getElementById(id.replace('Input','Range')).value = e.target.value;
-    } else {
-      document.getElementById(id.replace('Range','Input')).value = e.target.value;
-    }
-    updateChart();
+/* 为导航项增加简单处理（示例） */
+leftNav.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    const key = item.dataset.key;
+    // 这里可以接入你的路由或锚点逻辑，当前仅做示例高亮
+    leftNav.querySelectorAll('.nav-item').forEach(i=>i.style.background='transparent');
+    item.style.background = '#151515';
+    // 折叠导航（可选）
+    // leftNav.classList.remove('expanded'); leftNav.classList.add('collapsed'); navItems.style.display='none'; setBodyPaddingForNav(true);
   });
 });
 
-updateChart();
+/* 监听窗口大小变化：若窗口很窄，自动折叠导航并更新 padding */
+window.addEventListener('resize', ()=>{
+  const w = window.innerWidth;
+  if(w < 600){
+    leftNav.classList.remove('expanded');
+    leftNav.classList.add('collapsed');
+    navItems.style.display = 'none';
+    setBodyPaddingForNav(true);
+  }
+});
 </script>
 </body>
 </html>

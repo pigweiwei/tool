@@ -41,16 +41,14 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   z-index:10;
 }
 
-/* 表单区域 */
+/* 表单区域 - 方案2 */
 .form { 
-  flex:1; 
   display:flex; 
-  flex-direction:row; 
-  justify-content:flex-start;   /* 靠左排列 */
+  justify-content: space-between;  /* 三组均分，左右间距 = 中间间距 */
   align-items:flex-start; 
-  flex-wrap: nowrap; 
-  padding: 0 var(--form-gap);   /* 左右边距 */
-  gap: var(--form-gap);          /* 控制输入组间距 */
+  padding: 0 var(--form-gap);       /* 左右边距 = gap */
+  max-width: calc(3 * var(--input-scroll-width) + 2 * var(--form-gap)); 
+  margin: 0 auto;                   /* 居中整个表单 */
   box-sizing: border-box;
 }
 
@@ -176,7 +174,7 @@ function calculate(){
   if(chart) chart.destroy();
   const ctx=document.getElementById('balanceChart').getContext('2d');
 
-  const minY = principal; // Y 轴最小值贴近本金
+  const minY = principal; 
   chart=new Chart(ctx,{
     type:'line',
     data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#007bff', backgroundColor:'rgba(0,123,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:'#007bff'}]},

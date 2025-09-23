@@ -8,10 +8,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <style>
 :root {
-  --input-scroll-width: 108px; /* 输入框和滑条统一宽度 */
+  --input-scroll-width: 108px; 
   --scroll-height: 280px;     
-  --form-padding: 20px;       
-  --input-scroll-gap: 5px;    
+  --form-gap: 20px; /* 控制左右和中间间距一致 */
 }
 
 /* 基本样式 */
@@ -45,13 +44,12 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 /* 表单区域 */
 .form { 
   flex:1; 
-  padding: 0 var(--form-padding); 
-  box-sizing:border-box; 
   display:flex; 
   flex-direction:row; 
-  justify-content:space-between; 
+  justify-content:space-between; /* 左右和中间间距一致 */
   align-items:flex-start; 
-  flex-wrap: nowrap; /* 禁止换行 */
+  flex-wrap: nowrap; 
+  padding: 0 var(--form-gap); /* 保证屏幕左右间距和中间间距一致 */
 }
 
 /* 输入组 */
@@ -59,8 +57,8 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  width: var(--input-scroll-width); /* 固定宽度 */
-  flex: 0 0 auto; /* 不允许伸缩 */
+  width: var(--input-scroll-width); 
+  flex: 0 0 auto; 
 }
 
 /* 输入框 */
@@ -68,7 +66,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  margin-bottom: var(--input-scroll-gap);
+  margin-bottom: 5px;
 }
 .input-wrapper input { 
   padding:8px 0; 
@@ -90,7 +88,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   cursor:grab; 
   overflow:hidden; 
   touch-action:none; 
-  margin-top: var(--input-scroll-gap);
+  margin-top:5px;
 }
 .scroll-bar-vertical .fill { 
   position:absolute; 

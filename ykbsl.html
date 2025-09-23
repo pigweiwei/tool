@@ -121,11 +121,13 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-// 吸附逻辑
-function applySnap(value, step=0.5, threshold=0.05){
+// 轻吸附逻辑
+function applySnapDisplay(value, step=0.5, threshold=0.05){
   let nearest = Math.round(value/step)*step;
-  if(Math.abs(value - nearest) < threshold){
-    return nearest;
+  let delta = nearest - value;
+  if(Math.abs(delta) < threshold){
+    // 轻微偏移显示值，吸附感
+    return value + delta * 0.3; // 0.3 可调节吸附强度
   }
   return value;
 }
@@ -156,11 +158,12 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     let value = startValue + (isPercent ? deltaY/containerHeight*100 : deltaY/containerHeight*maxProfitRatio);
     value = Math.min(Math.max(value,0), isPercent ? 100 : maxProfitRatio);
 
+    let displayValue = value;
     if(!isPercent){
-      value = applySnap(value, 0.5, 0.05); // 盈亏比吸附0.5倍数
+      displayValue = applySnapDisplay(value, 0.5, 0.05); // 仅影响显示
     }
 
-    animateBarHeight(bar, valueDisplay, value, isPercent);
+    animateBarHeight(bar, valueDisplay, displayValue, isPercent);
     if(callback) callback(value);
     startValue = value;
   }
@@ -173,7 +176,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   wrapper.addEventListener('mousemove', moveDrag);
 }
 
-// 盈亏比，连续滑动 + 吸附
+// 盈亏比，连续滑动 + 轻吸附
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
   animateBarHeight(profitBar, profitValue, profitLogical, false);

@@ -102,12 +102,13 @@ function calculate(){
         datalabels:{
           color:'#007bff',
           font:{size:14},
-          formatter:function(value, context){
-            // 交替上下显示
-            context.align = (context.dataIndex % 2 === 0) ? 'top' : 'bottom';
-            context.anchor = (context.dataIndex % 2 === 0) ? 'end' : 'start';
-            return value.toFixed(2);
-          }
+          anchor: function(context){
+            return (context.dataIndex % 2 === 0) ? 'end' : 'start';
+          },
+          align: function(context){
+            return (context.dataIndex % 2 === 0) ? 'top' : 'bottom';
+          },
+          formatter: function(value){ return value.toFixed(2); }
         }
       },
       scales:{

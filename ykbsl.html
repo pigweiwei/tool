@@ -140,15 +140,18 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   function moveDrag(e){
     if(!dragging) return;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    let delta = startY - clientY; // 手指向上为正
+    const deltaY = startY - clientY;
     startY = clientY;
 
     const containerHeight = wrapper.clientHeight - 50;
-    let value = startValue + (isPercent ? delta/containerHeight*100 : delta/containerHeight*maxProfitRatio);
+    let value = startValue + (isPercent ? deltaY/containerHeight*100 : deltaY/containerHeight*maxProfitRatio);
     value = Math.min(Math.max(value,0), isPercent ? 100 : maxProfitRatio);
 
     animateBarHeight(bar, valueDisplay, value, isPercent);
     if(callback) callback(value);
+
+    // 更新 startValue，让下一次 moveDrag 增量基于当前值
+    startValue = value;
   }
 
   wrapper.addEventListener('touchstart', startDrag);

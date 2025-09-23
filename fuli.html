@@ -11,13 +11,22 @@
   --input-scroll-width: 108px; 
   --scroll-height: 280px;     
   --form-gap: 20px; /* 左右和中间间距 */
+  --bg-color: #1e1e1e;
+  --text-color: #eee;
+  --input-bg: #2c2c2c;
+  --input-border: #555;
+  --scroll-bg: rgba(255,255,255,0.1);
+  --scroll-fill: linear-gradient(to top, #1e90ff, #00bfff);
+  --chart-grid: #444;
 }
 
 /* 基本样式 */
 html, body {
   margin:0; padding:0; 
   font-family:Arial,Helvetica,sans-serif; 
-  background:#f9f9f9; color:#111; height:100%;
+  background: var(--bg-color); 
+  color: var(--text-color); 
+  height:100%;
 }
 body { display:flex; flex-direction:column; }
 
@@ -35,7 +44,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   gap:20px;
   font-size:14px;
   font-weight:bold;
-  color:#007bff;
+  color:#1e90ff;
   white-space:nowrap;
   pointer-events:none;
   z-index:10;
@@ -44,9 +53,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 /* 表单区域 */
 .form { 
   display:flex; 
-  justify-content: space-between;  /* 左右间距 = 中间间距 */
+  justify-content: space-between;  
   align-items:flex-start; 
-  padding: 0 var(--form-gap);      /* 左右边距 = gap */
+  padding: 0 var(--form-gap);      
   box-sizing: border-box;
   flex:1;
 }
@@ -70,7 +79,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   padding:8px 0; 
   font-size:16px; 
   border-radius:8px; 
-  border:1px solid #ccc; 
+  border:1px solid var(--input-border); 
+  background: var(--input-bg);
+  color: var(--text-color);
   text-align:center; 
   width: var(--input-scroll-width); 
   box-sizing: border-box; 
@@ -80,7 +91,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 .scroll-bar-vertical { 
   width: var(--input-scroll-width); 
   height: var(--scroll-height); 
-  background:rgba(0,0,0,0.05); 
+  background: var(--scroll-bg); 
   border-radius:8px; 
   position:relative; 
   cursor:grab; 
@@ -92,7 +103,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   bottom:0; 
   width:100%; 
   height:0%; 
-  background: linear-gradient(to top, #007bff, #00bfff); 
+  background: var(--scroll-fill); 
 }
 
 /* 移动端微调 */
@@ -176,14 +187,14 @@ function calculate(){
   const minY = principal; 
   chart=new Chart(ctx,{
     type:'line',
-    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#007bff', backgroundColor:'rgba(0,123,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:'#007bff'}]},
+    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#1e90ff', backgroundColor:'rgba(30,144,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:'#1e90ff'}]},
     options:{
       responsive:true,
       maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
         datalabels:{
-          color:'#007bff',
+          color:'#1e90ff',
           font:{size:14},
           anchor: function(context){
             const len = context.chart.data.datasets[0].data.length;
@@ -204,10 +215,10 @@ function calculate(){
         y:{
           beginAtZero:false,
           min:minY,
-          ticks:{callback:formatNumber,color:'#111'},
-          grid:{color:'#ddd'}
+          ticks:{callback:formatNumber,color:'#eee'},
+          grid:{color:'#444'}
         },
-        x:{ticks:{color:'#111'}, grid:{color:'#ddd'}}
+        x:{ticks:{color:'#eee'}, grid:{color:'#444'}}
       }
     },
     plugins:[ChartDataLabels]

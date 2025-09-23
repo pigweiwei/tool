@@ -283,34 +283,53 @@ window.addEventListener('load', ()=>{
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
 });
 
-// ====== 右侧导航逻辑 ======
-const rightNav = document.getElementById('rightNav');
-const overlay = document.getElementById('overlay');
-function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
-function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
+// ====== 右侧导航手势整合 ======
+function openNav(){ 
+  rightNav.classList.add('expanded'); 
+  overlay.classList.add('show'); 
+}
+function closeNav(){ 
+  rightNav.classList.remove('expanded'); 
+  overlay.classList.remove('show'); 
+}
+
+// 点击空白收回
 overlay.addEventListener('click', closeNav);
 
-const gestureRight = document.getElementById('gestureRight');
-let startX=0, startY=0;
+// 右屏幕边缘向左滑展开
+let startX=0;
 gestureRight.addEventListener('touchstart', e=>{
   if(e.touches.length!==1) return;
   e.preventDefault();
   startX=e.touches[0].clientX;
-  startY=e.touches[0].clientY;
-}, {passive: false});
+});
 gestureRight.addEventListener('touchmove', e=>{
   if(e.touches.length!==1) return;
   e.preventDefault();
-}, {passive: false});
+});
 gestureRight.addEventListener('touchend', e=>{
   const deltaX = startX - e.changedTouches[0].clientX;
-  if(Math.abs(deltaX)>30){
-    if(deltaX>0) openNav(); else closeNav();
-  }
-  startX=0; startY=0;
+  if(deltaX > 30) openNav();
+  startX=0;
+});
+
+// 导航栏本身向右滑收回
+let navStartX=0;
+rightNav.addEventListener('touchstart', e=>{
+  if(e.touches.length!==1) return;
+  navStartX = e.touches[0].clientX;
+});
+rightNav.addEventListener('touchmove', e=>{
+  if(e.touches.length!==1) return;
+  e.preventDefault();
+});
+rightNav.addEventListener('touchend', e=>{
+  if(navStartX === 0) return;
+  const deltaX = e.changedTouches[0].clientX - navStartX; // 左→右为正
+  if(deltaX > 30) closeNav();
+  navStartX = 0;
 });
 </script>
 
 </body>
 </html>
-

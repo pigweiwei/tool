@@ -17,15 +17,12 @@
   --scroll-bg: rgba(0,0,0,0.05);
 }
 
-/* 基本布局 */
 html, body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#f9f9f9; color:#111; height:100%; }
 body { display:flex; flex-direction:column; }
 
-/* 图表区域 */
 .chart-container { height:50%; padding:0; box-sizing:border-box; position:relative; }
 canvas { width:100% !important; height:100% !important; display:block; border-radius:8px; }
 
-/* 顶部倍率/终值 居中 */
 #topValues {
   position:absolute;
   top:5px;
@@ -41,15 +38,17 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   z-index:10;
 }
 
-/* 表单区域 */
 .form { flex:1; padding:20px; box-sizing:border-box; display:flex; flex-direction:row; gap:20px; justify-content:center; align-items:flex-start; }
+
 .input-group { 
   display:flex; 
   flex-direction:column; 
   align-items:center; 
   gap:2px; 
 }
+
 .input-label { font-weight:500; font-size:16px; }
+
 .input-wrapper { display:flex; flex-direction:column; position:relative; }
 .input-wrapper input { 
   padding:6px 0; 
@@ -58,12 +57,11 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   border:1px solid var(--input-border); 
   text-align:center; 
   width: var(--input-scroll-width); 
-  box-sizing: border-box; 
   margin-bottom:2px; 
   background-color: var(--input-bg);
+  box-sizing:border-box;
 }
 
-/* 滑条 */
 .scroll-bar-vertical { 
   width: var(--input-scroll-width); 
   height: var(--scroll-height); 
@@ -74,6 +72,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   overflow:hidden; 
   touch-action:none; 
 }
+
 .scroll-bar-vertical .fill { 
   position:absolute; 
   bottom:0; 
@@ -122,7 +121,6 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 </div>
 
 <script>
-// 格式化数字
 function formatNumber(v){ 
   let str = v.toFixed(1); 
   return str.replace(/\B(?=(\d{4})+(?!\d))/g, ','); 
@@ -156,14 +154,14 @@ function calculate(){
   const ctx=document.getElementById('balanceChart').getContext('2d');
   chart=new Chart(ctx,{
     type:'line',
-    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:var(--primary-color), backgroundColor:'rgba(0,123,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:var(--primary-color)}]},
+    data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#007bff', backgroundColor:'rgba(0,123,255,0.2)', fill:false, tension:0.2, pointBackgroundColor:'#007bff'}]},
     options:{
       responsive:true,
       maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
         datalabels:{
-          color:var(--primary-color),
+          color:'#007bff',
           font:{size:14},
           anchor: function(context){
             const len = context.chart.data.datasets[0].data.length;
@@ -193,7 +191,7 @@ function calculate(){
   document.getElementById('resultBox').textContent='倍率：'+(lastBalance/principal).toFixed(1)+'X';
 }
 
-// 初始化滑条
+// 滑条逻辑
 ['principal','rate','periods'].forEach(id=>{
   const input=document.getElementById(id);
   const scroll=document.getElementById(id+'Scroll');

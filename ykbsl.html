@@ -284,6 +284,10 @@ window.addEventListener('load', ()=>{
 });
 
 // ====== 右侧导航手势整合 ======
+const rightNav = document.getElementById('rightNav');
+const overlay = document.getElementById('overlay');
+const gestureRight = document.getElementById('gestureRight');
+
 function openNav(){ 
   rightNav.classList.add('expanded'); 
   overlay.classList.add('show'); 
@@ -295,6 +299,12 @@ function closeNav(){
 
 // 点击空白收回
 overlay.addEventListener('click', closeNav);
+
+// 导航栏内部空白点击收回
+rightNav.addEventListener('click', e=>{
+  if(e.target.classList.contains('nav-item') || e.target.tagName === 'A') return;
+  closeNav();
+});
 
 // 右屏幕边缘向左滑展开
 let startX=0;

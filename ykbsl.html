@@ -23,7 +23,7 @@ html, body {
   justify-content: space-around;
   align-items: flex-end;
   width: 90vw;
-  height: 100vh;  /* 占满全屏高度 */
+  height: 100vh;
   gap: 20px;
 }
 
@@ -57,13 +57,15 @@ html, body {
 #breakeven { background: rgba(40,167,69,0.35); border:1px solid rgba(40,167,69,0.6); }
 
 .bar-value {
-  position: relative; /* 改为相对定位，不覆盖柱子 */
-  bottom: auto;
-  margin-bottom: 5px;
+  position: absolute;
+  top: 5px;           /* 柱子内部顶部 */
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 16px;
   font-weight: bold;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  white-space: nowrap;
 }
 
 .label {
@@ -96,15 +98,15 @@ const profitValue = document.getElementById('profitLossValue');
 const breakevenValue = document.getElementById('breakevenValue');
 
 const maxProfitRatio = 10;
-let profitLogical = 2;  // 初始高度低
+let profitLogical = 2;  
 let breakevenLogical = 100/(1+profitLogical);
 
 function calculateBreakeven(r){ return 100/(1+r); }
 
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   const container = bar.parentElement;
-  const containerHeight = container.clientHeight - 50; // 留出底部数值高度
-  let minHeight = 5; // 柱子最小高度
+  const containerHeight = container.clientHeight - 50; // 底部留空间
+  let minHeight = 5; 
   if(!isPercent && targetVal > maxProfitRatio){
     bar.style.height = containerHeight + 'px';
     valueDisplay.textContent = '∞';
@@ -113,6 +115,7 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   let targetHeight = isPercent ? containerHeight*targetVal/100 : containerHeight*targetVal/maxProfitRatio;
   if(targetHeight < minHeight) targetHeight = minHeight;
   bar.style.height = targetHeight + 'px';
+  valueDisplay.style.top = '5px'; // 保持柱子内部顶部
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
@@ -138,7 +141,7 @@ function makeDraggableInertia(wrapper, bar, valueDisplay, isPercent=false, callb
 
   function startDrag(e){
     dragging = true;
-    containerHeight = wrapper.clientHeight - 50; // 留出底部空间
+    containerHeight = wrapper.clientHeight - 50; 
     lastY = e.touches ? e.touches[0].clientY : e.clientY;
     lastTime = Date.now();
     if(inertiaId) cancelAnimationFrame(inertiaId);

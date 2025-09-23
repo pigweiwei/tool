@@ -15,9 +15,16 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 /* 顶部倍率/终值 */
 #topValues {
   position:absolute;
-  top:5px; left:10px; 
-  display:flex; gap:10px; font-size:14px; font-weight:bold; color:#007bff;
-  white-space:nowrap; pointer-events:none; z-index:10;
+  top:5px;
+  left:50px; /* 与纵轴数字对齐 */
+  display:flex;
+  gap:10px;
+  font-size:14px;
+  font-weight:bold;
+  color:#007bff;
+  white-space:nowrap;
+  pointer-events:none;
+  z-index:10;
 }
 /* 表单区域 */
 .form { flex:1; padding:20px; box-sizing:border-box; display:flex; flex-direction:row; gap:20px; justify-content:center; align-items:flex-start; }
@@ -123,9 +130,9 @@ function calculate(){
           formatter: function(value){ return formatNumber(value); }
         }
       },
-      layout:{padding:{top:30, right:30}},
+      layout:{padding:{top:30, right:30, left:50, bottom:10}},
       scales:{
-        y:{beginAtZero:true, ticks:{callback:formatNumber, color:'#111'}, grid:{color:'#ddd'}},
+        y:{beginAtZero:true, ticks:{callback:formatNumber,color:'#111'}, grid:{color:'#ddd'}},
         x:{ticks:{color:'#111'}, grid:{color:'#ddd'}}
       }
     },

@@ -116,9 +116,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 /* 右侧悬浮导航 */
 .right-nav {
   position: fixed;
-  top: 50%;
+  top: 5px;          /* 对齐到图表顶部倍率 */
   right: 0;
-  transform: translateY(-50%);
+  transform: none;   /* 不再居中 */
   background: #2c2c2c;
   border-radius: 8px 0 0 8px;
   overflow: hidden;

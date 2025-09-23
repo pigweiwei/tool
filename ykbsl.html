@@ -111,16 +111,31 @@ const maxProfitRatio = 10;
 let profitLogical = 2;  
 let breakevenLogical = 100/(1+profitLogical);
 
-function calculateBreakeven(r){ return 100/(1+r); }
+function calculateBreakeven(r){ return 100/(1+Math.max(r,0.01)); }
 
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50; 
   let minHeight = 5;
-  let targetHeight = isPercent ? containerHeight*targetVal/100 : containerHeight*targetVal/maxProfitRatio;
-  if(targetHeight<minHeight) targetHeight=minHeight;
+  let displayVal = targetVal;
+  let heightVal = Math.max(targetVal, 0);
+  if (!isPercent && targetVal > maxProfitRatio) {
+    displayVal = '♾️';
+    heightVal = maxProfitRatio;
+  } else if (isPercent && targetVal > 100) {
+    displayVal = '♾️';
+    heightVal = 100;
+  }
+  if (targetVal < 0) {
+    displayVal = isPercent ? 0 : 0;
+    heightVal = 0;
+  }
+  let targetHeight = isPercent ? containerHeight * heightVal / 100 : containerHeight * heightVal / maxProfitRatio;
+  if (targetHeight < minHeight) targetHeight = minHeight;
   bar.style.height = targetHeight + 'px';
-  valueDisplay.style.top = (containerHeight - targetHeight - 20) + 'px';
-  valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
+  let valueTop = containerHeight - targetHeight - 20;
+  valueTop = Math.max(valueTop, 0);
+  valueDisplay.style.top = valueTop + 'px';
+  valueDisplay.textContent = (typeof displayVal === 'string') ? displayVal : isPercent ? Math.round(displayVal) + '%' : displayVal.toFixed(2);
 }
 
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
@@ -139,11 +154,21 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   function endDrag(){
     if(!dragging) return;
     dragging = false;
-    if(!isPercent){  // Snap only for profit-loss ratio (non-percent bar)
-      let currentValue = parseFloat(valueDisplay.textContent);
-      let snappedValue = Math.round(currentValue / 0.5) * 0.5;
+    let currentText = valueDisplay.textContent;
+    if (currentText === '♾️') {
+      let snappedValue = isPercent ? 100 : maxProfitRatio;
+      if (!isPercent) {
+        snappedValue = Math.round(snappedValue / 0.5) * 0.5;
+      }
       animateBarHeight(bar, valueDisplay, snappedValue, isPercent);
-      if(callback) callback(snappedValue);
+      if (callback) callback(snappedValue);
+    } else {
+      let currentValue = parseFloat(currentText);
+      if (!isPercent) {
+        let snappedValue = Math.round(currentValue / 0.5) * 0.5;
+        animateBarHeight(bar, valueDisplay, snappedValue, isPercent);
+        if (callback) callback(snappedValue);
+      }
     }
   }
 
@@ -151,16 +176,10 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     if(!dragging) return;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     let delta = startY - clientY; // 手指向上为正
-    let value;
-    if(isPercent){
-      value = startValue + delta/containerHeight*100;
-      value = Math.min(Math.max(value,0),100);
-    } else {
-      value = startValue + delta/containerHeight*maxProfitRatio;
-      value = Math.min(Math.max(value,0),maxProfitRatio);
-    }
+    let value = isPercent ? startValue + delta / containerHeight * 100 : startValue + delta / containerHeight * maxProfitRatio;
+    value = Math.max(value, 0);
     animateBarHeight(bar, valueDisplay, value, isPercent);
-    if(callback) callback(value);
+    if (callback) callback(value);
   }
 
   wrapper.addEventListener('touchstart', startDrag);
@@ -174,14 +193,14 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
 // 盈亏比
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
-  breakevenLogical = calculateBreakeven(Math.max(r,0.01));
+  breakevenLogical = calculateBreakeven(r);
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
 });
 
 // 胜率
 makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
-  profitLogical = (100/b)-1;
+  profitLogical = b > 0 ? (100 / b) - 1 : 0; // Avoid division by zero or negative
   animateBarHeight(profitBar, profitValue, profitLogical, false);
 });
 

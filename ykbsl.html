@@ -118,8 +118,8 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   if(targetHeight<minHeight) targetHeight=minHeight;
   bar.style.height = targetHeight + 'px';
 
-  // 数值显示在柱子上方
-  valueDisplay.style.bottom = (targetHeight + 5) + 'px';
+  // 数值显示在柱子上方，上方悬浮20px
+  valueDisplay.style.bottom = (targetHeight + 20) + 'px';
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 

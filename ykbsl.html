@@ -73,7 +73,7 @@ html, body {
   white-space: nowrap;
   pointer-events: none;
   z-index: 10;
-  transform: translateX(-50%) translateY(-20px); /* 默认悬浮 */
+  transform: translateX(-50%); /* 仅水平居中 */
 }
 
 .label {
@@ -118,9 +118,8 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   if(targetHeight<minHeight) targetHeight=minHeight;
   bar.style.height = targetHeight + 'px';
 
-  // 数值悬浮在柱子上方 20px
-  valueDisplay.style.bottom = `${targetHeight}px`;
-  valueDisplay.style.transform = `translateX(-50%) translateY(-20px)`;
+  // 用 top 定位数值，悬浮在柱子上方 20px
+  valueDisplay.style.top = (containerHeight - targetHeight - 20) + 'px';
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 

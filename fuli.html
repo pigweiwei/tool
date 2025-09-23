@@ -201,7 +201,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 <div class="overlay" id="overlay"></div>
 
 <script>
-// ==================== 复利计算器逻辑 ====================
+// ==================== 复利计算器 ====================
 function formatNumber(v){ 
   let str = v.toFixed(1); 
   return str.replace(/\B(?=(\d{4})+(?!\d))/g, ','); 
@@ -274,7 +274,7 @@ function calculate(){
   document.getElementById('resultBox').textContent='倍率：'+(lastBalance/principal).toFixed(1)+'X';
 }
 
-// ==================== 滚动条逻辑（纵向滑动，横向容忍10px） ====================
+// ==================== 滚动条（纵向滑动才刷新） ====================
 ['principal','rate','periods'].forEach(id=>{
   const input=document.getElementById(id);
   const scroll=document.getElementById(id+'Scroll');
@@ -308,10 +308,10 @@ function calculate(){
       const currentY = ev.touches[0].clientY;
       const deltaX = currentX - startX;
       const deltaY = currentY - startY;
-      const tolerance = 10; // 横向容忍区
+      const tolerance = 10; 
 
       if(Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > tolerance){
-        return; // 横向滑动大于纵向且超过容忍区 → 不处理
+        return; // 横向滑动不刷新
       }
 
       let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
@@ -349,7 +349,7 @@ function calculate(){
 
 window.addEventListener('load', calculate);
 
-// ==================== 右侧导航逻辑 ====================
+// ==================== 右侧导航 ====================
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 

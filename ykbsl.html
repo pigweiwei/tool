@@ -5,25 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>盈亏比&保本胜率</title>
 <style>
-body.light {
-  --bg-gradient: linear-gradient(135deg, #e0e0e0, #f5f5f5);
-  --bar-profit-bg: rgba(0,123,255,0.5);
-  --bar-profit-border: rgba(0,123,255,0.8);
-  --bar-breakeven-bg: rgba(40,167,69,0.5);
-  --bar-breakeven-border: rgba(40,167,69,0.8);
-  --label-color: #333;
-  --bar-value-color: #000;
-}
-body.dark {
-  --bg-gradient: linear-gradient(135deg, #1a1a1a, #2b2b2b);
-  --bar-profit-bg: rgba(0,123,255,0.35);
-  --bar-profit-border: rgba(0,123,255,0.6);
-  --bar-breakeven-bg: rgba(40,167,69,0.35);
-  --bar-breakeven-border: rgba(40,167,69,0.6);
-  --label-color: #eee;
-  --bar-value-color: #fff;
-}
-
 body {
   margin: 0;
   padding: 0;
@@ -33,9 +14,8 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: var(--bg-gradient);
+  background: linear-gradient(135deg, #1a1a1a, #2b2b2b);
   overflow-x: hidden;
-  transition: all 0.3s;
 }
 
 .bar-container {
@@ -68,6 +48,12 @@ body {
   backdrop-filter: blur(10px);
   transition: height 0.1s ease-out;
   overflow: hidden;
+  background: rgba(0,123,255,0.35); /* 默认盈亏比颜色 */
+  border:1px solid rgba(0,123,255,0.6);
+}
+#breakeven { 
+  background: rgba(40,167,69,0.35);
+  border:1px solid rgba(40,167,69,0.6);
 }
 .bar-value {
   position: absolute;
@@ -77,34 +63,18 @@ body {
   font-weight: bold;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   z-index: 2;
-  transition: bottom 0.1s, color 0.3s;
-  color: var(--bar-value-color);
+  transition: bottom 0.1s;
+  color: #fff;
 }
 .label {
   margin-top: 8px;
   font-size: 14px;
   font-weight: bold;
-  color: var(--label-color);
-  transition: color 0.3s;
+  color: #eee;
 }
-#profitLoss { background: var(--bar-profit-bg); border:1px solid var(--bar-profit-border);}
-#breakeven { background: var(--bar-breakeven-bg); border:1px solid var(--bar-breakeven-border);}
-.modeToggleBtn {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background: rgba(0,0,0,0.3);
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  z-index: 1000;
-  user-select: none;
-}
-body.light .modeToggleBtn { background: rgba(0,0,0,0.1); color: #000; }
 </style>
 </head>
-<body class="dark">
+<body>
 
 <div class="bar-container">
   <div class="bar-wrapper" id="wrapperProfit">
@@ -119,14 +89,11 @@ body.light .modeToggleBtn { background: rgba(0,0,0,0.1); color: #000; }
   </div>
 </div>
 
-<div class="modeToggleBtn" id="modeToggle">切换模式</div>
-
 <script>
 const profitBar = document.getElementById('profitLoss');
 const breakevenBar = document.getElementById('breakeven');
 const profitValue = document.getElementById('profitLossValue');
 const breakevenValue = document.getElementById('breakevenValue');
-const modeToggle = document.getElementById('modeToggle');
 
 const maxProfitRatio = 10;
 let profitLogical = 4;
@@ -149,7 +116,7 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-// ---------- 流畅触控拖动 ----------
+// 流畅触控拖动
 function makeDraggableTouch(bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
   let containerHeight=0;
@@ -205,12 +172,6 @@ makeDraggableTouch(breakevenBar, breakevenValue, true, b=>{
 window.addEventListener('load', ()=>{
   animateBarHeight(profitBar, profitValue, profitLogical, false);
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
-});
-
-// ---------- 深浅色切换 ----------
-modeToggle.addEventListener('click', ()=>{
-  document.body.classList.toggle('dark');
-  document.body.classList.toggle('light');
 });
 </script>
 </body>

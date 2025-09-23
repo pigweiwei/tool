@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <style>
 :root {
-  --input-scroll-width: 108px; /* 原 90px 增加20% */
+  --input-scroll-width: 108px; /* 输入框和滑条统一宽度 */
   --scroll-height: 280px;     
   --form-padding: 20px;       
   --input-scroll-gap: 5px;    
@@ -49,10 +49,9 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   box-sizing:border-box; 
   display:flex; 
   flex-direction:row; 
-  justify-content:space-between; 
+  justify-content:space-between; /* 左右间距和中间间距一致 */
   align-items:flex-start; 
-  flex-wrap: wrap; 
-  gap: 10px; 
+  flex-wrap: nowrap; /* 禁止换行 */
 }
 
 /* 输入组 */
@@ -60,8 +59,8 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  min-width: var(--input-scroll-width); 
-  flex: 1; 
+  width: var(--input-scroll-width); /* 固定宽度 */
+  flex: 0 0 auto; /* 不允许伸缩 */
 }
 
 /* 输入框 */
@@ -101,10 +100,11 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   background: linear-gradient(to top, #007bff, #00bfff); 
 }
 
-/* 响应式微调 */
-@media (max-width: 500px) {
-  .form { justify-content: space-around; }
-  .input-wrapper input, .scroll-bar-vertical { width: calc(var(--input-scroll-width) * 0.65); min-width: calc(var(--input-scroll-width) * 0.65); }
+/* 移动端微调 */
+@media (max-width: 400px) {
+  :root { --input-scroll-width: 80px; }
+  .input-wrapper input, .scroll-bar-vertical { width: var(--input-scroll-width); }
+  .input-group { width: var(--input-scroll-width); }
 }
 </style>
 </head>

@@ -3,21 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>右侧抽屉导航测试</title>
+<title>右侧抽屉导航 - 右滑打开</title>
 <style>
   body {
     margin: 0;
-    height: 200vh; /* 拉长页面方便测试 */
+    height: 200vh;
     background: #f5f5f5;
     font-family: Arial, sans-serif;
   }
 
-  /* 右侧抽屉导航 */
+  /* 右侧导航 */
   .right-nav {
     position: fixed;
     top: 0;
-    right: -200px; /* 默认隐藏 */
-    width: 200px;
+    right: -70%; /* 默认隐藏，宽度用百分比自适应 */
+    width: 70%;
+    max-width: 300px;
     height: 100%;
     background: #2c2c2c;
     border-radius: 8px 0 0 8px;
@@ -29,7 +30,7 @@
   }
 
   .right-nav.expanded {
-    right: 0; /* 展开时显示 */
+    right: 0;
   }
 
   /* 遮罩层 */
@@ -54,7 +55,7 @@
   }
   .right-nav .nav-item:hover { background: #1e1e1e; }
 
-  /* 悬浮按钮（固定在右下角） */
+  /* 悬浮按钮 */
   .nav-toggle {
     position: fixed;
     bottom: 20px;
@@ -77,42 +78,20 @@
 </head>
 <body>
 
-<!-- 遮罩层 -->
 <div class="overlay" id="overlay"></div>
 
-<!-- 右侧导航 -->
 <div class="right-nav" id="rightNav">
   <div class="nav-item">首页</div>
   <div class="nav-item">设置</div>
   <div class="nav-item">帮助</div>
 </div>
 
-<!-- 悬浮按钮 -->
 <div class="nav-toggle" id="navToggle">☰</div>
 
 <script>
   const rightNav = document.getElementById("rightNav");
   const navToggle = document.getElementById("navToggle");
   const overlay = document.getElementById("overlay");
-
-  // 点击按钮展开/收起
-  navToggle.addEventListener("click", () => {
-    toggleNav();
-  });
-
-  // 点击遮罩层收起
-  overlay.addEventListener("click", () => {
-    closeNav();
-  });
-
-  function toggleNav() {
-    const expanded = rightNav.classList.contains("expanded");
-    if (expanded) {
-      closeNav();
-    } else {
-      openNav();
-    }
-  }
 
   function openNav() {
     rightNav.classList.add("expanded");
@@ -124,27 +103,38 @@
     overlay.classList.remove("show");
   }
 
+  function toggleNav() {
+    if (rightNav.classList.contains("expanded")) closeNav();
+    else openNav();
+  }
+
+  // 点击按钮
+  navToggle.addEventListener("click", toggleNav);
+
+  // 点击遮罩层
+  overlay.addEventListener("click", closeNav);
+
   // ================= 手机端右滑/左滑手势控制 =================
   let touchStartX = 0;
   let touchEndX = 0;
 
-  document.addEventListener("touchstart", function(e) {
+  document.addEventListener("touchstart", e => {
     touchStartX = e.changedTouches[0].screenX;
   }, { passive: true });
 
-  document.addEventListener("touchend", function(e) {
+  document.addEventListener("touchend", e => {
     touchEndX = e.changedTouches[0].screenX;
     handleGesture();
   }, { passive: true });
 
   function handleGesture() {
-    const threshold = 50; // 滑动阈值
+    const threshold = 50;
     if (touchEndX - touchStartX > threshold) {
-      // 👉 右滑展开
+      // 右滑打开导航
       openNav();
     }
     if (touchStartX - touchEndX > threshold) {
-      // 👈 左滑收起
+      // 左滑关闭导航
       closeNav();
     }
   }

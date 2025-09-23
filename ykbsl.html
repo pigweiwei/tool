@@ -106,13 +106,13 @@ const profitValue = document.getElementById('profitLossValue');
 const breakevenValue = document.getElementById('breakevenValue');
 
 const maxProfitRatio = 10;
-let profitLogical = 2;
+let profitLogical = 2;  
 let breakevenLogical = 100/(1+profitLogical);
 
 function calculateBreakeven(r){ return 100/(1+r); }
 
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
-  const containerHeight = bar.parentElement.clientHeight - 50;
+  const containerHeight = bar.parentElement.clientHeight - 50; 
   let minHeight = 5;
   let targetHeight = isPercent ? containerHeight*targetVal/100 : containerHeight*targetVal/maxProfitRatio;
   if(targetHeight<minHeight) targetHeight=minHeight;
@@ -121,15 +121,16 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   valueDisplay.textContent = isPercent ? Math.round(targetVal)+'%' : targetVal.toFixed(2);
 }
 
-function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
+function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, step=null, callback=null){
   let dragging=false;
-  let startY=0;
-  let accumulatedDelta=0;
+  let startValue = 0;
+  let startY = 0;
+  const containerHeight = wrapper.clientHeight - 50;
 
   function startDrag(e){
     dragging = true;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
-    accumulatedDelta = 0;
+    startValue = parseFloat(valueDisplay.textContent);
     e.preventDefault();
   }
 
@@ -140,18 +141,22 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   function moveDrag(e){
     if(!dragging) return;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    let deltaY = startY - clientY;
-    startY = clientY;
-    accumulatedDelta += deltaY;
+    let delta = startY - clientY; // 手指向上为正
+    let value;
+    if(isPercent){
+      value = startValue + delta/containerHeight*100;
+      value = Math.min(Math.max(value,0),100);
+    } else {
+      value = startValue + delta/containerHeight*maxProfitRatio;
+      value = Math.min(Math.max(value,0),maxProfitRatio);
+    }
 
-    const containerHeight = wrapper.clientHeight - 50;
-    let deltaValue = isPercent ? accumulatedDelta/containerHeight*100 : accumulatedDelta/containerHeight*maxProfitRatio;
+    // 滑动视觉连续
+    animateBarHeight(bar, valueDisplay, value, isPercent);
 
-    let newValue = isPercent ? breakevenLogical + deltaValue : profitLogical + deltaValue;
-    newValue = Math.min(Math.max(newValue,0), isPercent ? 100 : maxProfitRatio);
-
-    animateBarHeight(bar, valueDisplay, newValue, isPercent);
-    if(callback) callback(newValue);
+    // 吸附到步进数值
+    let snapped = step ? Math.round(value/step)*step : value;
+    if(callback) callback(snapped);
   }
 
   wrapper.addEventListener('touchstart', startDrag);
@@ -162,15 +167,15 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   wrapper.addEventListener('mousemove', moveDrag);
 }
 
-// 盈亏比拖动
-makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
+// 盈亏比 0.5 步进
+makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, 0.5, r=>{
   profitLogical = r;
-  breakevenLogical = calculateBreakeven(Math.max(profitLogical,0.01));
+  breakevenLogical = calculateBreakeven(Math.max(r,0.01));
   animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
 });
 
-// 胜率拖动
-makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
+// 胜率 连续滑动
+makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, null, b=>{
   breakevenLogical = b;
   profitLogical = (100/b)-1;
   animateBarHeight(profitBar, profitValue, profitLogical, false);

@@ -83,6 +83,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 .right-nav.expanded { right:0; }
 .right-nav .nav-item { color: #eee; padding: 15px; text-align: center; cursor: pointer; border-bottom: 1px solid #444; }
 .right-nav .nav-item:hover { background: #1e1e1e; }
+.right-nav .nav-item a { color: inherit; text-decoration:none; display:block; width:100%; height:100%; }
 
 /* 遮罩层 */
 .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); display:none; z-index:150; touch-action: none; }
@@ -129,8 +130,8 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 </div>
 
 <div class="right-nav" id="rightNav">
-  <div class="nav-item">首页</div>
-  <div class="nav-item">盈亏比&胜率</div>
+  <div class="nav-item"><a href="index.html">首页</a></div>
+  <div class="nav-item"><a href="ykbsl.html">盈亏比&胜率</a></div>
 </div>
 
 <div class="overlay" id="overlay"></div>
@@ -169,7 +170,7 @@ function calculate(){
   document.getElementById('resultBox').textContent='倍率：'+(balances[n-1]/p).toFixed(1)+'X';
 }
 
-// ==================== 滑条逻辑（流畅版） ====================
+// ==================== 滑条逻辑 ====================
 ['principal','rate','periods'].forEach(id=>{
   const input=document.getElementById(id);
   const scroll=document.getElementById(id+'Scroll');
@@ -202,10 +203,7 @@ function calculate(){
       input.value = newVal;
       updateFill();
       if(!throttleTimeout){
-        throttleTimeout=setTimeout(()=>{
-          calculate();
-          throttleTimeout=null;
-        }, 50);
+        throttleTimeout=setTimeout(()=>{ calculate(); throttleTimeout=null; }, 50);
       }
     }
 
@@ -237,13 +235,13 @@ const overlay = document.getElementById('overlay');
 function openNav(){
   rightNav.classList.add('expanded');
   overlay.classList.add('show');
-  document.body.style.overflow='hidden'; // 阻止页面滚动
+  document.body.style.overflow='hidden';
 }
 
 function closeNav(){
   rightNav.classList.remove('expanded');
   overlay.classList.remove('show');
-  document.body.style.overflow=''; // 恢复页面滚动
+  document.body.style.overflow='';
 }
 overlay.addEventListener('click', closeNav);
 
@@ -269,6 +267,11 @@ gestureRight.addEventListener('touchend', e=>{
     if(deltaX>0) openNav(); else closeNav();
   }
   startX=0; startY=0;
+});
+
+// 点击导航链接自动收回右侧导航
+document.querySelectorAll('.right-nav a').forEach(a=>{
+  a.addEventListener('click', ()=>{ closeNav(); });
 });
 </script>
 </body>

@@ -21,7 +21,7 @@
     display: flex;
     gap: 30px;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
   }
 
   .picker-block {
@@ -38,7 +38,7 @@
 
   .picker-container {
     width: 150px;
-    height: 200px;
+    height: 400px; /* 增加一倍高度 */
     overflow: hidden;
     position: relative;
     background: #1e1e1e;
@@ -90,6 +90,13 @@
     border-bottom: 1px solid #0ff;
     pointer-events: none;
   }
+
+  .picker-info {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #0ff;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -102,6 +109,7 @@
       <div class="picker-mask"></div>
       <div class="picker-center-line"></div>
     </div>
+    <div class="picker-info" id="info1">总仓比: 50%</div>
   </div>
 
   <div class="picker-block">
@@ -111,17 +119,18 @@
       <div class="picker-mask"></div>
       <div class="picker-center-line"></div>
     </div>
+    <div class="picker-info" id="info2">盈亏(%): 10%</div>
   </div>
 </div>
 
 <script>
-function createPicker(containerId, items, titleId){
+function createPicker(containerId, items, titleId, infoId){
   const container = document.getElementById(containerId);
   const pickerList = container.querySelector('.picker-list');
   const title = document.getElementById(titleId);
+  const info = document.getElementById(infoId);
   const itemHeight = 40;
 
-  // 无限循环数组
   const extendedItems = [...items, ...items, ...items];
   extendedItems.forEach(text=>{
     const div = document.createElement('div');
@@ -141,6 +150,13 @@ function createPicker(containerId, items, titleId){
       el.classList.toggle('selected', idx===currentIndex);
     });
     title.innerText = extendedItems[currentIndex];
+
+    // 更新信息显示，可根据实际计算动态调整
+    if(infoId === 'info1'){
+      info.innerText = `总仓比: ${Math.round((currentIndex % items.length + 1)/items.length*100)}%`;
+    } else if(infoId === 'info2'){
+      info.innerText = `盈亏(%): ${Math.round((currentIndex % items.length - 2)*5)}%`;
+    }
   }
 
   function adjustLoop(){
@@ -213,8 +229,8 @@ function createPicker(containerId, items, titleId){
 const items1 = ["苹果","香蕉","橙子","西瓜","葡萄"];
 const items2 = ["红色","绿色","蓝色","黄色","紫色"];
 
-createPicker('picker1', items1, 'title1');
-createPicker('picker2', items2, 'title2');
+createPicker('picker1', items1, 'title1', 'info1');
+createPicker('picker2', items2, 'title2', 'info2');
 </script>
 
 </body>

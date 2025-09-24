@@ -1,183 +1,119 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>深色 iOS 风格滚动选择器</title>
-<style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-    background: #121212;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-
-  .picker-container {
-    width: 200px;
-    height: 200px;
-    overflow: hidden;
-    position: relative;
-    background: #1e1e1e;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-    touch-action: none;
-  }
-
-  .picker-list {
-    position: absolute;
-    width: 100%;
-    top: 0;
-    left: 0;
-  }
-
-  .picker-item {
-    height: 40px;
-    line-height: 40px;
-    text-align: center;
-    font-size: 18px;
-    color: #aaa;
-    user-select: none;
-  }
-
-  .picker-item.selected {
-    color: #fff;
-    font-weight: bold;
-  }
-
-  .picker-mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, rgba(18,18,18,1) 0%, rgba(18,18,18,0) 30%, rgba(18,18,18,0) 70%, rgba(18,18,18,1) 100%);
-    pointer-events: none;
-  }
-
-  .picker-center-line {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 40px;
-    margin-top: -20px;
-    border-top: 1px solid #555;
-    border-bottom: 1px solid #555;
-    pointer-events: none;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>popoPicker Demo</title>
+    <style>
+        /* 严格搬运自文档和仓库的示例，添加基本布局以使组件可用。样式和逻辑基于提供的文档。实际的完整CSS和JS需要从仓库源代码提取，但根据工具结果，这里提供一个基本的HTML框架。 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .screen {
+            position: relative;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .js-picker, .js-date, .js-time, .js-datetime {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background: white;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        /* 由于工具无法提取完整CSS，这里添加占位符。实际使用需下载popoPicker.css */
+        .popo-picker-placeholder {
+            width: 300px;
+            height: 200px;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+    <!-- 引入样式 - 实际需下载 https://raw.githubusercontent.com/po-po/popoPicker/master/popoPicker.css -->
+    <link href="popoPicker.css" rel="stylesheet">
 </head>
 <body>
+    <div class="screen">
+        <!-- Picker 示例 -->
+        <div class="js-picker">
+            <div class="popo-picker-placeholder">点击打开 Picker (选项滚轮)</div>
+        </div>
 
-<div class="picker-container">
-  <div class="picker-list" id="pickerList"></div>
-  <div class="picker-mask"></div>
-  <div class="picker-center-line"></div>
-</div>
+        <!-- Date 示例 -->
+        <div class="js-date">
+            <div class="popo-picker-placeholder">点击打开 Date (日期滚轮)</div>
+        </div>
 
-<script>
-const items = ["苹果","香蕉","橙子","西瓜","葡萄","菠萝","草莓","芒果","樱桃","梨"];
-const itemHeight = 40;
-const pickerList = document.getElementById('pickerList');
+        <!-- Time 示例 -->
+        <div class="js-time">
+            <div class="popo-picker-placeholder">点击打开 Time (时间滚轮)</div>
+        </div>
 
-// 无限循环：前后各复制一份
-const extendedItems = [...items, ...items, ...items];
-extendedItems.forEach(text=>{
-  const div = document.createElement('div');
-  div.className = 'picker-item';
-  div.innerText = text;
-  pickerList.appendChild(div);
-});
+        <!-- DateTime 示例 -->
+        <div class="js-datetime">
+            <div class="popo-picker-placeholder">点击打开 DateTime (日期时间滚轮)</div>
+        </div>
+    </div>
 
-let currentIndex = items.length; // 初始在中间组第一个
-let startY = 0;
-let lastY = 0;
-let startTime = 0;
-let velocity = 0;
-let isDragging = false;
-let animationFrameId = null;
+    <!-- 引入脚本 - 实际需下载 https://raw.githubusercontent.com/po-po/popoPicker/master/popodatetime.js -->
+    <script src="popodatetime.js"></script>
+    <script>
+        // Picker 示例 - 严格根据文档
+        new popoPicker('.js-picker', {
+            container: '.screen',
+            wheels: [{
+                infinite: false,
+                // selected: 3, // 可选，默认0
+                data: [
+                    {value: 0, display: '选项一'},
+                    {value: 1, display: '选项二'},
+                    {value: 2, display: '选项三'},
+                    {value: 3, display: '选项四'},
+                    {value: 4, display: '选项五'},
+                    {value: 5, display: '选项六'},
+                    {value: 6, display: '选项七'}
+                ]
+            }],
+            background: 'dark',
+            // init: function() { console.log('init'); },
+            // getResult: function(result) { console.log(result); },
+            // save: function(result) { console.log('save', result); },
+            // cancel: function() { console.log('cancel'); }
+        });
 
-function updatePicker(animate = true){
-  pickerList.style.transition = animate ? 'transform 0.2s cubic-bezier(.1, .57, .1, 1)' : 'none';
-  const offset = -currentIndex*itemHeight + Math.floor(5/2)*itemHeight;
-  pickerList.style.transform = `translateY(${offset}px)`;
-  document.querySelectorAll('.picker-item').forEach((el, idx)=>{
-    el.classList.toggle('selected', idx === currentIndex);
-  });
-}
+        // Date 示例
+        new popoDateTime('.js-date', {
+            container: '.screen',
+            time: false
+            // save: function(result) { console.log('date save', result); },
+            // cancel: function() { console.log('date cancel'); }
+        });
 
-function adjustLoop(){
-  if(currentIndex < items.length) currentIndex += items.length;
-  if(currentIndex >= items.length*2) currentIndex -= items.length;
-  updatePicker(false);
-}
+        // Time 示例
+        new popoDateTime('.js-time', {
+            container: '.screen',
+            date: false
+            // save: function(result) { console.log('time save', result); },
+            // cancel: function() { console.log('time cancel'); }
+        });
 
-function momentumScroll(){
-  velocity *= 0.95;
-  if(Math.abs(velocity) < 0.02){
-    currentIndex = Math.round(currentIndex - velocity);
-    adjustLoop();
-    updatePicker();
-    return;
-  }
-  currentIndex -= velocity;
-  adjustLoop();
-  updatePicker(false);
-  animationFrameId = requestAnimationFrame(momentumScroll);
-}
-
-// 拖拽事件
-function startDrag(e){
-  cancelAnimationFrame(animationFrameId);
-  isDragging = true;
-  startY = e.touches ? e.touches[0].clientY : e.clientY;
-  lastY = startY;
-  startTime = Date.now();
-  velocity = 0;
-}
-
-function moveDrag(e){
-  if(!isDragging) return;
-  e.preventDefault();
-  const y = e.touches ? e.touches[0].clientY : e.clientY;
-  const delta = y - lastY;
-  currentIndex -= delta/itemHeight;
-  updatePicker(false);
-
-  const now = Date.now();
-  velocity = delta / (now - startTime) * 16; // 修正帧率影响
-  startTime = now;
-  lastY = y;
-}
-
-function endDrag(){
-  if(!isDragging) return;
-  isDragging = false;
-  momentumScroll();
-}
-
-pickerList.addEventListener('mousedown', startDrag);
-pickerList.addEventListener('mousemove', moveDrag);
-pickerList.addEventListener('mouseup', endDrag);
-pickerList.addEventListener('mouseleave', endDrag);
-pickerList.addEventListener('touchstart', startDrag);
-pickerList.addEventListener('touchmove', moveDrag, {passive:false});
-pickerList.addEventListener('touchend', endDrag);
-
-// 鼠标滚轮支持
-pickerList.addEventListener('wheel', e=>{
-  e.preventDefault();
-  currentIndex += e.deltaY>0?1:-1;
-  adjustLoop();
-  updatePicker();
-},{passive:false});
-
-// 初始化
-updatePicker(false);
-</script>
-
+        // DateTime 示例
+        new popoDateTime('.js-datetime', {
+            container: '.screen'
+            // save: function(result) { console.log('datetime save', result); },
+            // cancel: function() { console.log('datetime cancel'); }
+        });
+    </script>
 </body>
 </html>

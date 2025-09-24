@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iPhone 风格深色滚轮</title>
+<title>iPhone 原生深色滚轮</title>
 <style>
 html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    overflow: hidden; /* 禁止全局滚动 */
-    background: #1c1c1e; /* 深色背景 */
+    overflow: hidden;
+    background: #1c1c1e;
     font-family: Arial, sans-serif;
     color: #fff;
     display: flex;
@@ -48,9 +48,10 @@ html, body {
     background: #2c2c2e;
     text-align: center;
     position: relative;
+    touch-action: none;
 }
 
-/* 阴影渐变遮罩 */
+/* 阴影遮罩 */
 .wheel::before, .wheel::after {
     content: '';
     position: absolute;
@@ -59,14 +60,8 @@ html, body {
     height: 80px;
     pointer-events: none;
 }
-.wheel::before {
-    top: 0;
-    background: linear-gradient(to bottom, #1c1c1e, transparent);
-}
-.wheel::after {
-    bottom: 0;
-    background: linear-gradient(to top, #1c1c1e, transparent);
-}
+.wheel::before { top: 0; background: linear-gradient(to bottom, #1c1c1e, transparent); }
+.wheel::after { bottom: 0; background: linear-gradient(to top, #1c1c1e, transparent); }
 
 .wheel-content {
     scroll-snap-type: y mandatory;
@@ -87,13 +82,19 @@ html, body {
 /* iPhone 横幅红线 */
 .wheel-line {
     position: absolute;
-    top: 48%; /* 高亮偏离中间 */
+    top: 50%; /* 红线居中 */
     left: 0;
     width: 100%;
-    height: 4px;
-    background: #ff3b30; /* 红色横幅 */
-    border-radius: 2px;
+    height: 40px; /* 加大高度，让数字悬浮其中 */
+    background: rgba(255,59,48,0.2);
     pointer-events: none;
+    border-radius: 8px;
+}
+
+/* 红线中的高亮数字样式 */
+.wheel-content div.selected {
+    color: #ff3b30 !important;
+    font-weight: bold !important;
 }
 
 .wheel-label {
@@ -127,7 +128,6 @@ html, body {
 </div>
 
 <script>
-// 数据
 const ratios = Array.from({length:10}, (_,i)=>(1/(i+1)).toFixed(2));
 const multipliers = Array.from({length:40}, (_,i)=>(0.5*(i+1)).toFixed(1));
 
@@ -152,24 +152,22 @@ function getSelectedIndex(wheel){
 function updateSelection(){
     [ratioWheel, multiplierWheel].forEach(wheel=>{
         Array.from(wheel.children).forEach((child, i)=>{
-            const centerOffset = getSelectedIndex(wheel) - i;
-            const scale = Math.max(0.5, 1 - Math.abs(centerOffset)*0.2);
-            const opacity = Math.max(0.3, 1 - Math.abs(centerOffset)*0.3);
-            const rotateX = centerOffset * 25;
+            child.classList.remove('selected');
+            const offset = getSelectedIndex(wheel) - i;
+            const scale = Math.max(0.5, 1 - Math.abs(offset)*0.2);
+            const opacity = Math.max(0.3, 1 - Math.abs(offset)*0.3);
+            const rotateX = offset * 25;
             child.style.transform = `scale(${scale}) rotateX(${rotateX}deg)`;
-            child.style.color = centerOffset === 0 ? '#ff3b30' : '#fff';
-            child.style.fontWeight = centerOffset === 0 ? 'bold' : 'normal';
             child.style.opacity = opacity;
+            if(offset === 0) child.classList.add('selected');
         });
     });
 
     const ratio = parseFloat(ratios[getSelectedIndex(ratioWheel)]);
     const multiplier = parseFloat(multipliers[getSelectedIndex(multiplierWheel)]);
-    const profitLoss = (1 * ratio * multiplier).toFixed(2);
-    totalProfitDisplay.textContent = `总仓盈亏：${profitLoss}`;
+    totalProfitDisplay.textContent = `总仓盈亏：${(ratio*multiplier).toFixed(2)}`;
 }
 
-// 弹性缓动滚动 + 吸附
 function elasticScroll(target, velocity){
     let pos = target.scrollTop;
     function step(){
@@ -198,10 +196,9 @@ function elasticScroll(target, velocity){
 }
 
 function attachWheel(wheel){
-    let lastY = 0, velocity = 0, isTouching = false, isMouseDown = false;
+    let lastY = 0, velocity = 0, isMouseDown = false;
 
     wheel.addEventListener('touchstart', e=>{
-        isTouching = true;
         lastY = e.touches[0].clientY;
         velocity = 0;
         e.preventDefault();
@@ -215,14 +212,13 @@ function attachWheel(wheel){
         e.preventDefault();
     });
     wheel.addEventListener('touchend', e=>{
-        isTouching = false;
         elasticScroll(wheel, velocity);
     });
 
     wheel.addEventListener('mousedown', e=>{
-        isMouseDown = true;
         lastY = e.clientY;
         velocity = 0;
+        isMouseDown = true;
         e.preventDefault();
     });
     window.addEventListener('mousemove', e=>{

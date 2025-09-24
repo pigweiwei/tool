@@ -1,142 +1,151 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
-  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
-  <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
-  <style>
-    .number-picker {
-      width: 300px;
-      margin: 20px auto;
-      display: flex;
-      justify-content: space-around;
-      padding: 10px;
-      background: linear-gradient(to bottom, #1a1a1a, #2d2d2d);
-      border-radius: 12px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      position: relative;
-    }
-    .number-picker::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 40px;
-      background: rgba(200, 200, 200, 0.3);
-      border-radius: 20px;
-      transform: translateY(-50%);
-      z-index: 1;
-      pointer-events: none; /* 确保横条不阻挡滑动 */
-    }
-    .picker-wheel {
-      width: 80px;
-      height: 300px; /* 高度加倍 */
-      overflow-y: scroll;
-      scroll-snap-type: y mandatory;
-      scroll-behavior: smooth;
-      overscroll-behavior: contain;
-      position: relative;
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    .picker-wheel::-webkit-scrollbar {
-      display: none;
-    }
-    .picker-item {
-      height: 30px;
-      line-height: 30px;
-      text-align: center;
-      font-size: 16px;
-      color: #999;
-      scroll-snap-align: center;
-      transition: color 0.2s, font-weight 0.2s;
-    }
-    .picker-item.selected {
-      color: #fff;
-      font-weight: bold;
-      z-index: 2;
-    }
-    .picker-wheel {
-      perspective: 1000px;
-    }
-    .picker-item {
-      opacity: 0.6;
-    }
-    .picker-item.selected {
-      opacity: 1;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>内嵌滚轮选择器 - BetterScroll</title>
+<link rel="stylesheet" href="https://unpkg.com/better-scroll@2.4.2/dist/bscroll.min.css">
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    margin: 50px;
+  }
+  h2 {
+    margin-bottom: 20px;
+  }
+
+  .picker-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .wheel-wrapper {
+    width: 100px;
+    height: 180px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    position: relative;
+  }
+
+  .wheel-wrapper .wheel-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .wheel-wrapper .wheel-list li {
+    height: 40px;
+    line-height: 40px;
+    color: #999;
+    font-size: 16px;
+  }
+
+  /* 中间高亮条 */
+  .wheel-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    margin-top: -20px;
+    border-top: 2px solid #007bff;
+    border-bottom: 2px solid #007bff;
+    pointer-events: none;
+  }
+
+  /* 高亮选中样式 */
+  .wheel-list li.selected {
+    color: #007bff;
+    font-weight: bold;
+    font-size: 20px;
+  }
+
+  .percentage-display {
+    margin-top: 30px;
+    font-size: 18px;
+  }
+</style>
 </head>
 <body>
-  <div class="number-picker">
-    <div class="picker-wheel" id="column1" role="spinbutton" aria-label="第一列"></div>
-    <div class="picker-wheel" id="column2" role="spinbutton" aria-label="第二列"></div>
+
+<h2>总仓位 & 盈亏滚轮</h2>
+<div class="picker-container">
+  <div class="wheel-wrapper" id="position-wheel">
+    <ul class="wheel-list" id="position-list"></ul>
   </div>
+  <div class="wheel-wrapper" id="profit-wheel">
+    <ul class="wheel-list" id="profit-list"></ul>
+  </div>
+</div>
 
-  <script>
-    ons.ready(() => {
-      const column1Wheel = document.querySelector('#column1');
-      const column2Wheel = document.querySelector('#column2');
+<p class="percentage-display">当前百分比: <strong id="percentage">0</strong>%</p>
 
-      // 生成第一列数字 (1-100)
-      for (let i = 1; i <= 100; i++) {
-        const item = document.createElement('div');
-        item.className = 'picker-item';
-        item.textContent = i.toString().padStart(2, '0');
-        column1Wheel.appendChild(item);
-      }
+<script src="https://unpkg.com/better-scroll@2.4.2/dist/bscroll.min.js"></script>
+<script>
+  // 数据
+  const positions = ['1/1','1/2','1/3','1/4','1/5','1/6','1/7','1/8','1/9','1/10'];
+  const profits = Array.from({length:20},(_,i) => ((i+1)*0.5).toFixed(1));
 
-      // 生成第二列数字 (1-100)
-      for (let i = 1; i <= 100; i++) {
-        const item = document.createElement('div');
-        item.className = 'picker-item';
-        item.textContent = i.toString().padStart(2, '0');
-        column2Wheel.appendChild(item);
-      }
+  const positionList = document.getElementById('position-list');
+  const profitList = document.getElementById('profit-list');
+  const percentageEl = document.getElementById('percentage');
 
-      // 滚动吸附和选中逻辑
-      function handleScroll(wheel, columnIndex) {
-        wheel.addEventListener('scroll', () => {
-          clearTimeout(wheel.scrollTimeout);
-          wheel.scrollTimeout = setTimeout(() => {
-            const items = wheel.querySelectorAll('.picker-item');
-            const wheelRect = wheel.getBoundingClientRect();
-            const centerY = wheelRect.top + wheelRect.height / 2;
-            let selectedItem = null;
+  positions.forEach(p => {
+    const li = document.createElement('li');
+    li.textContent = p;
+    positionList.appendChild(li);
+  });
 
-            items.forEach(item => {
-              const itemRect = item.getBoundingClientRect();
-              const itemCenter = itemRect.top + itemRect.height / 2;
-              if (Math.abs(itemCenter - centerY) < 15) {
-                selectedItem = item.textContent;
-                item.classList.add('selected');
-                wheel.scrollTop = item.offsetTop - (wheel.clientHeight - item.clientHeight) / 2;
-              } else {
-                item.classList.remove('selected');
-              }
-            });
+  profits.forEach(p => {
+    const li = document.createElement('li');
+    li.textContent = p + '%';
+    profitList.appendChild(li);
+  });
 
-            console.log(`Column ${columnIndex} Selected: ${selectedItem}`);
-          }, 100);
-        });
-      }
+  // 初始化 BetterScroll
+  const positionBS = new BScroll('#position-wheel', {
+    wheel: {
+      selectedIndex: 0,
+      wheelWrapperClass: 'wheel-list',
+      wheelItemClass: 'wheel-list li'
+    },
+    probeType: 3
+  });
 
-      // 为两列绑定滚动事件
-      handleScroll(column1Wheel, 1);
-      handleScroll(column2Wheel, 2);
+  const profitBS = new BScroll('#profit-wheel', {
+    wheel: {
+      selectedIndex: 0,
+      wheelWrapperClass: 'wheel-list',
+      wheelItemClass: 'wheel-list li'
+    },
+    probeType: 3
+  });
 
-      // 初始滚动到默认值（例如 18 和 39）
-      column1Wheel.scrollTop = 17 * 30; // 18 对应索引 17
-      column2Wheel.scrollTop = 38 * 30; // 39 对应索引 38
+  // 更新高亮和百分比
+  function updateSelected() {
+    const posIndex = positionBS.getSelectedIndex();
+    const profIndex = profitBS.getSelectedIndex();
 
-      // 初始触发滚动事件以选中默认值
-      column1Wheel.dispatchEvent(new Event('scroll'));
-      column2Wheel.dispatchEvent(new Event('scroll'));
-    });
-  </script>
+    // 高亮
+    document.querySelectorAll('#position-list li').forEach((li,i) => li.classList.toggle('selected', i===posIndex));
+    document.querySelectorAll('#profit-list li').forEach((li,i) => li.classList.toggle('selected', i===profIndex));
+
+    // 计算百分比
+    const posValue = eval(positions[posIndex]);
+    const profValue = parseFloat(profits[profIndex]);
+    percentageEl.textContent = (posValue * profValue).toFixed(2);
+  }
+
+  // 监听滚动结束
+  positionBS.on('scrollEnd', updateSelected);
+  profitBS.on('scrollEnd', updateSelected);
+
+  // 初始化一次
+  updateSelected();
+</script>
 </body>
 </html>

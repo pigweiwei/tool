@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚轮（可控惯性 + 音效）</title>
+<title>iOS 风格滚轮（距离触发音效）</title>
 <style>
 html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
 .picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
@@ -14,9 +14,6 @@ html, body { margin:0; height:100%; overflow:hidden; background:#111; font-famil
 .mask-top, .mask-bottom { position:absolute; left:0; width:100%; height:100px; z-index:5; pointer-events:none;}
 .mask-top { top:0; background: linear-gradient(to bottom, #111 0%, transparent 100%);}
 .mask-bottom { bottom:0; background: linear-gradient(to top, #111 0%, transparent 100%);}
-.picker-container::before, .picker-container::after { content:""; position:absolute; top:0; width:30px; height:100%; z-index:5; pointer-events:none;}
-.picker-container::before { left:0; background: linear-gradient(to right, #111, transparent); }
-.picker-container::after { right:0; background: linear-gradient(to left, #111, transparent); }
 </style>
 </head>
 <body>
@@ -31,98 +28,115 @@ html, body { margin:0; height:100%; overflow:hidden; background:#111; font-famil
 
 <script>
 (function(){
-const picker=document.getElementById('picker');
-const list=document.getElementById('pickerList');
-const tickSound=document.getElementById('tickSound');
-const itemHeight=70;
-const min=0.5,max=50,step=0.5;
-const values=[]; for(let v=min;v<=max;v+=step) values.push(v.toFixed(1));
+const picker = document.getElementById('picker');
+const list = document.getElementById('pickerList');
+const tickSound = document.getElementById('tickSound');
+const itemHeight = 70;
+const min = 0.5, max = 50, step = 0.5;
+const values = [];
+for(let v=min; v<=max; v+=step) values.push(v.toFixed(1));
 
-list.innerHTML='<div class="spacer"></div>'+values.map(v=>`<div class="picker-item">${v}</div>`).join('')+'<div class="spacer"></div>';
-const items=list.querySelectorAll('.picker-item');
-let offset=-itemHeight*2,startY=0,velocity=0,lastTickIndex=null,animFrame,lastTime=0,lastTickTime=0;
+list.innerHTML = '<div class="spacer"></div>' + values.map(v=>`<div class="picker-item">${v}</div>`).join('') + '<div class="spacer"></div>';
+const items = list.querySelectorAll('.picker-item');
 
-function updateHighlight(){
-    const center=picker.clientHeight/2;
-    let closestItem=null,closestDist=Infinity;
-    items.forEach((item,i)=>{
-        const itemCenter=item.offsetTop+itemHeight/2+offset;
-        const dist=center-itemCenter;
-        const absDist=Math.abs(dist);
-        const scale=Math.max(0.7,1-absDist/200);
-        const rotateX=Math.max(-40, Math.min(40, dist/5));
-        const colorVal=Math.round(Math.max(170,255-absDist/2));
-        item.style.transform=`scale(${scale}) rotateX(${rotateX}deg)`;
-        if(absDist<closestDist){
-            closestDist=absDist;
-            closestItem=item;
-            // 控制嗒嗒音频率
-            const now=Date.now();
-            const interval = Math.max(50, 200 - Math.abs(velocity)*10); // 速度快间隔小
-            if(lastTickIndex!==i && now - lastTickTime > interval){
-                lastTickIndex=i;
-                lastTickTime=now;
-                tickSound.currentTime=0;
-                tickSound.play().catch(()=>{});
-                if(navigator.vibrate) navigator.vibrate(5);
-            }
-        }
-        if(absDist<itemHeight/2){
+let offset = -itemHeight*2;
+let startY = 0;
+let velocity = 0;
+let animFrame;
+let lastTime = 0;
+let tickAccum = 0; // 累计滚动距离，用于触发音效
+
+function updateHighlight() {
+    const center = picker.clientHeight/2;
+    items.forEach(item => {
+        const itemCenter = item.offsetTop + itemHeight/2 + offset;
+        const dist = Math.abs(center - itemCenter);
+        const scale = Math.max(0.7, 1 - dist/200);
+        const rotateX = Math.max(-40, Math.min(40, (center-itemCenter)/5));
+        const colorVal = Math.round(Math.max(170, 255-dist/2));
+        item.style.transform = `scale(${scale}) rotateX(${rotateX}deg)`;
+        if(dist<itemHeight/2){
             item.style.color="#1e90ff";
             item.style.fontWeight="bold";
-        }else{
+        } else {
             item.style.color=`rgb(${colorVal},${colorVal},${colorVal})`;
             item.style.fontWeight="normal";
         }
     });
 }
 
-function render(){ list.style.transform=`translateY(${offset}px)`; updateHighlight(); }
+function render() { 
+    list.style.transform = `translateY(${offset}px)`; 
+    updateHighlight(); 
+}
 
 function spring(o){
-    const maxOffset=0, minOffset=-(itemHeight*(values.length-1));
-    if(o>maxOffset) return (o - maxOffset)*0.2;
-    if(o<minOffset) return (o - minOffset)*0.2;
+    const maxOffset = 0, minOffset = -(itemHeight*(values.length-1));
+    if(o > maxOffset) return (o - maxOffset)*0.2;
+    if(o < minOffset) return (o - minOffset)*0.2;
     return 0;
 }
 
-function animate(){
+function animate() {
     const springForce = spring(offset);
     offset += velocity - springForce;
-    velocity = Math.sign(velocity) * Math.pow(Math.abs(velocity)*0.88,1.05);
+
+    // 阻尼与非线性衰减
+    velocity = Math.sign(velocity) * Math.pow(Math.abs(velocity)*0.88, 1.05);
     const maxVel = 20;
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
+
+    // 累计滚动距离触发音效
+    tickAccum += Math.abs(velocity);
+    if(tickAccum > itemHeight/2) {
+        tickAccum = 0;
+        tickSound.currentTime = 0;
+        tickSound.play().catch(()=>{});
+        if(navigator.vibrate) navigator.vibrate(5);
+    }
+
     render();
-    if(Math.abs(velocity)>0.5 || Math.abs(springForce)>0.5) animFrame=requestAnimationFrame(animate);
+
+    if(Math.abs(velocity) > 0.5 || Math.abs(springForce) > 0.5) animFrame=requestAnimationFrame(animate);
     else{
-        let index=Math.round(-offset/itemHeight);
-        offset=-index*itemHeight;
+        // 平滑对齐最近数字
+        let index = Math.round(-offset/itemHeight);
+        offset = -index*itemHeight;
         render();
     }
 }
 
 picker.addEventListener('touchstart', e=>{
     cancelAnimationFrame(animFrame);
-    startY=e.touches[0].clientY;
-    velocity=0;
-    lastTime=Date.now();
+    startY = e.touches[0].clientY;
+    velocity = 0;
+    lastTime = Date.now();
+    tickAccum = 0;
 }, {passive:true});
 
 picker.addEventListener('touchmove', e=>{
-    const y=e.touches[0].clientY;
-    const now=Date.now();
-    const dt=now-lastTime;
-    lastTime=now;
-    const delta=y-startY;
-    startY=y;
-    offset+=delta;
+    const y = e.touches[0].clientY;
+    const now = Date.now();
+    const dt = now - lastTime;
+    lastTime = now;
+    const delta = y - startY;
+    startY = y;
+    offset += delta;
     velocity = delta/(dt/16) * 0.5;
+    // 累计滚动距离触发音效（移动过程中也触发）
+    tickAccum += Math.abs(delta);
+    if(tickAccum > itemHeight/2){
+        tickAccum = 0;
+        tickSound.currentTime = 0;
+        tickSound.play().catch(()=>{});
+        if(navigator.vibrate) navigator.vibrate(5);
+    }
     render();
 }, {passive:true});
 
 picker.addEventListener('touchend', ()=>{
-    animFrame=requestAnimationFrame(animate);
+    animFrame = requestAnimationFrame(animate);
 });
 
 render();

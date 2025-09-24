@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>深色模式滚动选择器（响应式）</title>
+<title>深色模式双滚轮选择器</title>
 <style>
   body {
     margin: 0;
@@ -19,17 +19,28 @@
 
   .picker-wrapper {
     display: flex;
-    gap: 20px;
-    width: 90%;
-    max-width: 500px;
+    gap: 30px;
     justify-content: center;
+    align-items: center;
+  }
+
+  .picker-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .picker-title {
+    margin-bottom: 5px;
+    font-size: 16px;
+    text-align: center;
   }
 
   .picker-container {
-    flex: 1;
-    position: relative;
+    width: 150px;
     height: 200px;
     overflow: hidden;
+    position: relative;
     background: #1e1e1e;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
@@ -79,18 +90,12 @@
     border-bottom: 1px solid #0ff;
     pointer-events: none;
   }
-
-  .picker-title {
-    text-align: center;
-    margin-bottom: 5px;
-    font-size: 16px;
-  }
 </style>
 </head>
 <body>
 
 <div class="picker-wrapper">
-  <div>
+  <div class="picker-block">
     <div class="picker-title" id="title1">苹果</div>
     <div class="picker-container" id="picker1">
       <div class="picker-list"></div>
@@ -99,7 +104,7 @@
     </div>
   </div>
 
-  <div>
+  <div class="picker-block">
     <div class="picker-title" id="title2">红色</div>
     <div class="picker-container" id="picker2">
       <div class="picker-list"></div>
@@ -116,6 +121,7 @@ function createPicker(containerId, items, titleId){
   const title = document.getElementById(titleId);
   const itemHeight = 40;
 
+  // 无限循环数组
   const extendedItems = [...items, ...items, ...items];
   extendedItems.forEach(text=>{
     const div = document.createElement('div');
@@ -210,5 +216,6 @@ const items2 = ["红色","绿色","蓝色","黄色","紫色"];
 createPicker('picker1', items1, 'title1');
 createPicker('picker2', items2, 'title2');
 </script>
+
 </body>
 </html>

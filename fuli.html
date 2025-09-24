@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>仿 iPhone 滚轮</title>
+<title>仿 iPhone 滚轮（带惯性）</title>
 <style>
   body {
     display: flex;
@@ -22,7 +22,7 @@
     overflow: hidden;
     border-radius: 12px;
     background: #222;
-    touch-action: none; /* 👈 禁止默认手势（解决页面跟随滚动问题） */
+    touch-action: none; /* 防止页面跟随滚动 */
   }
 
   .picker ul {
@@ -38,7 +38,7 @@
     text-align: center;
     font-size: 20px;
     opacity: 0.4;
-    transition: opacity 0.2s;
+    transition: opacity 0.2s, font-size 0.2s;
   }
 
   .picker li.active {
@@ -81,29 +81,49 @@ const picker = document.getElementById("picker");
 const list = document.getElementById("list");
 const items = list.querySelectorAll("li");
 
-let startY = 0, offsetY = 0;
+let startY = 0, offsetY = 0, currentIndex = 1;
+let velocity = 0, lastY = 0, lastTime = 0;
 const itemHeight = 40;
-let currentIndex = 1; // 默认选中 1.0
 
 updateActive();
 
 picker.addEventListener("touchstart", e => {
-  startY = e.touches[0].clientY - offsetY;
+  const touch = e.touches[0];
+  startY = touch.clientY - offsetY;
   list.style.transition = "none";
+  velocity = 0;
+  lastY = touch.clientY;
+  lastTime = Date.now();
 }, { passive: false });
 
 picker.addEventListener("touchmove", e => {
-  e.preventDefault(); // 👈 阻止页面跟随滚动
-  offsetY = e.touches[0].clientY - startY;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const now = Date.now();
+
+  offsetY = touch.clientY - startY;
   list.style.transform = `translateY(${offsetY}px)`;
+
+  // 计算速度
+  const deltaY = touch.clientY - lastY;
+  const deltaTime = now - lastTime;
+  velocity = deltaY / deltaTime; // px/ms
+  lastY = touch.clientY;
+  lastTime = now;
 }, { passive: false });
 
 picker.addEventListener("touchend", () => {
+  // 惯性滚动
+  let momentum = velocity * 200; // 惯性强度
+  offsetY += momentum;
+
+  // 吸附到最近项
   currentIndex = Math.round(-offsetY / itemHeight);
   if (currentIndex < 0) currentIndex = 0;
   if (currentIndex > items.length - 1) currentIndex = items.length - 1;
+
   offsetY = -currentIndex * itemHeight;
-  list.style.transition = "transform 0.2s ease-out";
+  list.style.transition = "transform 0.4s cubic-bezier(0.1, 0.57, 0.1, 1)";
   list.style.transform = `translateY(${offsetY}px)`;
   updateActive();
 });

@@ -22,6 +22,7 @@
     overflow: hidden;
     border-radius: 12px;
     background: #222;
+    touch-action: none; /* 👈 禁止默认手势（解决页面跟随滚动问题） */
   }
 
   .picker ul {
@@ -47,7 +48,6 @@
     color: #4CAF50;
   }
 
-  /* 中间选中框 */
   .picker::after {
     content: "";
     position: absolute;
@@ -81,25 +81,24 @@ const picker = document.getElementById("picker");
 const list = document.getElementById("list");
 const items = list.querySelectorAll("li");
 
-let startY = 0, currentY = 0, offsetY = 0;
+let startY = 0, offsetY = 0;
 const itemHeight = 40;
+let currentIndex = 1; // 默认选中 1.0
 
-// 初始化第 2 个 (1.0) 作为选中
-let currentIndex = 1;
 updateActive();
 
 picker.addEventListener("touchstart", e => {
   startY = e.touches[0].clientY - offsetY;
   list.style.transition = "none";
-});
+}, { passive: false });
 
 picker.addEventListener("touchmove", e => {
+  e.preventDefault(); // 👈 阻止页面跟随滚动
   offsetY = e.touches[0].clientY - startY;
   list.style.transform = `translateY(${offsetY}px)`;
-});
+}, { passive: false });
 
 picker.addEventListener("touchend", () => {
-  // 自动吸附
   currentIndex = Math.round(-offsetY / itemHeight);
   if (currentIndex < 0) currentIndex = 0;
   if (currentIndex > items.length - 1) currentIndex = items.length - 1;

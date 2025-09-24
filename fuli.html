@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚轮（阻尼+收窄横条）</title>
+<title>iOS 风格滚轮（快速惯性+阻尼+收窄横条）</title>
 <style>
 html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
 .picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
@@ -93,14 +93,13 @@ function spring(o){
 function animate() {
     const springForce = spring(offset);
 
-    let damping = 0.95;
-    const absVel = Math.abs(velocity);
-    if(absVel > 5) damping = 0.88; // 快速滑动阻力大
+    const speed = Math.abs(velocity);
+    let damping = speed < 5 ? 0.95 : 0.92; // 慢速高阻尼，快速低阻尼
     velocity *= damping;
 
     offset += velocity - springForce;
 
-    const maxVel = 25;
+    const maxVel = 60; // 快速滑动允许更大速度
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
 
@@ -126,12 +125,14 @@ picker.addEventListener('touchstart', e=>{
 picker.addEventListener('touchmove', e=>{
     const y = e.touches[0].clientY;
     const now = Date.now();
-    const dt = now - lastTime;
+    const dt = now - lastTime || 16;
     lastTime = now;
     const delta = y - startY;
     startY = y;
+
+    // 累积瞬时速度，快速滑动可明显滚动
+    velocity = delta / dt * 16; 
     offset += delta;
-    velocity = delta/(dt/16) * 0.5;
     render();
 }, {passive:true});
 

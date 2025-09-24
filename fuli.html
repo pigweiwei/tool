@@ -56,11 +56,11 @@ let lastTime = performance.now();
 let isSnapping = false;
 let targetOffset = 0;
 
-const decelerationRate = 0.998; // iOS-like deceleration rate per ms
-const maxVel = 10000; // High limit for fast scrolling (px/s)
-const snapK = 10000; // Spring constant for snap
-const snapD = 3 * Math.sqrt(snapK); // Over-damped for clean snap without oscillation
-const boundaryK = 1000; // Spring constant for boundaries
+const decelerationRate = 0.999; // iOS-like deceleration rate per ms
+const maxVel = 15000; // Higher limit for fast scrolling (px/s)
+const snapK = 15000; // Stronger spring constant for quick snap
+const snapD = 2 * Math.sqrt(snapK); // Critical damping for no oscillation
+const boundaryK = 1500; // Stronger boundary spring constant
 
 function updateHighlight() {
     const center = picker.clientHeight/2;
@@ -86,6 +86,10 @@ function updateHighlight() {
 }
 
 function render() { 
+    // Ensure offset stays within bounds to prevent content disappearance
+    const maxOffset = picker.clientHeight/2 - itemHeight/2;
+    const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
+    offset = Math.max(minOffset, Math.min(maxOffset, offset));
     list.style.transform = `translateY(${offset}px)`; 
     updateHighlight(); 
 }
@@ -103,11 +107,11 @@ function animate(timestamp) {
     const dt = Math.min((timestamp - lastTime) / 1000, 0.05); // Cap dt to avoid jumps
     lastTime = timestamp;
 
-    let accel = -spring(offset); // Boundary spring force (pulls back)
+    let accel = -spring(offset); // Boundary spring force
 
     if (isSnapping) {
         const diff = targetOffset - offset;
-        accel += snapK * diff - snapD * velocity; // Snap spring and damping
+        accel += snapK * diff - snapD * velocity; // Snap spring and critical damping
     } else {
         // Free scrolling with iOS-like exponential deceleration
         velocity *= Math.pow(decelerationRate, dt * 1000);
@@ -123,15 +127,17 @@ function animate(timestamp) {
     render();
 
     // Check if should start snapping
-    if (!isSnapping && Math.abs(velocity) < 50 && Math.abs(spring(offset)) < 50) {
+    if (!isSnapping && Math.abs(velocity) < 100 && Math.abs(spring(offset)) < 100) {
         isSnapping = true;
         const center = picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-        const index = Math.round(-offset / itemHeight);
+        const index = Math.round((-offset - center) / itemHeight);
         targetOffset = -index * itemHeight + center;
+        // Ensure targetOffset is within bounds
+        targetOffset = Math.max(minOffset, Math.min(maxOffset, targetOffset));
     }
 
     // Check if snapping is complete
-    if (isSnapping && Math.abs(targetOffset - offset) < 1 && Math.abs(velocity) < 10) {
+    if (isSnapping && Math.abs(targetOffset - offset) < 0.5 && Math.abs(velocity) < 5) {
         offset = targetOffset;
         velocity = 0;
         isSnapping = false;
@@ -158,7 +164,7 @@ picker.addEventListener('touchmove', e => {
     const y = e.touches[0].clientY;
     const delta = y - startY;
     startY = y;
-    velocity = (delta / dt) * 2; // Boost sensitivity for faster response (px/s)
+    velocity = (delta / dt) * 2.5; // Higher sensitivity for fast scrolling
     offset += delta;
     render();
 }, {passive: true});

@@ -1,0 +1,62 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+.picker-container {
+    width: 200px;
+    height: 200px;
+    perspective: 1000px; /* 开启 3D 空间 */
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+.picker-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d; /* 允许子元素在 3D 空间中定位 */
+    transform: translateZ(-100px);
+}
+
+.picker-scroller {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease-out; /* 用于惯性滚动动画 */
+}
+
+.picker-item {
+    position: absolute;
+    width: 100%;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    font-size: 18px;
+    color: #333;
+    backface-visibility: hidden; /* 隐藏元素背面，优化性能 */
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+.picker-highlight {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    margin-top: -20px;
+    border-top: 1px solid #aaa;
+    border-bottom: 1px solid #aaa;
+    pointer-events: none; /* 让鼠标事件可以穿透此元素 */
+    box-sizing: border-box;
+}

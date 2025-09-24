@@ -80,11 +80,32 @@
 </div>
 
 <script>
-const items = ["苹果","香蕉","橙子","西瓜","葡萄","菠萝","草莓","芒果","樱桃","梨","选项1","选项2","选项3","选项4","选项5","选项6","选项7","选项8","选项9","选项10"]; 
+/***********************
+ * 惯性滚动参数配置（在这里改数值即可）
+ ***********************/
+
+// 快速滑动时的惯性衰减系数（范围 0~1，越接近1惯性越大，滑得更远）
+const frictionFast = 0.95;
+
+// 轻轻滑动时的惯性衰减系数（范围 0~1，越小停得越快）
+const frictionSlow = 0.75;
+
+// 停止的速度阈值（越大越容易停下来，越小越丝滑）
+const stopThreshold = 0.1;
+
+// 判断“快速滑动”的速度阈值（值越大，需要更快的速度才算快速滑动）
+const fastVelocityLimit = 2;
+
+
+/***********************
+ * 选择器核心逻辑
+ ***********************/
+const items = ["苹果","香蕉","橙子","西瓜","葡萄","菠萝","草莓","芒果","樱桃","梨",
+               "选项1","选项2","选项3","选项4","选项5","选项6","选项7","选项8","选项9","选项10"]; 
 const itemHeight = 40;
 const pickerList = document.getElementById('pickerList');
 
-// 直接使用原始数组
+// 创建元素
 items.forEach(text=>{
   const div = document.createElement('div');
   div.className = 'picker-item';
@@ -92,7 +113,7 @@ items.forEach(text=>{
   pickerList.appendChild(div);
 });
 
-let currentIndex = 0; // 初始第一个
+let currentIndex = 0; 
 let startY = 0;
 let startTime = 0;
 let lastY = 0;
@@ -114,22 +135,34 @@ function updatePicker(animate = true){
   });
 }
 
-// 惯性滚动
+/***********************
+ * 惯性滚动函数
+ ***********************/
 function momentumScroll(){
-  velocity *= 0.8;
-  if(Math.abs(velocity) < 0.02){
-    currentIndex = Math.round(currentIndex - velocity);
+  // 大速度时用慢减速（惯性更远），小速度时快减速（早点停下）
+  if (Math.abs(velocity) > fastVelocityLimit) {
+    velocity *= frictionFast;
+  } else {
+    velocity *= frictionSlow;
+  }
+
+  // 如果速度已经很小，就吸附到最近的项
+  if (Math.abs(velocity) < stopThreshold) {
+    currentIndex = Math.round(currentIndex);
     clampIndex();
     updatePicker();
     return;
   }
+
   currentIndex -= velocity;
   clampIndex();
   updatePicker(false);
   animationFrameId = requestAnimationFrame(momentumScroll);
 }
 
-// 事件处理
+/***********************
+ * 拖拽事件
+ ***********************/
 function startDrag(e){
   cancelAnimationFrame(animationFrameId);
   isDragging = true;
@@ -159,6 +192,9 @@ function endDrag(){
   momentumScroll();
 }
 
+/***********************
+ * 事件绑定
+ ***********************/
 pickerList.addEventListener('mousedown', startDrag);
 pickerList.addEventListener('mousemove', moveDrag);
 pickerList.addEventListener('mouseup', endDrag);
@@ -167,7 +203,6 @@ pickerList.addEventListener('touchstart', startDrag);
 pickerList.addEventListener('touchmove', moveDrag, {passive:false});
 pickerList.addEventListener('touchend', endDrag);
 
-// 鼠标滚轮
 pickerList.addEventListener('wheel', function(e){
   e.preventDefault();
   currentIndex += e.deltaY>0?1:-1;
@@ -179,4 +214,3 @@ updatePicker(false);
 </script>
 </body>
 </html>
-

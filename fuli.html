@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iPhone 原生深色滚轮</title>
+<title>iPhone 风格深色滚轮</title>
 <style>
 html, body {
     margin: 0;
@@ -85,13 +85,13 @@ html, body {
     top: 50%; /* 红线居中 */
     left: 0;
     width: 100%;
-    height: 40px; /* 加大高度，让数字悬浮其中 */
+    height: 40px; /* 红线加高 */
     background: rgba(255,59,48,0.2);
     pointer-events: none;
     border-radius: 8px;
 }
 
-/* 红线中的高亮数字样式 */
+/* 高亮数字 */
 .wheel-content div.selected {
     color: #ff3b30 !important;
     font-weight: bold !important;
@@ -128,7 +128,8 @@ html, body {
 </div>
 
 <script>
-const ratios = Array.from({length:10}, (_,i)=>(1/(i+1)).toFixed(2));
+// 仓位使用分数表示
+const ratios = ['1','1/2','1/3','1/4','1/5','1/6','1/7','1/8','1/9','1/10'];
 const multipliers = Array.from({length:40}, (_,i)=>(0.5*(i+1)).toFixed(1));
 
 const ratioWheel = document.querySelector('#ratioWheel .wheel-content');
@@ -149,6 +150,13 @@ function getSelectedIndex(wheel){
     return Math.round(wheel.scrollTop / 80);
 }
 
+function parseRatio(str){
+    if(str.includes('/')){
+        const [num, denom] = str.split('/').map(Number);
+        return num/denom;
+    } else return parseFloat(str);
+}
+
 function updateSelection(){
     [ratioWheel, multiplierWheel].forEach(wheel=>{
         Array.from(wheel.children).forEach((child, i)=>{
@@ -163,7 +171,7 @@ function updateSelection(){
         });
     });
 
-    const ratio = parseFloat(ratios[getSelectedIndex(ratioWheel)]);
+    const ratio = parseRatio(ratios[getSelectedIndex(ratioWheel)]);
     const multiplier = parseFloat(multipliers[getSelectedIndex(multiplierWheel)]);
     totalProfitDisplay.textContent = `总仓盈亏：${(ratio*multiplier).toFixed(2)}`;
 }

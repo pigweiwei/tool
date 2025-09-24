@@ -85,53 +85,53 @@ function render() {
 function spring(o) {
     const maxOffset = picker.clientHeight/2 - itemHeight/2;
     const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-    if(o > maxOffset) return (o - maxOffset)*0.5; // 进一步增强边界弹簧力
-    if(o < minOffset) return (o - minOffset)*0.5;
+    if(o > maxOffset) return (o - maxOffset)*0.6; // 增强边界弹簧力
+    if(o < minOffset) return (o - minOffset)*0.6;
     return 0;
 }
 
-// 进一步改进的 animate 函数
+// 进一步优化的 animate 函数
 function animate() {
     const springForce = spring(offset);
     const speed = Math.abs(velocity);
 
-    // 增强非线性阻尼：低速更强阻尼，高速更平滑衰减
-    let damping = speed < 5 ? 0.97 : 0.90 * Math.exp(-speed / 150); // 调整参数以增强惯性和阻尼感
+    // 优化阻尼：增强高速时的平滑衰减
+    let damping = speed < 5 ? 0.96 : 0.88 * Math.exp(-speed / 120); // 调整以增强快速滚动
     velocity *= damping;
 
-    // 增强重力阻力，提供更强的“重量感”
-    const gravity = 0.15; // 增加重力值
+    // 调整重力阻力，提供平衡的重量感
+    const gravity = 0.12; // 微调重力
     velocity -= Math.sign(velocity) * gravity;
 
     offset += velocity - springForce;
 
-    // 进一步提高速度上限，增强快速滚动的惯性
-    const maxVel = 800; // 从 600 提高到 800
+    // 大幅提高速度上限，允许快速转动
+    const maxVel = 1200; // 从 800 提高到 1200
     if(velocity > maxVel) velocity = maxVel;
     if(velocity < -maxVel) velocity = -maxVel;
 
     render();
 
-    // 优化吸附逻辑：增加容忍度，避免后退抖动
-    if(Math.abs(velocity) < 1.0 && Math.abs(springForce) < 0.8) { // 放宽触发条件
+    // 优化吸附逻辑：减少振荡，提高吸附速度
+    if(Math.abs(velocity) < 1.2 && Math.abs(springForce) < 1.0) { // 进一步放宽触发
         let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2 - spacerHeight)/itemHeight);
         const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
         
-        // 改进弹簧-阻尼系统：增强阻尼以减少过冲和后退
+        // 增强弹簧-阻尼系统：更高刚度，更强阻尼以实现干净吸附
         const diff = targetOffset - offset;
-        const k = 0.3; // 增加弹簧刚度，加速吸附
-        const d = 0.92; // 增加阻尼系数，减少抖动
+        const k = 0.4; // 增加刚度，加速拉向中心
+        const d = 0.95; // 增加阻尼，减少上下跑动
         const springAccel = diff * k;
         velocity += springAccel;
         velocity *= d;
 
-        // 添加阈值判断：如果 diff 很小，直接 snap 到 target，避免无限后退
-        if(Math.abs(diff) < 1.0 && Math.abs(velocity) < 0.5) {
+        // 加强阈值：更早直接 snap，避免多余振荡
+        if(Math.abs(diff) < 0.8 && Math.abs(velocity) < 0.4) {
             offset = targetOffset;
             velocity = 0;
             render();
             cancelAnimationFrame(animFrame);
-        } else if(Math.abs(diff) > 0.5 || Math.abs(velocity) > 0.5) {
+        } else if(Math.abs(diff) > 0.2 || Math.abs(velocity) > 0.2) {
             animFrame = requestAnimationFrame(animate);
         } else {
             offset = targetOffset;
@@ -160,8 +160,8 @@ picker.addEventListener('touchmove', e=>{
     const delta = y - startY;
     startY = y;
 
-    // 调整速度灵敏度，提供更自然的惯性起始
-    velocity = delta / dt * 60; // 进一步降低到 60，增强重量感
+    // 提高速度灵敏度，允许快速转动
+    velocity = delta / dt * 90; // 从 60 提高到 90
     offset += delta;
     render();
 }, {passive:true});

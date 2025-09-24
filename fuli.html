@@ -2,141 +2,99 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>iPhone 风格滚轮</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>滚动选择器</title>
 <style>
   body {
-    background: #111;
+    margin: 0;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #111;
     color: #fff;
+    font-family: sans-serif;
   }
-
-  .picker {
+  .picker-container {
     position: relative;
-    width: 120px;
-    height: 360px; /* 45 × 8 = 360px，高度可见 8 个数值 */
-    overflow: hidden;
-    border-radius: 12px;
-    background: #222;
-    touch-action: none;
+    height: 400px;   /* 高度加倍 */
+    width: 140px;    /* 宽度加倍 */
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    border-left: 2px solid #555;
+    border-right: 2px solid #555;
   }
-
-  .highlight {
-    position: absolute;
-    top: 157.5px;  /* (360 - 45) / 2 */
-    left: 0;
-    right: 0;
-    height: 45px;
-    border-top: 2px solid #4CAF50;
-    border-bottom: 2px solid #4CAF50;
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  .picker-list {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    will-change: transform;
-  }
-
   .picker-item {
-    height: 45px;
-    line-height: 45px;
-    text-align: center;
-    font-size: 18px;
+    height: 70px;    /* 每个项加大 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px; /* 字号更大 */
+    scroll-snap-align: center;
+    transition: all 0.2s;
     color: #aaa;
-    transition: color 0.2s, font-size 0.2s;
   }
-
   .picker-item.active {
-    color: #4CAF50;
-    font-size: 22px;
+    font-size: 38px;
     font-weight: bold;
+    color: #4cafef;
+  }
+  .center-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 0;
+    border-top: 2px dashed #4cafef;
+    pointer-events: none;
   }
 </style>
 </head>
 <body>
-
-<div class="picker" id="ratePicker">
-  <div class="highlight"></div>
-  <div class="picker-list"></div>
-</div>
+  <div class="picker-container" id="picker">
+    <div class="picker-item">0.5</div>
+    <div class="picker-item">1</div>
+    <div class="picker-item">2</div>
+    <div class="picker-item">5</div>
+    <div class="picker-item">10</div>
+    <div class="picker-item">20</div>
+    <div class="picker-item">30</div>
+    <div class="picker-item">50</div>
+  </div>
+  <div class="center-line"></div>
 
 <script>
-(function() {
-  const picker = document.getElementById("ratePicker");
-  const list = picker.querySelector(".picker-list");
+  const picker = document.getElementById('picker');
+  const items = document.querySelectorAll('.picker-item');
 
-  const itemHeight = 45;
-  const visibleCount = 8;
-  const min = 0.5, max = 50, step = 0.5;
+  function highlightClosest() {
+    let containerRect = picker.getBoundingClientRect();
+    let centerY = containerRect.top + containerRect.height / 2;
 
-  // 生成数据
-  let values = [];
-  for (let v = min; v <= max; v += step) {
-    values.push(parseFloat(v.toFixed(1)));
-  }
+    let closestItem = null;
+    let closestDistance = Infinity;
 
-  // 渲染
-  list.innerHTML = values.map(v => `<div class="picker-item">${v}</div>`).join("");
+    items.forEach(item => {
+      let rect = item.getBoundingClientRect();
+      let itemCenter = rect.top + rect.height / 2;
+      let distance = Math.abs(centerY - itemCenter);
 
-  let offset = 0, startY = 0, velocity = 0, animationFrame;
-
-  function updateHighlight() {
-    const centerIndex = Math.round(-offset / itemHeight + (visibleCount/2 - 0.5));
-    document.querySelectorAll(".picker-item").forEach((el, i) => {
-      el.classList.toggle("active", i === centerIndex);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestItem = item;
+      }
     });
+
+    items.forEach(item => item.classList.remove('active'));
+    if (closestItem) closestItem.classList.add('active');
   }
 
-  function render() {
-    list.style.transform = `translateY(${offset}px)`;
-    updateHighlight();
-  }
-
-  function snapToNearest() {
-    let index = Math.round(-offset / itemHeight + (visibleCount/2 - 0.5));
-    index = Math.max(0, Math.min(values.length - 1, index));
-    offset = -(index - (visibleCount/2 - 0.5)) * itemHeight;
-    render();
-  }
-
-  function animate() {
-    offset += velocity;
-    velocity *= 0.95;
-    if (Math.abs(velocity) > 0.1) {
-      render();
-      animationFrame = requestAnimationFrame(animate);
-    } else {
-      snapToNearest();
-    }
-  }
-
-  picker.addEventListener("touchstart", e => {
-    cancelAnimationFrame(animationFrame);
-    startY = e.touches[0].clientY;
-    velocity = 0;
-  }, {passive:true});
-
-  picker.addEventListener("touchmove", e => {
-    let deltaY = e.touches[0].clientY - startY;
-    startY = e.touches[0].clientY;
-    offset += deltaY;
-    render();
-    velocity = deltaY;
-  }, {passive:true});
-
-  picker.addEventListener("touchend", () => {
-    animationFrame = requestAnimationFrame(animate);
+  picker.addEventListener('scroll', () => {
+    requestAnimationFrame(highlightClosest);
   });
-})();
-</script>
 
+  highlightClosest(); // 初始高亮
+</script>
 </body>
 </html>

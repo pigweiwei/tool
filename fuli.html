@@ -96,27 +96,27 @@ function animate() {
 
     const speed = Math.abs(velocity);
     // 优化阻尼曲线：中速/快速滑动更低阻尼
-    let damping = speed < 5 ? 0.99 : Math.min(0.99, 0.90 - speed * 0.002);
+    let damping = speed < 5 ? 0.995 : Math.min(0.995, 0.88 - speed * 0.0015);
     velocity *= damping;
 
     offset += velocity - springForce;
 
-    const maxVel = 300; // 提高到300，增强快速滑动的滚动距离
+    const maxVel = 400; // 提高到400，增强快速滑动的滚动距离
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
 
     render();
 
     // 延迟吸附触发，确保中速/快速滑动滚动多格
-    if(Math.abs(velocity) < 0.5 && Math.abs(springForce) < 0.5) {
+    if(Math.abs(velocity) < 0.6 && Math.abs(springForce) < 0.5) {
         let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2 - spacerHeight)/itemHeight);
         const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
         
         // 保持干净的吸附动画
         const diff = targetOffset - offset;
         if(Math.abs(diff) > 0.5) {
-            offset += diff * 0.3;
-            velocity = diff * 0.05; // 保留轻微超调
+            offset += diff * 0.35; // 略提高吸附速度
+            velocity = diff * 0.04; // 微调超调，保持弹性
             animFrame = requestAnimationFrame(animate);
         } else {
             offset = targetOffset;
@@ -146,7 +146,7 @@ picker.addEventListener('touchmove', e=>{
     startY = y;
 
     // 增强速度灵敏度
-    velocity = delta / dt * 60; // 放大系数从48提高到60
+    velocity = delta / dt * 80; // 放大系数从60提高到80
     offset += delta;
     render();
 }, {passive:true});

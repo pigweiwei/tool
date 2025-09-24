@@ -3,27 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚动选择器</title>
+<title>深色模式滚动选择器（响应式）</title>
 <style>
   body {
     margin: 0;
     font-family: sans-serif;
+    background: #121212;
+    color: #fff;
     display: flex;
-    height: 100vh;
     justify-content: center;
     align-items: center;
-    background: #f0f0f0;
+    height: 100vh;
     overflow: hidden;
   }
 
+  .picker-wrapper {
+    display: flex;
+    gap: 20px;
+    width: 90%;
+    max-width: 500px;
+    justify-content: center;
+  }
+
   .picker-container {
-    width: 200px;
+    flex: 1;
+    position: relative;
     height: 200px;
     overflow: hidden;
-    position: relative;
-    background: #fff;
+    background: #1e1e1e;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     touch-action: none;
   }
 
@@ -40,12 +49,12 @@
     line-height: 40px;
     text-align: center;
     font-size: 18px;
-    color: #666;
+    color: #aaa;
     user-select: none;
   }
 
   .picker-item.selected {
-    color: #000;
+    color: #0ff;
     font-weight: bold;
   }
 
@@ -55,7 +64,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, rgba(240,240,240,1) 0%, rgba(240,240,240,0) 30%, rgba(240,240,240,0) 70%, rgba(240,240,240,1) 100%);
+    background: linear-gradient(to bottom, #121212 0%, rgba(18,18,18,0) 30%, rgba(18,18,18,0) 70%, #121212 100%);
     pointer-events: none;
   }
 
@@ -66,119 +75,140 @@
     width: 100%;
     height: 40px;
     margin-top: -20px;
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
+    border-top: 1px solid #0ff;
+    border-bottom: 1px solid #0ff;
     pointer-events: none;
+  }
+
+  .picker-title {
+    text-align: center;
+    margin-bottom: 5px;
+    font-size: 16px;
   }
 </style>
 </head>
 <body>
-<div class="picker-container">
-  <div class="picker-list" id="pickerList"></div>
-  <div class="picker-mask"></div>
-  <div class="picker-center-line"></div>
+
+<div class="picker-wrapper">
+  <div>
+    <div class="picker-title" id="title1">苹果</div>
+    <div class="picker-container" id="picker1">
+      <div class="picker-list"></div>
+      <div class="picker-mask"></div>
+      <div class="picker-center-line"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="picker-title" id="title2">红色</div>
+    <div class="picker-container" id="picker2">
+      <div class="picker-list"></div>
+      <div class="picker-mask"></div>
+      <div class="picker-center-line"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-const items = ["苹果","香蕉","橙子","西瓜","葡萄","菠萝","草莓","芒果","樱桃","梨"];
-const itemHeight = 40;
-const pickerList = document.getElementById('pickerList');
+function createPicker(containerId, items, titleId){
+  const container = document.getElementById(containerId);
+  const pickerList = container.querySelector('.picker-list');
+  const title = document.getElementById(titleId);
+  const itemHeight = 40;
 
-// 无限循环数组：前后各复制一份
-const extendedItems = [...items, ...items, ...items];
-extendedItems.forEach(text=>{
-  const div = document.createElement('div');
-  div.className = 'picker-item';
-  div.innerText = text;
-  pickerList.appendChild(div);
-});
-
-let currentIndex = items.length; // 初始为中间一组第一个
-let startY = 0;
-let startTime = 0;
-let lastY = 0;
-let velocity = 0;
-let isDragging = false;
-let animationFrameId = null;
-
-function updatePicker(animate = true){
-  pickerList.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
-  const offset = -currentIndex*itemHeight + Math.floor(5/2)*itemHeight;
-  pickerList.style.transform = `translateY(${offset}px)`;
-  document.querySelectorAll('.picker-item').forEach((el, idx)=>{
-    el.classList.toggle('selected', idx === currentIndex);
+  const extendedItems = [...items, ...items, ...items];
+  extendedItems.forEach(text=>{
+    const div = document.createElement('div');
+    div.className = 'picker-item';
+    div.innerText = text;
+    pickerList.appendChild(div);
   });
-}
 
-// 调整循环
-function adjustLoop(){
-  if(currentIndex < items.length) currentIndex += items.length;
-  if(currentIndex >= items.length*2) currentIndex -= items.length;
-  updatePicker(false);
-}
+  let currentIndex = items.length;
+  let startY=0, lastY=0, startTime=0, velocity=0, isDragging=false, animationFrameId=null;
 
-// 惯性滚动
-function momentumScroll(){
-  velocity *= 0.95;
-  if(Math.abs(velocity) < 0.02){
-    // 吸附到最近选项
-    currentIndex = Math.round(currentIndex - velocity);
+  function updatePicker(animate = true){
+    pickerList.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
+    const offset = -currentIndex*itemHeight + Math.floor(5/2)*itemHeight;
+    pickerList.style.transform = `translateY(${offset}px)`;
+    pickerList.querySelectorAll('.picker-item').forEach((el, idx)=>{
+      el.classList.toggle('selected', idx===currentIndex);
+    });
+    title.innerText = extendedItems[currentIndex];
+  }
+
+  function adjustLoop(){
+    if(currentIndex < items.length) currentIndex += items.length;
+    if(currentIndex >= items.length*2) currentIndex -= items.length;
+    updatePicker(false);
+  }
+
+  function momentumScroll(){
+    velocity *= 0.95;
+    if(Math.abs(velocity)<0.02){
+      currentIndex = Math.round(currentIndex - velocity);
+      adjustLoop();
+      updatePicker();
+      return;
+    }
+    currentIndex -= velocity;
+    adjustLoop();
+    updatePicker(false);
+    animationFrameId = requestAnimationFrame(momentumScroll);
+  }
+
+  function startDrag(e){
+    cancelAnimationFrame(animationFrameId);
+    isDragging=true;
+    startY = e.touches ? e.touches[0].clientY : e.clientY;
+    lastY = startY;
+    startTime = Date.now();
+    velocity = 0;
+  }
+
+  function moveDrag(e){
+    if(!isDragging) return;
+    e.preventDefault();
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    const delta = y - lastY;
+    currentIndex -= delta/itemHeight;
+    updatePicker(false);
+    const now = Date.now();
+    velocity = delta / (now - startTime);
+    startTime = now;
+    lastY = y;
+  }
+
+  function endDrag(){
+    if(!isDragging) return;
+    isDragging=false;
+    momentumScroll();
+  }
+
+  container.addEventListener('mousedown', startDrag);
+  container.addEventListener('mousemove', moveDrag);
+  container.addEventListener('mouseup', endDrag);
+  container.addEventListener('mouseleave', endDrag);
+  container.addEventListener('touchstart', startDrag);
+  container.addEventListener('touchmove', moveDrag, {passive:false});
+  container.addEventListener('touchend', endDrag);
+
+  container.addEventListener('wheel', function(e){
+    e.preventDefault();
+    currentIndex += e.deltaY>0?1:-1;
     adjustLoop();
     updatePicker();
-    return;
-  }
-  currentIndex -= velocity;
-  adjustLoop();
+  }, {passive:false});
+
   updatePicker(false);
-  animationFrameId = requestAnimationFrame(momentumScroll);
 }
 
-// 事件处理
-function startDrag(e){
-  cancelAnimationFrame(animationFrameId);
-  isDragging = true;
-  startY = e.touches ? e.touches[0].clientY : e.clientY;
-  lastY = startY;
-  startTime = Date.now();
-  velocity = 0;
-}
+// 初始化两个滚动选择器
+const items1 = ["苹果","香蕉","橙子","西瓜","葡萄"];
+const items2 = ["红色","绿色","蓝色","黄色","紫色"];
 
-function moveDrag(e){
-  if(!isDragging) return;
-  e.preventDefault();
-  const y = e.touches ? e.touches[0].clientY : e.clientY;
-  const delta = y - lastY;
-  currentIndex -= delta/itemHeight;
-  updatePicker(false);
-  const now = Date.now();
-  velocity = delta / (now - startTime);
-  startTime = now;
-  lastY = y;
-}
-
-function endDrag(){
-  if(!isDragging) return;
-  isDragging = false;
-  momentumScroll();
-}
-
-pickerList.addEventListener('mousedown', startDrag);
-pickerList.addEventListener('mousemove', moveDrag);
-pickerList.addEventListener('mouseup', endDrag);
-pickerList.addEventListener('mouseleave', endDrag);
-pickerList.addEventListener('touchstart', startDrag);
-pickerList.addEventListener('touchmove', moveDrag, {passive:false});
-pickerList.addEventListener('touchend', endDrag);
-
-// 鼠标滚轮
-pickerList.addEventListener('wheel', function(e){
-  e.preventDefault();
-  currentIndex += e.deltaY>0?1:-1;
-  adjustLoop();
-  updatePicker();
-},{passive:false});
-
-updatePicker(false);
+createPicker('picker1', items1, 'title1');
+createPicker('picker2', items2, 'title2');
 </script>
 </body>
 </html>

@@ -57,33 +57,14 @@ let isSnapping = false;
 let targetOffset = 0;
 
 const decelerationRate = 0.998; // Faster deceleration for more weight
-const maxVel = 8000; // Controlled fast scrolling
+const maxVel = 6000; // Lowered for controlled fast scrolling
 const snapK = 20000; // Strong spring for quick snap
-const snapD = 2 * Math.sqrt(snapK); // Critical damping for no oscillation
-const boundaryK = 2500; // Stronger boundary spring
+const snapD = 2.2 * Math.sqrt(snapK); // Slightly over-damped for no oscillation
+const boundaryK = 2000; // Strong boundary spring
 
 function updateHighlight() {
     const center = picker.clientHeight/2;
     let closestItem = null, closestDist = Infinity;
-    
-    if (isSnapping && Math.abs(targetOffset - offset) < 10) {
-        // When close to snapping, force highlight on target item
-        const index = Math.round((center - targetOffset - itemHeight/2 - spacerHeight) / itemHeight);
-        if (index >= 0 && index < items.length) {
-            closestItem = items[index];
-        }
-    } else {
-        // Normal highlight logic
-        items.forEach(item => {
-            const itemCenter = item.offsetTop + itemHeight/2 + offset;
-            const dist = Math.abs(center - itemCenter);
-            if (dist < closestDist) {
-                closestDist = dist;
-                closestItem = item;
-            }
-        });
-    }
-
     items.forEach(item => {
         const itemCenter = item.offsetTop + itemHeight/2 + offset;
         const dist = Math.abs(center - itemCenter);
@@ -91,11 +72,14 @@ function updateHighlight() {
         const rotateX = Math.max(-40, Math.min(40, (center-itemCenter)/5));
         const colorVal = Math.round(Math.max(170, 255-dist/2));
         item.style.transform = `scale(${scale}) rotateX(${rotateX}deg)`;
+        if(dist < closestDist){
+            closestDist = dist;
+            closestItem = item;
+        }
         item.style.color = `rgb(${colorVal},${colorVal},${colorVal})`;
         item.style.fontWeight = "normal";
     });
-
-    if (closestItem) {
+    if(closestItem){
         closestItem.style.color = "#1e90ff";
         closestItem.style.fontWeight = "bold";
     }
@@ -127,12 +111,12 @@ function animate(timestamp) {
 
     if (isSnapping) {
         const diff = targetOffset - offset;
-        accel += snapK * diff - snapD * velocity; // Snap spring and critical damping
+        accel += snapK * diff - snapD * velocity; // Snap spring and over-damping
     } else {
         // Free scrolling with iOS-like exponential deceleration
         velocity *= Math.pow(decelerationRate, dt * 1000);
         // Add gravity-like resistance
-        const gravity = 60; // Slightly increased for more weight
+        const gravity = 60; // Increased for more weight
         velocity -= Math.sign(velocity) * gravity * dt;
     }
 
@@ -146,9 +130,9 @@ function animate(timestamp) {
     render();
 
     // Check if should start snapping
-    if (!isSnapping && Math.abs(velocity) < 80 && Math.abs(spring(offset)) < 80) {
+    if (!isSnapping && Math.abs(velocity) < 60 && Math.abs(spring(offset)) < 60) {
         isSnapping = true;
-        const center = picker.clientHeight/2;
+        const center = picker.clientHeight/2; // Center of the picker
         const index = Math.round((center - offset - itemHeight/2 - spacerHeight) / itemHeight);
         targetOffset = center - (index * itemHeight + spacerHeight);
         // Ensure targetOffset is within bounds
@@ -185,7 +169,7 @@ picker.addEventListener('touchmove', e => {
     const y = e.touches[0].clientY;
     const delta = y - startY;
     startY = y;
-    velocity = (delta / dt) * 1.2; // Further lowered sensitivity for smoother control
+    velocity = (delta / dt) * 1.4; // Slightly lowered sensitivity
     offset += delta;
     render();
 }, {passive: true});

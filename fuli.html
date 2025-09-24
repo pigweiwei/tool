@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚轮（可控惯性）</title>
+<title>iOS 风格滚轮（可控惯性 + 音效）</title>
 <style>
 html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
 .picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
@@ -40,7 +40,7 @@ const values=[]; for(let v=min;v<=max;v+=step) values.push(v.toFixed(1));
 
 list.innerHTML='<div class="spacer"></div>'+values.map(v=>`<div class="picker-item">${v}</div>`).join('')+'<div class="spacer"></div>';
 const items=list.querySelectorAll('.picker-item');
-let offset=-itemHeight*2,startY=0,velocity=0,lastTickIndex=null,animFrame,lastTime=0;
+let offset=-itemHeight*2,startY=0,velocity=0,lastTickIndex=null,animFrame,lastTime=0,lastTickTime=0;
 
 function updateHighlight(){
     const center=picker.clientHeight/2;
@@ -56,8 +56,12 @@ function updateHighlight(){
         if(absDist<closestDist){
             closestDist=absDist;
             closestItem=item;
-            if(lastTickIndex!==i){
+            // 控制嗒嗒音频率
+            const now=Date.now();
+            const interval = Math.max(50, 200 - Math.abs(velocity)*10); // 速度快间隔小
+            if(lastTickIndex!==i && now - lastTickTime > interval){
                 lastTickIndex=i;
+                lastTickTime=now;
                 tickSound.currentTime=0;
                 tickSound.play().catch(()=>{});
                 if(navigator.vibrate) navigator.vibrate(5);
@@ -75,8 +79,6 @@ function updateHighlight(){
 
 function render(){ list.style.transform=`translateY(${offset}px)`; updateHighlight(); }
 
-// 阻尼 + 弹簧 + 控制惯性
-function damping(v){ return v*0.88; } // 阻尼加大，快速滚动更易控制
 function spring(o){
     const maxOffset=0, minOffset=-(itemHeight*(values.length-1));
     if(o>maxOffset) return (o - maxOffset)*0.2;
@@ -87,8 +89,7 @@ function spring(o){
 function animate(){
     const springForce = spring(offset);
     offset += velocity - springForce;
-    velocity = Math.sign(velocity) * Math.pow(Math.abs(velocity)*0.88,1.05); // 非线性阻尼曲线
-    // 限制最大速度，防止飞太远
+    velocity = Math.sign(velocity) * Math.pow(Math.abs(velocity)*0.88,1.05);
     const maxVel = 20;
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
@@ -116,7 +117,7 @@ picker.addEventListener('touchmove', e=>{
     const delta=y-startY;
     startY=y;
     offset+=delta;
-    velocity = delta/(dt/16) * 0.5; // 初始惯性减半，更易控制
+    velocity = delta/(dt/16) * 0.5;
     render();
 }, {passive:true});
 

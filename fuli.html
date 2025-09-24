@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
   <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
   <style>
-    .time-picker {
+    .number-picker {
       width: 300px;
       margin: 20px auto;
       display: flex;
@@ -26,6 +26,11 @@
       scroll-behavior: smooth;
       overscroll-behavior: contain;
       position: relative;
+      -ms-overflow-style: none; /* IE and Edge */
+      scrollbar-width: none; /* Firefox */
+    }
+    .picker-wheel::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
     }
     .picker-item {
       height: 30px;
@@ -38,7 +43,6 @@
     .picker-item:hover {
       background: #e0e0e0;
     }
-    /* 高亮选中区域 */
     .picker-wheel::before {
       content: '';
       position: absolute;
@@ -50,39 +54,44 @@
       border-bottom: 1px solid #ccc;
       background: rgba(0, 0, 0, 0.05);
       transform: translateY(-50%);
+      z-index: 1;
+    }
+    .picker-item.selected {
+      font-weight: bold;
+      color: #000;
+      z-index: 2;
     }
   </style>
 </head>
 <body>
-  <div class="time-picker">
-    <div class="picker-wheel" id="hours"></div>
-    <div class="picker-wheel" id="minutes"></div>
+  <div class="number-picker">
+    <div class="picker-wheel" id="column1" role="spinbutton" aria-label="第一列"></div>
+    <div class="picker-wheel" id="column2" role="spinbutton" aria-label="第二列"></div>
   </div>
 
   <script>
     ons.ready(() => {
-      // 初始化小时和分钟
-      const hoursWheel = document.querySelector('#hours');
-      const minutesWheel = document.querySelector('#minutes');
+      const column1Wheel = document.querySelector('#column1');
+      const column2Wheel = document.querySelector('#column2');
 
-      // 生成小时选项 (0-23)
-      for (let i = 0; i < 24; i++) {
+      // 生成第一列数字 (0-99)
+      for (let i = 0; i < 100; i++) {
         const item = document.createElement('div');
         item.className = 'picker-item';
         item.textContent = i.toString().padStart(2, '0');
-        hoursWheel.appendChild(item);
+        column1Wheel.appendChild(item);
       }
 
-      // 生成分钟选项 (0-59)
-      for (let i = 0; i < 60; i++) {
+      // 生成第二列数字 (0-99)
+      for (let i = 0; i < 100; i++) {
         const item = document.createElement('div');
         item.className = 'picker-item';
         item.textContent = i.toString().padStart(2, '0');
-        minutesWheel.appendChild(item);
+        column2Wheel.appendChild(item);
       }
 
-      // 监听滚动停止以获取选中值
-      [hoursWheel, minutesWheel].forEach(wheel => {
+      // 滚动吸附和选中逻辑
+      [column1Wheel, column2Wheel].forEach((wheel, index) => {
         wheel.addEventListener('scroll', () => {
           clearTimeout(wheel.scrollTimeout);
           wheel.scrollTimeout = setTimeout(() => {
@@ -93,24 +102,23 @@
 
             items.forEach(item => {
               const itemRect = item.getBoundingClientRect();
-              if (Math.abs(itemRect.top + itemRect.height / 2 - centerY) < 15) {
+              const itemCenter = itemRect.top + itemRect.height / 2;
+              if (Math.abs(itemCenter - centerY) < 15) {
                 selectedItem = item.textContent;
+                item.classList.add('selected');
+              } else {
+                item.classList.remove('selected');
               }
             });
 
-            if (wheel === hoursWheel) {
-              console.log(`Selected Hour: ${selectedItem}`);
-            } else {
-              console.log(`Selected Minute: ${selectedItem}`);
-            }
+            console.log(`Column ${index + 1} Selected: ${selectedItem}`);
           }, 100);
         });
       });
 
-      // 初始滚动到当前时间
-      const now = new Date();
-      hoursWheel.scrollTop = now.getHours() * 30;
-      minutesWheel.scrollTop = now.getMinutes() * 30;
+      // 初始滚动到默认值（例如 10 和 20）
+      column1Wheel.scrollTop = 10 * 30;
+      column2Wheel.scrollTop = 20 * 30;
     });
   </script>
 </body>

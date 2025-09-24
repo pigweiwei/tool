@@ -1,151 +1,140 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>内嵌滚轮选择器 - BetterScroll</title>
-<link rel="stylesheet" href="https://unpkg.com/better-scroll@2.4.2/dist/bscroll.min.css">
+<title>Wheel Picker Demo</title>
+<!-- 引入 React 和 ReactDOM UMD -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<!-- Babel 支持 JSX -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
   body {
     font-family: sans-serif;
-    text-align: center;
-    margin: 50px;
-  }
-  h2 {
-    margin-bottom: 20px;
-  }
-
-  .picker-container {
+    background: #f5f5f5;
     display: flex;
     justify-content: center;
-    gap: 20px;
+    align-items: center;
+    height: 100vh;
   }
-
-  .wheel-wrapper {
-    width: 100px;
-    height: 180px;
+  .wheel-picker-container {
+    width: 200px;
+    text-align: center;
+  }
+  .selected-value {
+    margin-top: 20px;
+    font-size: 18px;
+  }
+  /* 滚轮样式（模仿官网 3D 效果） */
+  .wheel-picker {
+    perspective: 1000px;
+    height: 200px;
     overflow: hidden;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     position: relative;
   }
-
-  .wheel-wrapper .wheel-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .wheel-wrapper .wheel-list li {
+  .wheel-item {
     height: 40px;
     line-height: 40px;
-    color: #999;
-    font-size: 16px;
+    text-align: center;
+    font-size: 18px;
+    transform-origin: center center -80px;
   }
-
-  /* 中间高亮条 */
-  .wheel-wrapper::after {
-    content: '';
+  .highlight-bar {
     position: absolute;
-    top: 50%;
+    top: 80px; /* 高度的一半减 itemHeight/2 */
     left: 0;
     width: 100%;
     height: 40px;
-    margin-top: -20px;
-    border-top: 2px solid #007bff;
-    border-bottom: 2px solid #007bff;
+    border-top: 1px solid #f00;
+    border-bottom: 1px solid #f00;
     pointer-events: none;
-  }
-
-  /* 高亮选中样式 */
-  .wheel-list li.selected {
-    color: #007bff;
-    font-weight: bold;
-    font-size: 20px;
-  }
-
-  .percentage-display {
-    margin-top: 30px;
-    font-size: 18px;
   }
 </style>
 </head>
 <body>
+<div id="root"></div>
 
-<h2>总仓位 & 盈亏滚轮</h2>
-<div class="picker-container">
-  <div class="wheel-wrapper" id="position-wheel">
-    <ul class="wheel-list" id="position-list"></ul>
-  </div>
-  <div class="wheel-wrapper" id="profit-wheel">
-    <ul class="wheel-list" id="profit-list"></ul>
-  </div>
-</div>
+<script type="text/babel">
 
-<p class="percentage-display">当前百分比: <strong id="percentage">0</strong>%</p>
+const { useState, useRef, useEffect } = React;
 
-<script src="https://unpkg.com/better-scroll@2.4.2/dist/bscroll.min.js"></script>
-<script>
-  // 数据
-  const positions = ['1/1','1/2','1/3','1/4','1/5','1/6','1/7','1/8','1/9','1/10'];
-  const profits = Array.from({length:20},(_,i) => ((i+1)*0.5).toFixed(1));
+function WheelPicker({ data, value, onChange, height = 200, itemHeight = 40 }) {
+  const containerRef = useRef(null);
+  const [scrollTop, setScrollTop] = useState(0);
 
-  const positionList = document.getElementById('position-list');
-  const profitList = document.getElementById('profit-list');
-  const percentageEl = document.getElementById('percentage');
+  // 滚动到当前值
+  useEffect(() => {
+    const index = data.indexOf(value);
+    if (index >= 0 && containerRef.current) {
+      containerRef.current.scrollTop = index * itemHeight;
+    }
+  }, [value]);
 
-  positions.forEach(p => {
-    const li = document.createElement('li');
-    li.textContent = p;
-    positionList.appendChild(li);
-  });
+  // 滚动处理
+  const handleScroll = (e) => {
+    const scroll = e.target.scrollTop;
+    const index = Math.round(scroll / itemHeight);
+    const newIndex = Math.min(Math.max(index, 0), data.length -1);
+    if (data[newIndex] !== value) {
+      onChange(data[newIndex]);
+    }
+    setScrollTop(scroll);
+  };
 
-  profits.forEach(p => {
-    const li = document.createElement('li');
-    li.textContent = p + '%';
-    profitList.appendChild(li);
-  });
+  return (
+    <div style={{ position: "relative" }}>
+      <div
+        ref={containerRef}
+        className="wheel-picker"
+        style={{ height: height }}
+        onScroll={handleScroll}
+      >
+        <div style={{ paddingTop: height/2 - itemHeight/2, paddingBottom: height/2 - itemHeight/2 }}>
+          {data.map((item, idx) => {
+            const offset = (idx * itemHeight) - scrollTop;
+            const rotateX = offset / 2; // 简单3D效果
+            return (
+              <div
+                key={idx}
+                className="wheel-item"
+                style={{ transform: `rotateX(${rotateX}deg)` }}
+              >
+                {item}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="highlight-bar"></div>
+    </div>
+  );
+}
 
-  // 初始化 BetterScroll
-  const positionBS = new BScroll('#position-wheel', {
-    wheel: {
-      selectedIndex: 0,
-      wheelWrapperClass: 'wheel-list',
-      wheelItemClass: 'wheel-list li'
-    },
-    probeType: 3
-  });
+function App() {
+  const [value, setValue] = useState("1");
+  const data = Array.from({length: 30}, (_, i) => (i+1).toString());
 
-  const profitBS = new BScroll('#profit-wheel', {
-    wheel: {
-      selectedIndex: 0,
-      wheelWrapperClass: 'wheel-list',
-      wheelItemClass: 'wheel-list li'
-    },
-    probeType: 3
-  });
+  return (
+    <div className="wheel-picker-container">
+      <h2>Wheel Picker Demo</h2>
+      <WheelPicker
+        data={data}
+        value={value}
+        onChange={setValue}
+        height={200}
+        itemHeight={40}
+      />
+      <div className="selected-value">选中: {value}</div>
+    </div>
+  );
+}
 
-  // 更新高亮和百分比
-  function updateSelected() {
-    const posIndex = positionBS.getSelectedIndex();
-    const profIndex = profitBS.getSelectedIndex();
-
-    // 高亮
-    document.querySelectorAll('#position-list li').forEach((li,i) => li.classList.toggle('selected', i===posIndex));
-    document.querySelectorAll('#profit-list li').forEach((li,i) => li.classList.toggle('selected', i===profIndex));
-
-    // 计算百分比
-    const posValue = eval(positions[posIndex]);
-    const profValue = parseFloat(profits[profIndex]);
-    percentageEl.textContent = (posValue * profValue).toFixed(2);
-  }
-
-  // 监听滚动结束
-  positionBS.on('scrollEnd', updateSelected);
-  profitBS.on('scrollEnd', updateSelected);
-
-  // 初始化一次
-  updateSelected();
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>

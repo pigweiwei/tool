@@ -52,7 +52,15 @@ let offset = picker.clientHeight/2 - itemHeight/2 - spacerHeight;
 let startY = 0;
 let velocity = 0;
 let animFrame;
-let lastTime = 0;
+let lastTime = performance.now();
+let isSnapping = false;
+let targetOffset = 0;
+
+const decelerationRate = 0.998; // iOS-like deceleration rate per ms
+const maxVel = 10000; // High limit for fast scrolling (px/s)
+const snapK = 10000; // Spring constant for snap
+const snapD = 3 * Math.sqrt(snapK); // Over-damped for clean snap without oscillation
+const boundaryK = 1000; // Spring constant for boundaries
 
 function updateHighlight() {
     const center = picker.clientHeight/2;
@@ -85,88 +93,77 @@ function render() {
 function spring(o) {
     const maxOffset = picker.clientHeight/2 - itemHeight/2;
     const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-    if(o > maxOffset) return (o - maxOffset)*0.6; // 增强边界弹簧力
-    if(o < minOffset) return (o - minOffset)*0.6;
+    if(o > maxOffset) return (o - maxOffset) * boundaryK;
+    if(o < minOffset) return (o - minOffset) * boundaryK;
     return 0;
 }
 
-// 进一步优化的 animate 函数
-function animate() {
-    const springForce = spring(offset);
-    const speed = Math.abs(velocity);
+function animate(timestamp) {
+    if (lastTime === 0) lastTime = timestamp;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05); // Cap dt to avoid jumps
+    lastTime = timestamp;
 
-    // 优化阻尼：增强高速时的平滑衰减
-    let damping = speed < 5 ? 0.96 : 0.88 * Math.exp(-speed / 120); // 调整以增强快速滚动
-    velocity *= damping;
+    let accel = -spring(offset); // Boundary spring force (pulls back)
 
-    // 调整重力阻力，提供平衡的重量感
-    const gravity = 0.12; // 微调重力
-    velocity -= Math.sign(velocity) * gravity;
+    if (isSnapping) {
+        const diff = targetOffset - offset;
+        accel += snapK * diff - snapD * velocity; // Snap spring and damping
+    } else {
+        // Free scrolling with iOS-like exponential deceleration
+        velocity *= Math.pow(decelerationRate, dt * 1000);
+    }
 
-    offset += velocity - springForce;
+    velocity += accel * dt;
+    offset += velocity * dt;
 
-    // 大幅提高速度上限，允许快速转动
-    const maxVel = 1200; // 从 800 提高到 1200
-    if(velocity > maxVel) velocity = maxVel;
-    if(velocity < -maxVel) velocity = -maxVel;
+    // Cap velocity
+    if (velocity > maxVel) velocity = maxVel;
+    if (velocity < -maxVel) velocity = -maxVel;
 
     render();
 
-    // 优化吸附逻辑：减少振荡，提高吸附速度
-    if(Math.abs(velocity) < 1.2 && Math.abs(springForce) < 1.0) { // 进一步放宽触发
-        let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2 - spacerHeight)/itemHeight);
-        const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-        
-        // 增强弹簧-阻尼系统：更高刚度，更强阻尼以实现干净吸附
-        const diff = targetOffset - offset;
-        const k = 0.4; // 增加刚度，加速拉向中心
-        const d = 0.95; // 增加阻尼，减少上下跑动
-        const springAccel = diff * k;
-        velocity += springAccel;
-        velocity *= d;
+    // Check if should start snapping
+    if (!isSnapping && Math.abs(velocity) < 50 && Math.abs(spring(offset)) < 50) {
+        isSnapping = true;
+        const center = picker.clientHeight/2 - itemHeight/2 - spacerHeight;
+        const index = Math.round(-offset / itemHeight);
+        targetOffset = -index * itemHeight + center;
+    }
 
-        // 加强阈值：更早直接 snap，避免多余振荡
-        if(Math.abs(diff) < 0.8 && Math.abs(velocity) < 0.4) {
-            offset = targetOffset;
-            velocity = 0;
-            render();
-            cancelAnimationFrame(animFrame);
-        } else if(Math.abs(diff) > 0.2 || Math.abs(velocity) > 0.2) {
-            animFrame = requestAnimationFrame(animate);
-        } else {
-            offset = targetOffset;
-            velocity = 0;
-            render();
-            cancelAnimationFrame(animFrame);
-        }
+    // Check if snapping is complete
+    if (isSnapping && Math.abs(targetOffset - offset) < 1 && Math.abs(velocity) < 10) {
+        offset = targetOffset;
+        velocity = 0;
+        isSnapping = false;
+        render();
+        cancelAnimationFrame(animFrame);
     } else {
         animFrame = requestAnimationFrame(animate);
     }
 }
 
-// 触摸事件
-picker.addEventListener('touchstart', e=>{
+// Touch events
+picker.addEventListener('touchstart', e => {
     cancelAnimationFrame(animFrame);
+    isSnapping = false;
     startY = e.touches[0].clientY;
     velocity = 0;
-    lastTime = Date.now();
-}, {passive:true});
+    lastTime = performance.now();
+}, {passive: true});
 
-picker.addEventListener('touchmove', e=>{
-    const y = e.touches[0].clientY;
-    const now = Date.now();
-    const dt = now - lastTime || 16;
+picker.addEventListener('touchmove', e => {
+    const now = performance.now();
+    const dt = (now - lastTime) / 1000 || 0.016;
     lastTime = now;
+    const y = e.touches[0].clientY;
     const delta = y - startY;
     startY = y;
-
-    // 提高速度灵敏度，允许快速转动
-    velocity = delta / dt * 90; // 从 60 提高到 90
+    velocity = (delta / dt) * 2; // Boost sensitivity for faster response (px/s)
     offset += delta;
     render();
-}, {passive:true});
+}, {passive: true});
 
-picker.addEventListener('touchend', ()=>{
+picker.addEventListener('touchend', () => {
     animFrame = requestAnimationFrame(animate);
 });
 

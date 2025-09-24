@@ -5,20 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>滚动选择器</title>
 <style>
-  body {
+  html, body {
     margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    height: 100%;
+    overflow: hidden; /* 禁止整个页面上下滚动 */
     background: #111;
     color: #fff;
     font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   .picker-container {
     position: relative;
-    height: 400px;   /* 高度加倍 */
-    width: 140px;    /* 宽度加倍 */
+    height: 400px;   /* 显示区高度 */
+    width: 140px;    /* 显示区宽度 */
     overflow-y: scroll;
     scroll-snap-type: y mandatory;
     -webkit-overflow-scrolling: touch;
@@ -26,11 +27,11 @@
     border-right: 2px solid #555;
   }
   .picker-item {
-    height: 70px;    /* 每个项加大 */
+    height: 70px;    /* 每个项高度 */
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 28px; /* 字号更大 */
+    font-size: 28px;
     scroll-snap-align: center;
     transition: all 0.2s;
     color: #aaa;
@@ -39,15 +40,6 @@
     font-size: 38px;
     font-weight: bold;
     color: #4cafef;
-  }
-  .center-line {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 0;
-    border-top: 2px dashed #4cafef;
-    pointer-events: none;
   }
 </style>
 </head>
@@ -62,7 +54,6 @@
     <div class="picker-item">30</div>
     <div class="picker-item">50</div>
   </div>
-  <div class="center-line"></div>
 
 <script>
   const picker = document.getElementById('picker');

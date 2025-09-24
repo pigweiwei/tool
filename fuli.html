@@ -94,23 +94,35 @@ function animate() {
     const springForce = spring(offset);
 
     const speed = Math.abs(velocity);
-    let damping = speed < 5 ? 0.95 : 0.92; // 慢速高阻尼，快速低阻尼
+    // 动态阻尼：快速滑动时阻尼更低，慢速时更高
+    let damping = speed < 5 ? 0.98 : (speed < 20 ? 0.92 : 0.88);
     velocity *= damping;
 
     offset += velocity - springForce;
 
-    const maxVel = 60; // 快速滑动允许更大速度
+    // 放宽最大速度限制
+    const maxVel = 120; // 增大最大速度，模拟iPhone更强的惯性
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
 
     render();
 
-    if(Math.abs(velocity) > 0.5 || Math.abs(springForce) > 0.5)
-        animFrame = requestAnimationFrame(animate);
-    else {
+    // 判断是否需要吸附到最近刻度
+    if(Math.abs(velocity) < 0.5 && Math.abs(springForce) < 0.5) {
         let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2)/itemHeight);
-        offset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2;
-        render();
+        const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2;
+        
+        // 平滑吸附动画
+        const diff = targetOffset - offset;
+        if(Math.abs(diff) > 0.5) {
+            offset += diff * 0.2; // ease-out 效果
+            animFrame = requestAnimationFrame(animate);
+        } else {
+            offset = targetOffset;
+            render();
+        }
+    } else {
+        animFrame = requestAnimationFrame(animate);
     }
 }
 
@@ -130,8 +142,8 @@ picker.addEventListener('touchmove', e=>{
     const delta = y - startY;
     startY = y;
 
-    // 累积瞬时速度，快速滑动可明显滚动
-    velocity = delta / dt * 16; 
+    // 放大速度，增强快速滑动的效果
+    velocity = delta / dt * 32; // 放大系数，从16调整到32
     offset += delta;
     render();
 }, {passive:true});

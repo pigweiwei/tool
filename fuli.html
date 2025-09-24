@@ -13,7 +13,7 @@
     align-items: center;
     justify-content: center;
     background: #f0f0f0;
-    overflow: hidden; /* 禁止页面滚动 */
+    overflow: hidden;
   }
 
   .picker-container {
@@ -29,11 +29,9 @@
 
   .picker-list {
     position: absolute;
-    top: 50%;
+    top: 0;
     left: 0;
     width: 100%;
-    transform-style: preserve-3d;
-    transform: translateY(-50%);
     transition: transform 0.2s ease-out;
   }
 
@@ -43,7 +41,7 @@
     text-align: center;
     font-size: 18px;
     color: #666;
-    backface-visibility: hidden;
+    user-select: none;
   }
 
   .picker-item.selected {
@@ -88,7 +86,7 @@
   const visibleCount = 5;
   const pickerList = document.getElementById('pickerList');
 
-  // 填充列表
+  // 渲染列表
   items.forEach(text => {
     const div = document.createElement('div');
     div.className = 'picker-item';
@@ -100,8 +98,9 @@
   const totalItems = items.length;
 
   function updatePicker() {
-    const offset = -currentIndex * itemHeight;
-    pickerList.style.transform = `translateY(calc(50% - ${itemHeight/2}px)) translateY(${offset}px)`;
+    // translateY 将选中项置于中间
+    const offset = -currentIndex * itemHeight + Math.floor(visibleCount / 2) * itemHeight;
+    pickerList.style.transform = `translateY(${offset}px)`;
     document.querySelectorAll('.picker-item').forEach((el, idx) => {
       el.classList.toggle('selected', idx === currentIndex);
     });
@@ -109,14 +108,7 @@
 
   updatePicker();
 
-  // 阻止滚动穿透页面
-  function preventScroll(e) {
-    e.preventDefault();
-  }
-
-  pickerList.addEventListener('wheel', preventScroll, {passive: false});
-
-  // 鼠标拖动 / 触摸滑动
+  // 鼠标/触摸拖动逻辑
   let startY = 0;
   let isDragging = false;
 
@@ -127,6 +119,7 @@
 
   function moveDrag(e) {
     if(!isDragging) return;
+    e.preventDefault(); // 阻止页面滚动
     const y = e.touches ? e.touches[0].clientY : e.clientY;
     const delta = y - startY;
     if(Math.abs(delta) >= itemHeight) {
@@ -143,6 +136,7 @@
     isDragging = false;
   }
 
+  // 事件绑定
   pickerList.addEventListener('mousedown', startDrag);
   pickerList.addEventListener('mousemove', moveDrag);
   pickerList.addEventListener('mouseup', endDrag);
@@ -150,6 +144,17 @@
   pickerList.addEventListener('touchstart', startDrag);
   pickerList.addEventListener('touchmove', moveDrag, {passive: false});
   pickerList.addEventListener('touchend', endDrag);
+
+  // 鼠标滚轮也可以滚动
+  pickerList.addEventListener('wheel', function(e){
+    e.preventDefault();
+    if(e.deltaY > 0) {
+      currentIndex = Math.min(currentIndex + 1, totalItems -1);
+    } else {
+      currentIndex = Math.max(currentIndex -1, 0);
+    }
+    updatePicker();
+  }, {passive:false});
 
 </script>
 </body>

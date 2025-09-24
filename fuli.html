@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚动选择器</title>
+<title>iOS 风格滚动选择器（无限循环 + 惯性）</title>
 <style>
   body {
     margin: 0;
@@ -86,73 +86,100 @@
   const visibleCount = 5;
   const pickerList = document.getElementById('pickerList');
 
-  // 渲染列表
-  items.forEach(text => {
+  // 无限循环：复制前后各一份
+  const extendedItems = [...items, ...items, ...items];
+  extendedItems.forEach(text => {
     const div = document.createElement('div');
     div.className = 'picker-item';
     div.innerText = text;
     pickerList.appendChild(div);
   });
 
-  let currentIndex = 0;
-  const totalItems = items.length;
+  let currentIndex = items.length; // 初始为中间一组的第一个
+  const totalItems = extendedItems.length;
 
-  function updatePicker() {
-    // translateY 将选中项置于中间
+  function updatePicker(animate = true) {
+    if(animate) pickerList.style.transition = 'transform 0.2s ease-out';
+    else pickerList.style.transition = 'none';
     const offset = -currentIndex * itemHeight + Math.floor(visibleCount / 2) * itemHeight;
     pickerList.style.transform = `translateY(${offset}px)`;
+
     document.querySelectorAll('.picker-item').forEach((el, idx) => {
       el.classList.toggle('selected', idx === currentIndex);
     });
   }
 
-  updatePicker();
+  updatePicker(false);
 
-  // 鼠标/触摸拖动逻辑
+  // 无限循环调整
+  function adjustLoop() {
+    if(currentIndex < items.length) currentIndex += items.length;
+    if(currentIndex >= items.length*2) currentIndex -= items.length;
+    updatePicker(false);
+  }
+
+  // 拖动惯性
   let startY = 0;
+  let startTime = 0;
   let isDragging = false;
+  let velocity = 0;
+  let momentumId;
 
   function startDrag(e) {
+    cancelAnimationFrame(momentumId);
     isDragging = true;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
+    startTime = Date.now();
+    velocity = 0;
   }
 
   function moveDrag(e) {
     if(!isDragging) return;
-    e.preventDefault(); // 阻止页面滚动
+    e.preventDefault();
     const y = e.touches ? e.touches[0].clientY : e.clientY;
     const delta = y - startY;
-    if(Math.abs(delta) >= itemHeight) {
-      const step = Math.floor(delta / itemHeight);
+    if(Math.abs(delta) >= itemHeight/2) {
+      const step = delta / itemHeight;
       currentIndex -= step;
-      if(currentIndex < 0) currentIndex = 0;
-      if(currentIndex >= totalItems) currentIndex = totalItems -1;
       startY = y;
+      updatePicker(false);
+    }
+    const now = Date.now();
+    velocity = (y - startY) / (now - startTime + 1);
+    startTime = now;
+  }
+
+  function endDrag() {
+    if(!isDragging) return;
+    isDragging = false;
+
+    // 惯性滚动
+    let momentum = velocity * 200; // 放大惯性
+    if(Math.abs(momentum) < 0.5) momentum = 0;
+    const steps = Math.round(momentum);
+    if(steps !== 0) {
+      currentIndex -= steps;
+      adjustLoop();
+      updatePicker();
+    } else {
+      adjustLoop();
       updatePicker();
     }
   }
 
-  function endDrag() {
-    isDragging = false;
-  }
-
-  // 事件绑定
   pickerList.addEventListener('mousedown', startDrag);
   pickerList.addEventListener('mousemove', moveDrag);
   pickerList.addEventListener('mouseup', endDrag);
   pickerList.addEventListener('mouseleave', endDrag);
   pickerList.addEventListener('touchstart', startDrag);
-  pickerList.addEventListener('touchmove', moveDrag, {passive: false});
+  pickerList.addEventListener('touchmove', moveDrag, {passive:false});
   pickerList.addEventListener('touchend', endDrag);
 
-  // 鼠标滚轮也可以滚动
+  // 滚轮也支持
   pickerList.addEventListener('wheel', function(e){
     e.preventDefault();
-    if(e.deltaY > 0) {
-      currentIndex = Math.min(currentIndex + 1, totalItems -1);
-    } else {
-      currentIndex = Math.max(currentIndex -1, 0);
-    }
+    currentIndex += e.deltaY > 0 ? 1 : -1;
+    adjustLoop();
     updatePicker();
   }, {passive:false});
 

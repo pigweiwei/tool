@@ -1,196 +1,139 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚动选择器</title>
-<style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-    display: flex;
-    height: 100vh;
-    justify-content: center;
-    align-items: center;
-    background: #f0f0f0;
-    overflow: hidden;
-  }
-
-  .picker-container {
-    width: 200px;
-    height: 200px;
-    overflow: hidden;
-    position: relative;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    touch-action: none;
-  }
-
-  .picker-list {
-    position: absolute;
-    width: 100%;
-    top: 0;
-    left: 0;
-    transition: transform 0.2s ease-out;
-  }
-
-  .picker-item {
-    height: 40px;
-    line-height: 40px;
-    text-align: center;
-    font-size: 18px;
-    color: #666;
-    user-select: none;
-  }
-
-  .picker-item.selected {
-    color: #000;
-    font-weight: bold;
-  }
-
-  .picker-mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom,
-      rgba(240,240,240,1) 0%,
-      rgba(240,240,240,0) 30%,
-      rgba(240,240,240,0) 70%,
-      rgba(240,240,240,1) 100%);
-    pointer-events: none;
-  }
-
-  .picker-center-line {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 40px;
-    margin-top: -20px;
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
-    pointer-events: none;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>非循环 3D 滚轮选择器</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f0f0f0;
+    }
+    .picker {
+      position: relative;
+      width: 120px;
+      height: 200px;
+      overflow: hidden;
+      perspective: 1000px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .wheel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-style: preserve-3d;
+      transform: translate(-50%, -50%) rotateX(0deg);
+      transition: transform 0.2s ease-out;
+    }
+    .option {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      height: 30px;
+      line-height: 30px;
+      color: #666;
+      transition: color 0.3s;
+    }
+    .option.active {
+      color: #000;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    .highlight {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 30px;
+      margin-top: -15px;
+      border-top: 2px solid #007aff;
+      border-bottom: 2px solid #007aff;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-<div class="picker-container">
-  <div class="picker-list" id="pickerList"></div>
-  <div class="picker-mask"></div>
-  <div class="picker-center-line"></div>
-</div>
+  <div class="picker">
+    <div class="wheel" id="wheel"></div>
+    <div class="highlight"></div>
+  </div>
 
-<script>
-const items = ["苹果","香蕉","橙子","西瓜","葡萄","菠萝","草莓","芒果","樱桃","梨"];
-const itemHeight = 40;
-const pickerList = document.getElementById('pickerList');
+  <script>
+    const wheel = document.getElementById('wheel');
+    const optionCount = 30; // 改为 30 个
+    const optionHeight = 30;
+    const radius = 100;
+    let angle = 0;
+    let currentIndex = 0;
+    let startY = 0;
+    let startTime = 0;
+    let velocity = 0;
 
-// 渲染一份数组
-items.forEach(text=>{
-  const div = document.createElement('div');
-  div.className = 'picker-item';
-  div.innerText = text;
-  pickerList.appendChild(div);
-});
+    // 生成 30 个选项
+    for (let i = 0; i < optionCount; i++) {
+      const option = document.createElement('div');
+      option.className = 'option';
+      option.textContent = `选项 ${i + 1}`;
+      const rotateX = i * (360 / optionCount);
+      option.style.transform = `rotateX(${rotateX}deg) translateZ(${radius}px) translateX(-50%)`;
+      wheel.appendChild(option);
+    }
 
-let currentIndex = 0; 
-let startY = 0;
-let lastY = 0;
-let startTime = 0;
-let totalDelta = 0;
-let isDragging = false;
-let velocity = 0;
+    const options = document.querySelectorAll('.option');
 
-function updatePicker(animate = true){
-  pickerList.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
-  const offset = -currentIndex*itemHeight + Math.floor(5/2)*itemHeight;
-  pickerList.style.transform = `translateY(${offset}px)`;
-  document.querySelectorAll('.picker-item').forEach((el, idx)=>{
-    el.classList.toggle('selected', idx === currentIndex);
-  });
-}
+    function updateWheel() {
+      wheel.style.transform = `translate(-50%, -50%) rotateX(${angle}deg)`;
+      options.forEach((opt, i) => {
+        opt.classList.toggle('active', i === currentIndex);
+      });
+    }
 
-// 限制范围
-function clampIndex(){
-  if(currentIndex < 0) currentIndex = 0;
-  if(currentIndex >= items.length) currentIndex = items.length - 1;
-}
+    function clampIndex(index) {
+      return Math.max(0, Math.min(optionCount - 1, index));
+    }
 
-// 事件处理
-function startDrag(e){
-  isDragging = true;
-  startY = e.touches ? e.touches[0].clientY : e.clientY;
-  lastY = startY;
-  startTime = Date.now();
-  totalDelta = 0;
-  pickerList.style.transition = 'none';
-}
+    function setIndex(index) {
+      currentIndex = clampIndex(index);
+      angle = -currentIndex * (360 / optionCount);
+      updateWheel();
+    }
 
-function moveDrag(e){
-  if(!isDragging) return;
-  e.preventDefault();
-  const y = e.touches ? e.touches[0].clientY : e.clientY;
-  const delta = y - lastY;
-  totalDelta += delta;
-  lastY = y;
+    // 拖拽逻辑
+    wheel.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].clientY;
+      startTime = Date.now();
+      wheel.style.transition = 'none';
+    });
 
-  const now = Date.now();
-  const dt = now - startTime;
-  if(dt > 0){
-    velocity = delta / dt; // px/ms
-  }
-  startTime = now;
+    wheel.addEventListener('touchmove', (e) => {
+      const deltaY = e.touches[0].clientY - startY;
+      angle += deltaY * 0.3;
+      startY = e.touches[0].clientY;
+      updateWheel();
+    });
 
-  const offset = -currentIndex*itemHeight + Math.floor(5/2)*itemHeight + totalDelta;
-  pickerList.style.transform = `translateY(${offset}px)`;
-}
+    wheel.addEventListener('touchend', (e) => {
+      const deltaTime = Date.now() - startTime;
+      const deltaY = e.changedTouches[0].clientY - startY;
+      velocity = deltaY / deltaTime;
 
-function endDrag(){
-  if(!isDragging) return;
-  isDragging = false;
+      let move = Math.round(velocity * 10);
+      if (Math.abs(move) < 1) move = deltaY > 0 ? -1 : 1;
 
-  // 基于位移判断最少移动
-  let moved = Math.round(totalDelta / itemHeight);
+      setIndex(currentIndex + move);
 
-  // 如果速度足够快，加上惯性
-  if(Math.abs(velocity) > 0.5){ 
-    moved += Math.round(velocity * 10); // 惯性因子
-  }
+      wheel.style.transition = 'transform 0.3s ease-out';
+    });
 
-  // 限制不要太夸张
-  if(moved > 5) moved = 5;
-  if(moved < -5) moved = -5;
-
-  // 轻滑最多 ±1
-  if(Math.abs(totalDelta) < itemHeight/2 && Math.abs(moved) === 0){
-    moved = (totalDelta > 0) ? -1 : 1;
-  }
-
-  currentIndex -= moved;
-  clampIndex();
-  updatePicker(true);
-}
-
-pickerList.addEventListener('mousedown', startDrag);
-pickerList.addEventListener('mousemove', moveDrag);
-pickerList.addEventListener('mouseup', endDrag);
-pickerList.addEventListener('mouseleave', endDrag);
-pickerList.addEventListener('touchstart', startDrag);
-pickerList.addEventListener('touchmove', moveDrag, {passive:false});
-pickerList.addEventListener('touchend', endDrag);
-
-// 鼠标滚轮
-pickerList.addEventListener('wheel', function(e){
-  e.preventDefault();
-  currentIndex += e.deltaY>0?1:-1;
-  clampIndex();
-  updatePicker();
-},{passive:false});
-
-updatePicker(false);
-</script>
+    // 初始状态
+    setIndex(0);
+  </script>
 </body>
 </html>

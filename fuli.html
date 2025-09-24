@@ -1,510 +1,120 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>复利计算器</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仿 iPhone 滚轮</title>
 <style>
-:root {
-  --input-scroll-width: 86px;
-  --scroll-height: 280px;
-  --form-gap: 20px; 
-  --bg-color: #1e1e1e;
-  --text-color: #eee;
-  --input-bg: #2c2c2c;
-  --input-border: #555;
-  --picker-bg: #222;
-  --picker-item-height: 40px;
-}
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #111;
+    color: #fff;
+    margin: 0;
+  }
 
-html, body { 
-  margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; 
-  background: var(--bg-color); color: var(--text-color); 
-  height:100%; overscroll-behavior: none; 
-}
-body { display:flex; flex-direction:column; overflow-x:hidden; }
+  .picker {
+    position: relative;
+    width: 120px;
+    height: 200px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #222;
+  }
 
-.chart-container { height:50%; padding:0; box-sizing:border-box; position:relative; }
-canvas { width:100% !important; height:100% !important; display:block; border-radius:8px; }
+  .picker ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    transition: transform 0.2s ease-out;
+  }
 
-#topValues {
-  position:absolute;
-  top:5px;
-  left:50%;
-  transform: translateX(-50%);
-  display:flex;
-  gap:20px;
-  font-size:14px;
-  font-weight:bold;
-  color:#1e90ff;
-  pointer-events:none;
-  z-index:10;
-}
+  .picker li {
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    font-size: 20px;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+  }
 
-.form { display:flex; justify-content: space-between; align-items:flex-start; padding: 0 var(--form-gap); flex:1; }
+  .picker li.active {
+    font-size: 24px;
+    font-weight: bold;
+    opacity: 1;
+    color: #4CAF50;
+  }
 
-.input-group { display:flex; flex-direction:column; align-items:center; width: var(--input-scroll-width); }
-.input-wrapper { display:flex; flex-direction:column; align-items:center; margin-bottom:5px; }
-.input-wrapper input { padding:8px 0; font-size:16px; border-radius:8px; border:1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); text-align:center; width: var(--input-scroll-width); box-sizing: border-box; }
-
-/* ========== iPhone-like picker (替代竖向滑条) ========== */
-.picker {
-  width: var(--input-scroll-width);
-  height: var(--scroll-height);
-  position:relative;
-  overflow:hidden;
-  border-radius:8px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  touch-action:none;
-  -webkit-user-select:none;
-  user-select:none;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.picker .wheel {
-  position: absolute;
-  width:100%;
-  will-change: transform;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-/* 每一项高度（注意与 JS 中保持一致） */
-.picker .item {
-  height: var(--picker-item-height);
-  line-height: var(--picker-item-height);
-  font-size:16px;
-  width:100%;
-  text-align:center;
-  color:var(--text-color);
-  box-sizing:border-box;
-}
-
-/* 中间高亮条 */
-.picker::after{
-  content:"";
-  position:absolute;
-  left:0;
-  right:0;
-  height:var(--picker-item-height);
-  top: calc(50% - var(--picker-item-height)/2);
-  border-top:1px solid rgba(255,255,255,0.06);
-  border-bottom:1px solid rgba(255,255,255,0.06);
-  pointer-events:none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
-}
-
-/* 上下渐隐 mask，更像 iOS */
-.picker::before{
-  content:"";
-  position:absolute;
-  left:0; right:0; top:0; bottom:0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.0) 25%, rgba(0,0,0,0.0) 75%, rgba(0,0,0,0.6) 100%);
-  pointer-events:none;
-}
-
-/* 隐藏你原来的滚动条样式（如果有残留） */
-.scroll-bar-vertical { display:none; }
-
-.right-nav {
-  position: fixed;
-  top:0;
-  right:-35%; 
-  width:35%;
-  max-width:300px;
-  height:100%;
-  background:#2c2c2c;
-  display:flex;
-  flex-direction: column;
-  justify-content: center;
-  transition:right 0.3s ease;
-  z-index:200;
-  box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
-  border-radius: 8px 0 0 8px;
-  touch-action: none;
-}
-.right-nav.expanded { right:0; }
-.right-nav .nav-item { color: #eee; padding: 15px; text-align: center; cursor: pointer; border-bottom: 1px solid #444; }
-.right-nav .nav-item:hover { background: #1e1e1e; }
-.right-nav .nav-item a { color: inherit; text-decoration:none; display:block; width:100%; height:100%; }
-
-.overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); display:none; z-index:150; touch-action: none; }
-.overlay.show { display:block; }
-
-.gesture-right { position: fixed; top:0; right:0; width:30px; height:100%; z-index:250; background:transparent; touch-action:none; }
+  /* 中间选中框 */
+  .picker::after {
+    content: "";
+    position: absolute;
+    top: 80px;
+    left: 0;
+    right: 0;
+    height: 40px;
+    border-top: 2px solid #4CAF50;
+    border-bottom: 2px solid #4CAF50;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
 
-<div class="chart-container">
-  <canvas id="balanceChart"></canvas>
-  <div id="topValues">
-    <div id="resultBox">倍率：--X</div>
-    <div id="finalValue">终值：--</div>
-  </div>
+<div class="picker" id="picker">
+  <ul id="list">
+    <li>0.5</li>
+    <li>1.0</li>
+    <li>1.5</li>
+    <li>2.0</li>
+    <li>2.5</li>
+    <li>3.0</li>
+    <li>3.5</li>
+    <li>4.0</li>
+  </ul>
 </div>
-
-<div class="form">
-  <div class="input-group">
-    <span class="input-label">本金</span>
-    <div class="input-wrapper">
-      <input type="number" id="principal" value="1" min="1" max="99"/>
-    </div>
-    <!-- picker 替换 -->
-    <div class="picker" id="principalPicker" aria-label="本金选择器"></div>
-  </div>
-
-  <div class="input-group">
-    <span class="input-label">利率(%)</span>
-    <div class="input-wrapper">
-      <input type="number" id="rate" value="10" min="0.5" max="50" step="0.5"/>
-    </div>
-    <div class="picker" id="ratePicker" aria-label="利率选择器"></div>
-  </div>
-
-  <div class="input-group">
-    <span class="input-label">期数</span>
-    <div class="input-wrapper">
-      <input type="number" id="periods" value="12" min="1" max="120"/>
-    </div>
-    <div class="picker" id="periodsPicker" aria-label="期数选择器"></div>
-  </div>
-</div>
-
-<div class="right-nav" id="rightNav">
-  <div class="nav-item"><a href="index.html">首页</a></div>
-  <div class="nav-item"><a href="ykbsl.html">盈亏比&胜率</a></div>
-</div>
-
-<div class="overlay" id="overlay"></div>
-<div class="gesture-right" id="gestureRight"></div>
-
-<!-- 短促 tick 音（base64 小音效） -->
-<audio id="tickAudio">
-  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav">
-</audio>
 
 <script>
-// ========== 工具函数 ==========
-function formatNumber(v){ return v.toFixed(1).replace(/\B(?=(\d{4})+(?!\d))/g, ','); }
+const picker = document.getElementById("picker");
+const list = document.getElementById("list");
+const items = list.querySelectorAll("li");
 
-// 触发短震动（若支持）
-function doHaptic(){
-  if(navigator.vibrate) navigator.vibrate(10);
-}
+let startY = 0, currentY = 0, offsetY = 0;
+const itemHeight = 40;
 
-// 播放短促声音（若支持）
-function playTick(){
-  const a = document.getElementById('tickAudio');
-  if(!a) return;
-  try {
-    a.currentTime = 0;
-    a.play().catch(()=>{ /* ignore */ });
-  } catch(e){}
-}
+// 初始化第 2 个 (1.0) 作为选中
+let currentIndex = 1;
+updateActive();
 
-// ========== 复利计算器逻辑（保留原有） ==========
-let chart=null;
-function calculate(){
-  const p = parseFloat(document.getElementById('principal').value) || 0;
-  const r = parseFloat(document.getElementById('rate').value)/100 || 0;
-  const n = parseInt(document.getElementById('periods').value) || 0;
-  if(!p || !r || !n){ if(chart){chart.destroy(); chart=null;} return; }
-
-  const balances=[], labels=[];
-  for(let i=1;i<=n;i++){ balances.push(+(p*Math.pow(1+r,i)).toFixed(1)); labels.push(i); }
-
-  if(chart){
-    chart.data.labels = labels;
-    chart.data.datasets[0].data = balances;
-    chart.update();
-  } else {
-    const ctx=document.getElementById('balanceChart').getContext('2d');
-    chart=new Chart(ctx,{
-      type:'line',
-      data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#1e90ff', fill:false, tension:0.2, pointBackgroundColor:'#1e90ff'}]},
-      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, datalabels:{color:'#1e90ff', font:{size:14}, anchor:'end', align:'top', formatter:formatNumber}}, layout:{padding:{top:30, right:30}}, scales:{y:{beginAtZero:false, ticks:{callback:formatNumber,color:'#eee'}, grid:{color:'#444'}}, x:{ticks:{color:'#eee'}, grid:{color:'#444'}}}}, plugins:[ChartDataLabels]
-    });
-  }
-
-  document.getElementById('finalValue').textContent='终值：'+formatNumber(balances[n-1]);
-  document.getElementById('resultBox').textContent='倍率：'+(balances[n-1]/p).toFixed(1)+'X';
-}
-
-// ========== Picker 生成与交互逻辑 ==========
-/*
-  实现要点：
-  - values: 数组（显示文本和对应数值）
-  - 每项高度由 CSS 变量 --picker-item-height 控制（40px）
-  - 支持 touch & mouse
-  - 拖动时连续播放 tick（节流），最终 snap 到最近一项并触发震动+音效
-*/
-const ITEM_HEIGHT = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--picker-item-height')) || 40;
-
-function createValues(start, end, step){
-  const vals = [];
-  for(let v = start; v <= end + 1e-9; v = +(v + step).toFixed(10)){
-    vals.push(+v);
-  }
-  return vals;
-}
-
-function makePicker(pickerEl, values, initialValue, onChange){
-  // 创建 wheel DOM
-  const wheel = document.createElement('div');
-  wheel.className = 'wheel';
-  // 前后补空项，使首尾能居中
-  const padCount = Math.floor((parseInt(getComputedStyle(pickerEl).height) / ITEM_HEIGHT - 1) / 2) || 3;
-  for(let i=0;i<padCount;i++){
-    const e = document.createElement('div'); e.className='item'; e.textContent=''; wheel.appendChild(e);
-  }
-  values.forEach(v=>{
-    const it = document.createElement('div'); it.className='item'; it.textContent = (Math.round(v) === v ? String(v) : String(v)); wheel.appendChild(it);
-  });
-  for(let i=0;i<padCount;i++){
-    const e = document.createElement('div'); e.className='item'; e.textContent=''; wheel.appendChild(e);
-  }
-  pickerEl.appendChild(wheel);
-
-  // 状态
-  let offset = 0; // translateY
-  let minOffset = - (values.length - 1) * ITEM_HEIGHT;
-  // 初始定位到 initialValue（或中间）
-  let initIndex = values.indexOf(initialValue);
-  if(initIndex === -1){
-    // 如果没有，找最近
-    let closest = 0;
-    let mindiff = Infinity;
-    values.forEach((v,i)=>{ const d = Math.abs(v - initialValue); if(d < mindiff){ mindiff = d; closest = i; }});
-    initIndex = closest;
-  }
-  offset = -initIndex * ITEM_HEIGHT;
-  wheel.style.transform = `translateY(${offset}px)`;
-
-  // 交互
-  let startY = 0, startOffset = 0, lastY = 0, lastTime = 0, velocity = 0;
-  let ticking = false;
-  let lastPlayedIndex = null;
-
-  function setOffset(o, animate=false){
-    if(o > 0) o = 0;
-    if(o < minOffset) o = minOffset;
-    offset = o;
-    if(animate){
-      wheel.style.transition = 'transform 220ms cubic-bezier(.2,.9,.2,1)';
-      requestAnimationFrame(()=> wheel.style.transform = `translateY(${offset}px)`);
-      setTimeout(()=> wheel.style.transition = '', 250);
-    } else {
-      wheel.style.transform = `translateY(${offset}px)`;
-    }
-    // 计算当前 nearest index 并回调（实时）
-    const idx = Math.round(-offset / ITEM_HEIGHT);
-    if(idx !== lastPlayedIndex){
-      // 每跳一格播放声音（节流）
-      playTick();
-      lastPlayedIndex = idx;
-    }
-    if(typeof onChange === 'function'){
-      const val = values[Math.min(Math.max(idx,0),values.length-1)];
-      onChange(val);
-    }
-  }
-
-  function startDrag(y){
-    startY = y;
-    startOffset = offset;
-    lastY = y;
-    lastTime = performance.now();
-    velocity = 0;
-    lastPlayedIndex = Math.round(-offset / ITEM_HEIGHT);
-  }
-
-  function moveDrag(y){
-    const dy = y - startY;
-    const newOffset = startOffset + dy;
-    setOffset(newOffset, false);
-
-    // 速度估算
-    const now = performance.now();
-    const dt = now - lastTime || 16;
-    velocity = (y - lastY) / dt;
-    lastY = y;
-    lastTime = now;
-  }
-
-  function endDrag(){
-    // 基于速度进行简单的惯性滚动
-    // velocity px/ms -> 惯性位移
-    let inertia = velocity * 1200; // 调整系数以获得合适的惯性
-    let target = offset + inertia;
-    // snap 到最近项
-    const nearestIndex = Math.round(-target / ITEM_HEIGHT);
-    const clampedIndex = Math.min(Math.max(nearestIndex, 0), values.length - 1);
-    const finalOffset = -clampedIndex * ITEM_HEIGHT;
-    // 播放震动与声音
-    doHaptic();
-    playTick();
-    setOffset(finalOffset, true);
-  }
-
-  // 触摸事件
-  let active = false;
-  pickerEl.addEventListener('touchstart', e=>{
-    if(e.touches.length !== 1) return;
-    active = true;
-    wheel.style.transition = '';
-    startDrag(e.touches[0].clientY);
-  }, {passive:false});
-  pickerEl.addEventListener('touchmove', e=>{
-    if(!active) return;
-    e.preventDefault();
-    moveDrag(e.touches[0].clientY);
-  }, {passive:false});
-  pickerEl.addEventListener('touchend', e=>{
-    if(!active) return;
-    active = false;
-    endDrag();
-  });
-
-  // 鼠标事件（桌面）
-  let mouseDown = false;
-  pickerEl.addEventListener('mousedown', e=>{
-    mouseDown = true;
-    wheel.style.transition = '';
-    startDrag(e.clientY);
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove', e=>{
-    if(!mouseDown) return;
-    moveDrag(e.clientY);
-    e.preventDefault();
-  });
-  window.addEventListener('mouseup', e=>{
-    if(!mouseDown) return;
-    mouseDown = false;
-    endDrag();
-  });
-
-  // 外部可调用：设置索引
-  function setToValue(v, animate=true){
-    const idx = values.indexOf(v);
-    if(idx === -1) return;
-    const off = -idx * ITEM_HEIGHT;
-    setOffset(off, animate);
-  }
-
-  // 返回控制对象
-  return { setToValue, getCurrentIndex:()=>Math.round(-offset/ITEM_HEIGHT) };
-}
-
-// ========== 将 picker 与页面 input 绑定 ==========
-function bindPicker(pickerId, inputId, valuesArray){
-  const pickerEl = document.getElementById(pickerId);
-  const inputEl = document.getElementById(inputId);
-  const vals = valuesArray.slice();
-  // 回调：更新 input 的 value 与触发 calculate（去抖）
-  let throttleTimer = null;
-  const p = makePicker(pickerEl, vals, parseFloat(inputEl.value), (val)=>{
-    // 更新 input，但不要触发 input 的 focus 清空逻辑（你原始代码里对 focus 做了清空）
-    inputEl.value = val;
-    if(throttleTimer) clearTimeout(throttleTimer);
-    throttleTimer = setTimeout(()=>{ calculate(); throttleTimer = null; }, 60);
-  });
-  // 当 input 手动修改时也要同步 picker
-  inputEl.addEventListener('input', ()=>{
-    const v = (inputEl.type === 'number') ? parseFloat(inputEl.value) : inputEl.value;
-    p.setToValue(v);
-    calculate();
-  });
-  // 初始化
-  p.setToValue(parseFloat(inputEl.value));
-  return p;
-}
-
-// ========== 创建每个 picker 的值数组并绑定 ==========
-window.addEventListener('load', ()=>{
-  // principal 1..99
-  const principalVals = createValues(1, 99, 1);
-  // rate 0.5..50 step 0.5
-  const rateVals = createValues(0.5, 50, 0.5);
-  // periods 1..120
-  const periodVals = createValues(1, 120, 1);
-
-  bindPicker('principalPicker', 'principal', principalVals);
-  bindPicker('ratePicker', 'rate', rateVals);
-  bindPicker('periodsPicker', 'periods', periodVals);
-
-  // 你的原始逻辑里 input focus 会清空，我保留但改成不影响 picker（如需移除可删）
-  ['principal','rate','periods'].forEach(id=>{
-    const input=document.getElementById(id);
-    input.addEventListener('focus', ()=>{ /* 不再清空，以免影响用户选择 */ });
-  });
-
-  calculate();
+picker.addEventListener("touchstart", e => {
+  startY = e.touches[0].clientY - offsetY;
+  list.style.transition = "none";
 });
 
-// ========== 右侧导航逻辑（保留原有） ==========
-const rightNav = document.getElementById('rightNav');
-const overlay = document.getElementById('overlay');
+picker.addEventListener("touchmove", e => {
+  offsetY = e.touches[0].clientY - startY;
+  list.style.transform = `translateY(${offsetY}px)`;
+});
 
-function openNav(){
-  rightNav.classList.add('expanded');
-  overlay.classList.add('show');
-  document.body.style.overflow='hidden';
+picker.addEventListener("touchend", () => {
+  // 自动吸附
+  currentIndex = Math.round(-offsetY / itemHeight);
+  if (currentIndex < 0) currentIndex = 0;
+  if (currentIndex > items.length - 1) currentIndex = items.length - 1;
+  offsetY = -currentIndex * itemHeight;
+  list.style.transition = "transform 0.2s ease-out";
+  list.style.transform = `translateY(${offsetY}px)`;
+  updateActive();
+});
+
+function updateActive() {
+  items.forEach((li, i) => {
+    li.classList.toggle("active", i === currentIndex);
+  });
 }
-
-function closeNav(){
-  rightNav.classList.remove('expanded');
-  overlay.classList.remove('show');
-  document.body.style.overflow='';
-}
-
-// 点击遮罩关闭导航
-overlay.addEventListener('click', closeNav);
-
-// 点击导航栏空白区域收回导航（排除点击 nav-item 内部）
-rightNav.addEventListener('click', (e) => {
-  if (!e.target.closest('.nav-item')) {
-    closeNav();
-  }
-});
-
-// 点击导航链接自动收回导航
-document.querySelectorAll('.right-nav a').forEach(a=>{ a.addEventListener('click', closeNav); });
-
-// 右侧边缘手势打开导航
-const gestureRight = document.getElementById('gestureRight');
-let startX=0, startY=0;
-gestureRight.addEventListener('touchstart', e=>{
-  if(e.touches.length!==1) return;
-  e.preventDefault();
-  startX=e.touches[0].clientX;
-  startY=e.touches[0].clientY;
-},{passive:false});
-gestureRight.addEventListener('touchmove', e=>{
-  if(e.touches.length!==1) return;
-  e.preventDefault();
-},{passive:false});
-gestureRight.addEventListener('touchend', e=>{
-  const deltaX = startX - e.changedTouches[0].clientX;
-  if(Math.abs(deltaX)>30){ deltaX>0 ? openNav() : closeNav(); }
-  startX=0; startY=0;
-});
-
-// 导航栏内手势关闭
-let navStartX = 0;
-rightNav.addEventListener('touchstart', e=>{ if(e.touches.length!==1) return; navStartX = e.touches[0].clientX; },{passive:false});
-rightNav.addEventListener('touchmove', e=>{ if(e.touches.length!==1) return; e.preventDefault(); },{passive:false});
-rightNav.addEventListener('touchend', e=>{
-  const deltaX = e.changedTouches[0].clientX - navStartX;
-  if(deltaX > 30) closeNav();
-  navStartX = 0;
-});
 </script>
+
 </body>
 </html>

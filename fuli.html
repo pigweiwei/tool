@@ -80,15 +80,8 @@
   </div>
 
   <script>
-    // 滚动参数配置
-    const itemHeight = 40; // 每项高度
-    const frictionFast = 0.95; // 快速滑动时的惯性衰减系数
-    const frictionSlow = 0.75; // 轻轻滑动时的惯性衰减系数
-    const stopThreshold = 0.1; // 停止的速度阈值
-    const fastVelocityLimit = 2; // 判断“快速滑动”的速度阈值
-
-    const items = ["苹果","香蕉","橙子","西瓜","葡萄","菠萝","草莓","芒果","樱桃","梨",
-                   "选项1","选项2","选项3","选项4","选项5","选项6","选项7","选项8","选项9","选项10"];
+    const items = ["苹果", "香蕉", "橙子", "西瓜", "葡萄", "菠萝", "草莓", "芒果", "樱桃", "梨", "选项1", "选项2", "选项3", "选项4", "选项5", "选项6", "选项7", "选项8", "选项9", "选项10"];
+    const itemHeight = 40;
     const pickerList = document.getElementById('pickerList');
 
     // 创建元素
@@ -122,23 +115,20 @@
     }
 
     function momentumScroll() {
-      if (Math.abs(velocity) > fastVelocityLimit) {
-        velocity *= frictionFast;
-      } else {
-        velocity *= frictionSlow;
-      }
-
-      if (Math.abs(velocity) < stopThreshold) {
-        currentIndex = Math.round(currentIndex);
+      // 使用 Popmotion 的惯性滚动 API
+      inertia({
+        velocity,
+        from: currentIndex,
+        modifyTarget: v => Math.round(v),
+        bounceStiffness: 500,
+        bounceDamping: 30,
+        power: 0.8,
+        timeConstant: 350
+      }).start(v => {
+        currentIndex = v;
         clampIndex();
         updatePicker();
-        return;
-      }
-
-      currentIndex -= velocity;
-      clampIndex();
-      updatePicker(false);
-      animationFrameId = requestAnimationFrame(momentumScroll);
+      });
     }
 
     function startDrag(e) {

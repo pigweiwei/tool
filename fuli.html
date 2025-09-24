@@ -3,13 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚轮（高级阻尼）</title>
+<title>iOS 风格滚轮（阻尼+收窄横条）</title>
 <style>
 html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
 .picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
 .picker-list { position:absolute; top:0; left:0; right:0; transform-style: preserve-3d; }
 .picker-item { height:70px; display:flex; justify-content:center; align-items:center; font-size:28px; color:#aaa; transition: all 0.1s; }
-.selected-bar { position:absolute; top:50%; transform:translateY(-50%); left:0; right:0; height:70px; background: rgba(30,144,255,0.2); pointer-events:none; border-radius:8px; z-index:10;}
+.selected-bar { 
+  position:absolute; 
+  top:50%; 
+  transform:translateY(-50%); 
+  left:0; 
+  right:0; 
+  height:49px; /* 收窄 30% */
+  background: rgba(30,144,255,0.2); 
+  pointer-events:none; 
+  border-radius:8px; 
+  z-index:10;
+}
 .spacer { height:200px; }
 .mask-top, .mask-bottom { position:absolute; left:0; width:100%; height:100px; z-index:5; pointer-events:none;}
 .mask-top { top:0; background: linear-gradient(to bottom, #111 0%, transparent 100%);}
@@ -36,7 +47,6 @@ for(let v=min; v<=max; v+=step) values.push(v.toFixed(1));
 list.innerHTML = '<div class="spacer"></div>' + values.map(v=>`<div class="picker-item">${v}</div>`).join('') + '<div class="spacer"></div>';
 const items = list.querySelectorAll('.picker-item');
 
-// 修正 offset，让第一个数字正好居中
 let offset = picker.clientHeight/2 - itemHeight/2 - itemHeight*2;
 let startY = 0;
 let velocity = 0;
@@ -79,29 +89,26 @@ function spring(o){
     return 0;
 }
 
-// ================== 高级非线性阻尼 animate ==================
+// 高级阻尼 + 可控快速惯性
 function animate() {
     const springForce = spring(offset);
 
-    // 非线性阻尼：慢速精确，快速加大阻力
-    let damping = 0.92;
-    if(Math.abs(velocity) > 10) damping = 0.85;
+    let damping = 0.95;
+    const absVel = Math.abs(velocity);
+    if(absVel > 5) damping = 0.88; // 快速滑动阻力大
     velocity *= damping;
 
-    // 应用弹簧力
     offset += velocity - springForce;
 
-    // 最大速度限制
-    const maxVel = 15;
+    const maxVel = 25;
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
 
     render();
 
-    if(Math.abs(velocity) > 0.5 || Math.abs(springForce) > 0.5) 
+    if(Math.abs(velocity) > 0.5 || Math.abs(springForce) > 0.5)
         animFrame = requestAnimationFrame(animate);
-    else{
-        // 平滑对齐最近数字
+    else {
         let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2)/itemHeight);
         offset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2;
         render();

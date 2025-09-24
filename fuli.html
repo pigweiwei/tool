@@ -64,10 +64,11 @@ html, body {
 .wheel::after { bottom: 0; background: linear-gradient(to top, #1c1c1e, transparent); }
 
 .wheel-content {
-    scroll-snap-type: y mandatory;
-    -webkit-overflow-scrolling: touch;
     overflow-y: scroll;
     height: 100%;
+    padding: calc(50% - 40px) 0; /* 顶部底部填充让选中项居中 */
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
 }
 
 .wheel-content div {
@@ -79,19 +80,18 @@ html, body {
     transform-origin: center center -40px;
 }
 
-/* iPhone 横幅红线 */
+/* 红色横幅 */
 .wheel-line {
     position: absolute;
-    top: 50%; /* 红线居中 */
+    top: 50%;
     left: 0;
     width: 100%;
-    height: 40px; /* 红线加高 */
+    height: 40px;
     background: rgba(255,59,48,0.2);
     pointer-events: none;
     border-radius: 8px;
 }
 
-/* 高亮数字 */
 .wheel-content div.selected {
     color: #ff3b30 !important;
     font-weight: bold !important;
@@ -128,7 +128,7 @@ html, body {
 </div>
 
 <script>
-// 仓位使用分数表示
+// 仓位分数
 const ratios = ['1','1/2','1/3','1/4','1/5','1/6','1/7','1/8','1/9','1/10'];
 const multipliers = Array.from({length:40}, (_,i)=>(0.5*(i+1)).toFixed(1));
 
@@ -146,10 +146,6 @@ function populateWheel(wheel, items){
 populateWheel(ratioWheel, ratios);
 populateWheel(multiplierWheel, multipliers);
 
-function getSelectedIndex(wheel){
-    return Math.round(wheel.scrollTop / 80);
-}
-
 function parseRatio(str){
     if(str.includes('/')){
         const [num, denom] = str.split('/').map(Number);
@@ -161,7 +157,7 @@ function updateSelection(){
     [ratioWheel, multiplierWheel].forEach(wheel=>{
         Array.from(wheel.children).forEach((child, i)=>{
             child.classList.remove('selected');
-            const offset = getSelectedIndex(wheel) - i;
+            const offset = Math.round((wheel.scrollTop)/80) - i;
             const scale = Math.max(0.5, 1 - Math.abs(offset)*0.2);
             const opacity = Math.max(0.3, 1 - Math.abs(offset)*0.3);
             const rotateX = offset * 25;
@@ -171,61 +167,37 @@ function updateSelection(){
         });
     });
 
-    const ratio = parseRatio(ratios[getSelectedIndex(ratioWheel)]);
-    const multiplier = parseFloat(multipliers[getSelectedIndex(multiplierWheel)]);
+    const ratio = parseRatio(ratios[Math.round(ratioWheel.scrollTop/80)]);
+    const multiplier = parseFloat(multipliers[Math.round(multiplierWheel.scrollTop/80)]);
     totalProfitDisplay.textContent = `总仓盈亏：${(ratio*multiplier).toFixed(2)}`;
 }
 
-function elasticScroll(target, velocity){
-    let pos = target.scrollTop;
-    function step(){
-        const damping = 0.93 + Math.min(Math.abs(velocity)/50, 0.05);
-        velocity *= damping;
-        pos += velocity;
-
-        if(pos < 0){ pos = pos*0.3; velocity = 0; }
-        else if(pos > target.scrollHeight - target.clientHeight){
-            const excess = pos - (target.scrollHeight - target.clientHeight);
-            pos = (target.scrollHeight - target.clientHeight) + excess*0.3;
-            velocity = 0;
-        }
-
-        target.scrollTop = pos;
-        updateSelection();
-
-        if(Math.abs(velocity) > 0.1){
-            requestAnimationFrame(step);
-        } else {
-            const index = getSelectedIndex(target);
-            target.scrollTo({top: index*80, behavior: 'smooth'});
-        }
-    }
-    requestAnimationFrame(step);
+// 自动吸附到最近刻度
+function snapToClosest(wheel){
+    const index = Math.round(wheel.scrollTop / 80);
+    wheel.scrollTo({top: index*80, behavior: 'smooth'});
+    updateSelection();
 }
 
 function attachWheel(wheel){
-    let lastY = 0, velocity = 0, isMouseDown = false;
+    let lastY = 0, isMouseDown = false;
 
-    wheel.addEventListener('touchstart', e=>{
-        lastY = e.touches[0].clientY;
-        velocity = 0;
-        e.preventDefault();
-    });
+    const moveHandler = (delta)=>{
+        wheel.scrollTop += delta;
+        updateSelection();
+    }
+
+    wheel.addEventListener('touchstart', e=>{ lastY = e.touches[0].clientY; });
     wheel.addEventListener('touchmove', e=>{
         const delta = lastY - e.touches[0].clientY;
         lastY = e.touches[0].clientY;
-        wheel.scrollTop += delta;
-        velocity = delta;
-        updateSelection();
+        moveHandler(delta);
         e.preventDefault();
     });
-    wheel.addEventListener('touchend', e=>{
-        elasticScroll(wheel, velocity);
-    });
+    wheel.addEventListener('touchend', e=>{ snapToClosest(wheel); });
 
     wheel.addEventListener('mousedown', e=>{
         lastY = e.clientY;
-        velocity = 0;
         isMouseDown = true;
         e.preventDefault();
     });
@@ -233,15 +205,13 @@ function attachWheel(wheel){
         if(isMouseDown){
             const delta = lastY - e.clientY;
             lastY = e.clientY;
-            wheel.scrollTop += delta;
-            velocity = delta;
-            updateSelection();
+            moveHandler(delta);
         }
     });
     window.addEventListener('mouseup', e=>{
         if(isMouseDown){
             isMouseDown = false;
-            elasticScroll(wheel, velocity);
+            snapToClosest(wheel);
         }
     });
 }

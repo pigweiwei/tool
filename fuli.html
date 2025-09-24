@@ -1,132 +1,184 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>非循环滚轮选择器</title>
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #f0f0f0;
-      overflow: hidden;      /* 禁止页面整体滚动 */
-      touch-action: none;    /* 阻止系统手势 */
-    }
-    .picker {
-      position: relative;
-      width: 120px;
-      height: 200px;
-      overflow: hidden;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      background: #fff;
-    }
-    .wheel {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) translateY(0);
-      transition: transform 0.2s ease-out;
-    }
-    .option {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 18px;
-      height: 30px;
-      line-height: 30px;
-      color: #666;
-      transition: color 0.3s, font-size 0.3s;
-    }
-    .option.active {
-      color: #000;
-      font-weight: bold;
-      font-size: 20px;
-    }
-    .highlight {
-      position: absolute;
-      top: 50%;
-      left: 0;
-      width: 100%;
-      height: 30px;
-      margin-top: -15px;
-      border-top: 2px solid #007aff;
-      border-bottom: 2px solid #007aff;
-      pointer-events: none;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iOS 风格滚动选择器</title>
+<style>
+  body {
+    margin: 0;
+    font-family: sans-serif;
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    background: #f0f0f0;
+    overflow: hidden;
+  }
+
+  .picker-container {
+    width: 200px;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    touch-action: none;
+  }
+
+  .picker-list {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+    transition: transform 0.2s ease-out;
+  }
+
+  .picker-item {
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    font-size: 18px;
+    color: #666;
+    user-select: none;
+  }
+
+  .picker-item.selected {
+    color: #000;
+    font-weight: bold;
+  }
+
+  .picker-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(240,240,240,1) 0%, rgba(240,240,240,0) 30%, rgba(240,240,240,0) 70%, rgba(240,240,240,1) 100%);
+    pointer-events: none;
+  }
+
+  .picker-center-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    margin-top: -20px;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    pointer-events: none;
+  }
+</style>
 </head>
 <body>
-  <div class="picker">
-    <div class="wheel" id="wheel"></div>
-    <div class="highlight"></div>
-  </div>
+<div class="picker-container">
+  <div class="picker-list" id="pickerList"></div>
+  <div class="picker-mask"></div>
+  <div class="picker-center-line"></div>
+</div>
 
-  <script>
-    const wheel = document.getElementById('wheel');
-    const optionCount = 30;  // 30个选项
-    const optionHeight = 30;
-    let currentIndex = 0;
-    let startY = 0;
-    let startTime = 0;
-    let offsetY = 0;
+<script>
+const items = ["苹果","香蕉","橙子","西瓜","葡萄","菠萝","草莓","芒果","樱桃","梨","选项1","选项2","选项3","选项4","选项5","选项6","选项7","选项8","选项9","选项10"]; 
+const itemHeight = 40;
+const pickerList = document.getElementById('pickerList');
 
-    // 生成竖直堆叠的选项
-    for (let i = 0; i < optionCount; i++) {
-      const option = document.createElement('div');
-      option.className = 'option';
-      option.textContent = `选项 ${i + 1}`;
-      option.style.top = `${i * optionHeight}px`;
-      wheel.appendChild(option);
-    }
-    const options = document.querySelectorAll('.option');
+// 无限循环数组：前后各复制一份
+const extendedItems = [...items, ...items, ...items];
+extendedItems.forEach(text=>{
+  const div = document.createElement('div');
+  div.className = 'picker-item';
+  div.innerText = text;
+  pickerList.appendChild(div);
+});
 
-    function updateWheel() {
-      wheel.style.transform = `translate(-50%, -50%) translateY(${-currentIndex * optionHeight}px)`;
-      options.forEach((opt, i) => {
-        opt.classList.toggle('active', i === currentIndex);
-      });
-    }
+let currentIndex = items.length; // 初始为中间一组第一个
+let startY = 0;
+let startTime = 0;
+let lastY = 0;
+let velocity = 0;
+let isDragging = false;
+let animationFrameId = null;
 
-    function clampIndex(index) {
-      return Math.max(0, Math.min(optionCount - 1, index));
-    }
+function updatePicker(animate = true){
+  pickerList.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
+  const offset = -currentIndex*itemHeight + Math.floor(5/2)*itemHeight;
+  pickerList.style.transform = `translateY(${offset}px)`;
+  document.querySelectorAll('.picker-item').forEach((el, idx)=>{
+    el.classList.toggle('selected', idx === currentIndex);
+  });
+}
 
-    function setIndex(index) {
-      currentIndex = clampIndex(index);
-      updateWheel();
-    }
+// 调整循环
+function adjustLoop(){
+  if(currentIndex < items.length) currentIndex += items.length;
+  if(currentIndex >= items.length*2) currentIndex -= items.length;
+  updatePicker(false);
+}
 
-    // 触摸逻辑
-    wheel.addEventListener('touchstart', (e) => {
-      startY = e.touches[0].clientY;
-      startTime = Date.now();
-      wheel.style.transition = 'none';
-    });
+// 惯性滚动
+function momentumScroll(){
+  velocity *= 0.95;
+  if(Math.abs(velocity) < 0.02){
+    // 吸附到最近选项
+    currentIndex = Math.round(currentIndex - velocity);
+    adjustLoop();
+    updatePicker();
+    return;
+  }
+  currentIndex -= velocity;
+  adjustLoop();
+  updatePicker(false);
+  animationFrameId = requestAnimationFrame(momentumScroll);
+}
 
-    wheel.addEventListener('touchmove', (e) => {
-      const deltaY = e.touches[0].clientY - startY;
-      offsetY = deltaY;
-      wheel.style.transform = `translate(-50%, -50%) translateY(${-(currentIndex * optionHeight - deltaY)}px)`;
-    });
+// 事件处理
+function startDrag(e){
+  cancelAnimationFrame(animationFrameId);
+  isDragging = true;
+  startY = e.touches ? e.touches[0].clientY : e.clientY;
+  lastY = startY;
+  startTime = Date.now();
+  velocity = 0;
+}
 
-    wheel.addEventListener('touchend', (e) => {
-      const deltaY = e.changedTouches[0].clientY - startY;
-      const deltaTime = Date.now() - startTime;
-      let velocity = deltaY / deltaTime;
+function moveDrag(e){
+  if(!isDragging) return;
+  e.preventDefault();
+  const y = e.touches ? e.touches[0].clientY : e.clientY;
+  const delta = y - lastY;
+  currentIndex -= delta/itemHeight;
+  updatePicker(false);
+  const now = Date.now();
+  velocity = delta / (now - startTime);
+  startTime = now;
+  lastY = y;
+}
 
-      let move = Math.round(velocity * 10);
-      if (Math.abs(move) < 1) move = deltaY > 0 ? -1 : 1;
+function endDrag(){
+  if(!isDragging) return;
+  isDragging = false;
+  momentumScroll();
+}
 
-      setIndex(currentIndex - move); // 向下滑动增加index
-      wheel.style.transition = 'transform 0.3s ease-out';
-    });
+pickerList.addEventListener('mousedown', startDrag);
+pickerList.addEventListener('mousemove', moveDrag);
+pickerList.addEventListener('mouseup', endDrag);
+pickerList.addEventListener('mouseleave', endDrag);
+pickerList.addEventListener('touchstart', startDrag);
+pickerList.addEventListener('touchmove', moveDrag, {passive:false});
+pickerList.addEventListener('touchend', endDrag);
 
-    // 初始
-    setIndex(0);
-  </script>
+// 鼠标滚轮
+pickerList.addEventListener('wheel', function(e){
+  e.preventDefault();
+  currentIndex += e.deltaY>0?1:-1;
+  adjustLoop();
+  updatePicker();
+},{passive:false});
+
+updatePicker(false);
+</script>
 </body>
 </html>

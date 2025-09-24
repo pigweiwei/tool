@@ -55,7 +55,11 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, rgba(240,240,240,1) 0%, rgba(240,240,240,0) 30%, rgba(240,240,240,0) 70%, rgba(240,240,240,1) 100%);
+    background: linear-gradient(to bottom,
+      rgba(240,240,240,1) 0%,
+      rgba(240,240,240,0) 30%,
+      rgba(240,240,240,0) 70%,
+      rgba(240,240,240,1) 100%);
     pointer-events: none;
   }
 
@@ -95,11 +99,9 @@ extendedItems.forEach(text=>{
 
 let currentIndex = items.length; // 初始为中间一组第一个
 let startY = 0;
-let startTime = 0;
 let lastY = 0;
-let velocity = 0;
+let totalDelta = 0;
 let isDragging = false;
-let animationFrameId = null;
 
 function updatePicker(animate = true){
   pickerList.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
@@ -117,30 +119,13 @@ function adjustLoop(){
   updatePicker(false);
 }
 
-// 惯性滚动
-function momentumScroll(){
-  velocity *= 0.95;
-  if(Math.abs(velocity) < 0.02){
-    // 吸附到最近选项
-    currentIndex = Math.round(currentIndex - velocity);
-    adjustLoop();
-    updatePicker();
-    return;
-  }
-  currentIndex -= velocity;
-  adjustLoop();
-  updatePicker(false);
-  animationFrameId = requestAnimationFrame(momentumScroll);
-}
-
 // 事件处理
 function startDrag(e){
-  cancelAnimationFrame(animationFrameId);
   isDragging = true;
   startY = e.touches ? e.touches[0].clientY : e.clientY;
   lastY = startY;
-  startTime = Date.now();
-  velocity = 0;
+  totalDelta = 0;
+  pickerList.style.transition = 'none';
 }
 
 function moveDrag(e){
@@ -148,18 +133,26 @@ function moveDrag(e){
   e.preventDefault();
   const y = e.touches ? e.touches[0].clientY : e.clientY;
   const delta = y - lastY;
-  currentIndex -= delta/itemHeight;
-  updatePicker(false);
-  const now = Date.now();
-  velocity = delta / (now - startTime);
-  startTime = now;
+  totalDelta += delta;
   lastY = y;
+
+  // 临时跟随拖动
+  const offset = -currentIndex*itemHeight + Math.floor(5/2)*itemHeight + totalDelta;
+  pickerList.style.transform = `translateY(${offset}px)`;
 }
 
 function endDrag(){
   if(!isDragging) return;
   isDragging = false;
-  momentumScroll();
+
+  // 计算滚动几个 item，轻轻滑一下最多 ±1
+  let moved = Math.round(totalDelta / itemHeight);
+  if(moved > 1) moved = 1;
+  if(moved < -1) moved = -1;
+
+  currentIndex -= moved;
+  adjustLoop();
+  updatePicker(true);
 }
 
 pickerList.addEventListener('mousedown', startDrag);

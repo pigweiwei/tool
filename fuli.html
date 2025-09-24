@@ -5,9 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>仿 iOS 3D 滚轮选择器</title>
 <style>
-/* ---------------- popoPicker 样式核心 ---------------- */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body, html { width: 100%; height: 100%; font-family: Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body, html { width:100%; height:100%; font-family:Arial,sans-serif; background:#f5f5f5; display:flex; justify-content:center; align-items:center; overflow:hidden; }
 
 .picker-container {
   perspective: 1000px;
@@ -18,109 +17,121 @@ body, html { width: 100%; height: 100%; font-family: Arial, sans-serif; backgrou
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  touch-action: none; /* 阻止默认滑动 */
 }
 
 .picker-wheel {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 50%;
+  list-style:none;
+  padding:0;
+  margin:0;
+  position:absolute;
+  width:100%;
+  height:100%;
+  top:50%;
   transform-style: preserve-3d;
   transform: translateY(-50%);
   transition: transform 0.2s cubic-bezier(.25,.1,.25,1);
 }
 
 .picker-wheel li {
-  text-align: center;
+  text-align:center;
   height: 40px;
-  line-height: 40px;
-  font-size: 18px;
-  color: #888;
-  position: absolute;
-  width: 100%;
-  left: 0;
-  top: 50%;
+  line-height:40px;
+  font-size:18px;
+  color:#888;
+  position:absolute;
+  width:100%;
+  left:0;
+  top:50%;
   transform-origin: center -80px;
 }
 
 .picker-wheel li.active {
-  color: #000;
-  font-weight: bold;
-  font-size: 20px;
+  color:#000;
+  font-weight:bold;
+  font-size:20px;
 }
 
 .picker-highlight {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 40px;
-  margin-top: -20px;
-  border-top: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
-  pointer-events: none;
+  position:absolute;
+  top:50%;
+  left:0;
+  width:100%;
+  height:40px;
+  margin-top:-20px;
+  border-top:1px solid #ccc;
+  border-bottom:1px solid #ccc;
+  pointer-events:none;
 }
-
-/* ---------------- end 样式 ---------------- */
 </style>
 </head>
 <body>
 
 <div class="picker-container">
-  <ul class="picker-wheel" id="pickerWheel">
-    <!-- 选项会通过 JS 渲染 -->
-  </ul>
+  <ul class="picker-wheel" id="pickerWheel"></ul>
   <div class="picker-highlight"></div>
 </div>
 
 <script>
-/* ---------------- popoPicker 核心逻辑模拟 ---------------- */
-const data = [
-  '选项一','选项二','选项三','选项四','选项五','选项六','选项七'
-];
+// 生成几十个选项
+const data = [];
+for(let i=1; i<=50; i++){
+  data.push(`选项 ${i}`);
+}
 
 const wheel = document.getElementById('pickerWheel');
-const itemHeight = 40;      // 每个选项高度
-const radius = 80;          // 滚轮半径
+const itemHeight = 40;
+const radius = 80;
 let selectedIndex = 0;
 
 // 渲染滚轮
-function renderWheel() {
+function renderWheel(){
   wheel.innerHTML = '';
-  data.forEach((text, i) => {
+  data.forEach((text,i)=>{
     const li = document.createElement('li');
     li.textContent = text;
-    const angle = (i - selectedIndex) * 25; // 每项间隔角度
+    const angle = (i - selectedIndex) * 25;
     li.style.transform = `rotateX(${angle}deg) translateZ(${radius}px)`;
-    if(i === selectedIndex) li.classList.add('active');
+    if(i===selectedIndex) li.classList.add('active');
     wheel.appendChild(li);
   });
 }
 
-// 滑动逻辑
-let startY, currentY, isDragging = false;
-wheel.addEventListener('mousedown', e => {
-  isDragging = true;
-  startY = e.clientY;
-});
-wheel.addEventListener('mousemove', e => {
+renderWheel();
+
+// 滑动逻辑（支持鼠标和触屏）
+let startY=0, currentY=0, isDragging=false;
+
+function onStart(e){
+  isDragging=true;
+  startY = e.touches ? e.touches[0].clientY : e.clientY;
+}
+
+function onMove(e){
   if(!isDragging) return;
-  currentY = e.clientY;
+  currentY = e.touches ? e.touches[0].clientY : e.clientY;
   const diff = startY - currentY;
-  if(Math.abs(diff) > itemHeight/2) {
-    if(diff > 0 && selectedIndex < data.length - 1) selectedIndex++;
-    if(diff < 0 && selectedIndex > 0) selectedIndex--;
+  if(Math.abs(diff) > itemHeight/2){
+    if(diff>0 && selectedIndex<data.length-1) selectedIndex++;
+    if(diff<0 && selectedIndex>0) selectedIndex--;
     startY = currentY;
     renderWheel();
   }
-});
-window.addEventListener('mouseup', e => { isDragging = false; });
+  e.preventDefault(); // 阻止页面滚动
+}
 
-// 初始渲染
-renderWheel();
+function onEnd(e){
+  isDragging=false;
+}
+
+wheel.addEventListener('mousedown', onStart);
+wheel.addEventListener('mousemove', onMove);
+wheel.addEventListener('mouseup', onEnd);
+wheel.addEventListener('mouseleave', onEnd);
+
+wheel.addEventListener('touchstart', onStart, {passive:false});
+wheel.addEventListener('touchmove', onMove, {passive:false});
+wheel.addEventListener('touchend', onEnd);
 </script>
 
 </body>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚轮（居中数字）</title>
+<title>iOS 风格滚轮（高级阻尼）</title>
 <style>
 html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
 .picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
@@ -72,25 +72,34 @@ function render() {
 }
 
 function spring(o){
-    const maxOffset = picker.clientHeight/2 - itemHeight/2; // 修正边界
+    const maxOffset = picker.clientHeight/2 - itemHeight/2;
     const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2;
     if(o > maxOffset) return (o - maxOffset)*0.2;
     if(o < minOffset) return (o - minOffset)*0.2;
     return 0;
 }
 
+// ================== 高级非线性阻尼 animate ==================
 function animate() {
     const springForce = spring(offset);
+
+    // 非线性阻尼：慢速精确，快速加大阻力
+    let damping = 0.92;
+    if(Math.abs(velocity) > 10) damping = 0.85;
+    velocity *= damping;
+
+    // 应用弹簧力
     offset += velocity - springForce;
 
-    velocity = Math.sign(velocity) * Math.pow(Math.abs(velocity)*0.88, 1.05);
-    const maxVel = 20;
+    // 最大速度限制
+    const maxVel = 15;
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
 
     render();
 
-    if(Math.abs(velocity) > 0.5 || Math.abs(springForce) > 0.5) animFrame=requestAnimationFrame(animate);
+    if(Math.abs(velocity) > 0.5 || Math.abs(springForce) > 0.5) 
+        animFrame = requestAnimationFrame(animate);
     else{
         // 平滑对齐最近数字
         let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2)/itemHeight);
@@ -99,6 +108,7 @@ function animate() {
     }
 }
 
+// ================== 触摸事件 ==================
 picker.addEventListener('touchstart', e=>{
     cancelAnimationFrame(animFrame);
     startY = e.touches[0].clientY;

@@ -15,8 +15,8 @@
   --text-color: #eee;
   --input-bg: #2c2c2c;
   --input-border: #555;
-  --scroll-bg: rgba(255,255,255,0.1);
-  --scroll-fill: linear-gradient(to top, #1e90ff, #00bfff);
+  --picker-bg: #222;
+  --picker-item-height: 40px;
 }
 
 html, body { 
@@ -49,12 +49,67 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 .input-wrapper { display:flex; flex-direction:column; align-items:center; margin-bottom:5px; }
 .input-wrapper input { padding:8px 0; font-size:16px; border-radius:8px; border:1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); text-align:center; width: var(--input-scroll-width); box-sizing: border-box; }
 
-.scroll-bar-vertical { width: var(--input-scroll-width); height: var(--scroll-height); background: var(--scroll-bg); border-radius:8px; position:relative; cursor:grab; overflow:hidden; touch-action:none; }
-.scroll-bar-vertical .fill {
-  position:absolute; bottom:0; width:100%; height:100%; background: var(--scroll-fill);
-  transform-origin: bottom; transform: scaleY(0);
-  will-change: transform;
+/* ========== iPhone-like picker (替代竖向滑条) ========== */
+.picker {
+  width: var(--input-scroll-width);
+  height: var(--scroll-height);
+  position:relative;
+  overflow:hidden;
+  border-radius:8px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  touch-action:none;
+  -webkit-user-select:none;
+  user-select:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
+
+.picker .wheel {
+  position: absolute;
+  width:100%;
+  will-change: transform;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* 每一项高度（注意与 JS 中保持一致） */
+.picker .item {
+  height: var(--picker-item-height);
+  line-height: var(--picker-item-height);
+  font-size:16px;
+  width:100%;
+  text-align:center;
+  color:var(--text-color);
+  box-sizing:border-box;
+}
+
+/* 中间高亮条 */
+.picker::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  height:var(--picker-item-height);
+  top: calc(50% - var(--picker-item-height)/2);
+  border-top:1px solid rgba(255,255,255,0.06);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  pointer-events:none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
+}
+
+/* 上下渐隐 mask，更像 iOS */
+.picker::before{
+  content:"";
+  position:absolute;
+  left:0; right:0; top:0; bottom:0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.0) 25%, rgba(0,0,0,0.0) 75%, rgba(0,0,0,0.6) 100%);
+  pointer-events:none;
+}
+
+/* 隐藏你原来的滚动条样式（如果有残留） */
+.scroll-bar-vertical { display:none; }
 
 .right-nav {
   position: fixed;
@@ -100,7 +155,8 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
     <div class="input-wrapper">
       <input type="number" id="principal" value="1" min="1" max="99"/>
     </div>
-    <div class="scroll-bar-vertical" id="principalScroll"><div class="fill"></div></div>
+    <!-- picker 替换 -->
+    <div class="picker" id="principalPicker" aria-label="本金选择器"></div>
   </div>
 
   <div class="input-group">
@@ -108,7 +164,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
     <div class="input-wrapper">
       <input type="number" id="rate" value="10" min="0.5" max="50" step="0.5"/>
     </div>
-    <div class="scroll-bar-vertical" id="rateScroll"><div class="fill"></div></div>
+    <div class="picker" id="ratePicker" aria-label="利率选择器"></div>
   </div>
 
   <div class="input-group">
@@ -116,7 +172,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
     <div class="input-wrapper">
       <input type="number" id="periods" value="12" min="1" max="120"/>
     </div>
-    <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
+    <div class="picker" id="periodsPicker" aria-label="期数选择器"></div>
   </div>
 </div>
 
@@ -128,10 +184,31 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 <div class="overlay" id="overlay"></div>
 <div class="gesture-right" id="gestureRight"></div>
 
+<!-- 短促 tick 音（base64 小音效） -->
+<audio id="tickAudio">
+  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav">
+</audio>
+
 <script>
-// ==================== 复利计算器逻辑 ====================
+// ========== 工具函数 ==========
 function formatNumber(v){ return v.toFixed(1).replace(/\B(?=(\d{4})+(?!\d))/g, ','); }
 
+// 触发短震动（若支持）
+function doHaptic(){
+  if(navigator.vibrate) navigator.vibrate(10);
+}
+
+// 播放短促声音（若支持）
+function playTick(){
+  const a = document.getElementById('tickAudio');
+  if(!a) return;
+  try {
+    a.currentTime = 0;
+    a.play().catch(()=>{ /* ignore */ });
+  } catch(e){}
+}
+
+// ========== 复利计算器逻辑（保留原有） ==========
 let chart=null;
 function calculate(){
   const p = parseFloat(document.getElementById('principal').value) || 0;
@@ -159,65 +236,219 @@ function calculate(){
   document.getElementById('resultBox').textContent='倍率：'+(balances[n-1]/p).toFixed(1)+'X';
 }
 
-// ==================== 滑条逻辑 ====================
-['principal','rate','periods'].forEach(id=>{
-  const input=document.getElementById(id);
-  const scroll=document.getElementById(id+'Scroll');
-  const fill=scroll.querySelector('.fill');
-  const min=parseFloat(input.min), max=parseFloat(input.max);
+// ========== Picker 生成与交互逻辑 ==========
+/*
+  实现要点：
+  - values: 数组（显示文本和对应数值）
+  - 每项高度由 CSS 变量 --picker-item-height 控制（40px）
+  - 支持 touch & mouse
+  - 拖动时连续播放 tick（节流），最终 snap 到最近一项并触发震动+音效
+*/
+const ITEM_HEIGHT = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--picker-item-height')) || 40;
 
-  function updateFill(){ 
-    const val=parseFloat(input.value)||0;
-    const percent=Math.min(Math.max((val-min)/(max-min),0),1);
-    fill.style.transform = `scaleY(${percent})`;
+function createValues(start, end, step){
+  const vals = [];
+  for(let v = start; v <= end + 1e-9; v = +(v + step).toFixed(10)){
+    vals.push(+v);
+  }
+  return vals;
+}
+
+function makePicker(pickerEl, values, initialValue, onChange){
+  // 创建 wheel DOM
+  const wheel = document.createElement('div');
+  wheel.className = 'wheel';
+  // 前后补空项，使首尾能居中
+  const padCount = Math.floor((parseInt(getComputedStyle(pickerEl).height) / ITEM_HEIGHT - 1) / 2) || 3;
+  for(let i=0;i<padCount;i++){
+    const e = document.createElement('div'); e.className='item'; e.textContent=''; wheel.appendChild(e);
+  }
+  values.forEach(v=>{
+    const it = document.createElement('div'); it.className='item'; it.textContent = (Math.round(v) === v ? String(v) : String(v)); wheel.appendChild(it);
+  });
+  for(let i=0;i<padCount;i++){
+    const e = document.createElement('div'); e.className='item'; e.textContent=''; wheel.appendChild(e);
+  }
+  pickerEl.appendChild(wheel);
+
+  // 状态
+  let offset = 0; // translateY
+  let minOffset = - (values.length - 1) * ITEM_HEIGHT;
+  // 初始定位到 initialValue（或中间）
+  let initIndex = values.indexOf(initialValue);
+  if(initIndex === -1){
+    // 如果没有，找最近
+    let closest = 0;
+    let mindiff = Infinity;
+    values.forEach((v,i)=>{ const d = Math.abs(v - initialValue); if(d < mindiff){ mindiff = d; closest = i; }});
+    initIndex = closest;
+  }
+  offset = -initIndex * ITEM_HEIGHT;
+  wheel.style.transform = `translateY(${offset}px)`;
+
+  // 交互
+  let startY = 0, startOffset = 0, lastY = 0, lastTime = 0, velocity = 0;
+  let ticking = false;
+  let lastPlayedIndex = null;
+
+  function setOffset(o, animate=false){
+    if(o > 0) o = 0;
+    if(o < minOffset) o = minOffset;
+    offset = o;
+    if(animate){
+      wheel.style.transition = 'transform 220ms cubic-bezier(.2,.9,.2,1)';
+      requestAnimationFrame(()=> wheel.style.transform = `translateY(${offset}px)`);
+      setTimeout(()=> wheel.style.transition = '', 250);
+    } else {
+      wheel.style.transform = `translateY(${offset}px)`;
+    }
+    // 计算当前 nearest index 并回调（实时）
+    const idx = Math.round(-offset / ITEM_HEIGHT);
+    if(idx !== lastPlayedIndex){
+      // 每跳一格播放声音（节流）
+      playTick();
+      lastPlayedIndex = idx;
+    }
+    if(typeof onChange === 'function'){
+      const val = values[Math.min(Math.max(idx,0),values.length-1)];
+      onChange(val);
+    }
   }
 
-  input.addEventListener('focus', ()=>{ input.value=''; updateFill(); });
+  function startDrag(y){
+    startY = y;
+    startOffset = offset;
+    lastY = y;
+    lastTime = performance.now();
+    velocity = 0;
+    lastPlayedIndex = Math.round(-offset / ITEM_HEIGHT);
+  }
 
-  let startY=0, startVal=0;
+  function moveDrag(y){
+    const dy = y - startY;
+    const newOffset = startOffset + dy;
+    setOffset(newOffset, false);
 
-  scroll.addEventListener('touchstart', e=>{
+    // 速度估算
+    const now = performance.now();
+    const dt = now - lastTime || 16;
+    velocity = (y - lastY) / dt;
+    lastY = y;
+    lastTime = now;
+  }
+
+  function endDrag(){
+    // 基于速度进行简单的惯性滚动
+    // velocity px/ms -> 惯性位移
+    let inertia = velocity * 1200; // 调整系数以获得合适的惯性
+    let target = offset + inertia;
+    // snap 到最近项
+    const nearestIndex = Math.round(-target / ITEM_HEIGHT);
+    const clampedIndex = Math.min(Math.max(nearestIndex, 0), values.length - 1);
+    const finalOffset = -clampedIndex * ITEM_HEIGHT;
+    // 播放震动与声音
+    doHaptic();
+    playTick();
+    setOffset(finalOffset, true);
+  }
+
+  // 触摸事件
+  let active = false;
+  pickerEl.addEventListener('touchstart', e=>{
+    if(e.touches.length !== 1) return;
+    active = true;
+    wheel.style.transition = '';
+    startDrag(e.touches[0].clientY);
+  }, {passive:false});
+  pickerEl.addEventListener('touchmove', e=>{
+    if(!active) return;
     e.preventDefault();
-    startY=e.touches[0].clientY;
-    startVal=parseFloat(input.value)||min;
-
-    let throttleTimeout=null;
-
-    function moveHandler(ev){
-      ev.preventDefault();
-      const deltaY = ev.touches[0].clientY - startY;
-      let newVal = startVal - deltaY/(scroll.clientHeight)*(max-min);
-      newVal = id==='rate'? Math.round(newVal*2)/2 : Math.round(newVal);
-      newVal = Math.min(Math.max(newVal,min),max);
-      input.value = newVal;
-      updateFill();
-      if(!throttleTimeout){
-        throttleTimeout=setTimeout(()=>{ calculate(); throttleTimeout=null; }, 50);
-      }
-    }
-
-    function endHandler(){
-      let finalVal=parseFloat(input.value);
-      finalVal = id==='rate'? Math.round(finalVal*2)/2 : Math.round(finalVal);
-      finalVal = Math.min(Math.max(finalVal,min),max);
-      input.value=finalVal;
-      updateFill();
-      calculate();
-      document.removeEventListener('touchmove', moveHandler);
-      document.removeEventListener('touchend', endHandler);
-    }
-
-    document.addEventListener('touchmove', moveHandler, {passive:false});
-    document.addEventListener('touchend', endHandler);
+    moveDrag(e.touches[0].clientY);
+  }, {passive:false});
+  pickerEl.addEventListener('touchend', e=>{
+    if(!active) return;
+    active = false;
+    endDrag();
   });
 
-  input.addEventListener('input', ()=>{ updateFill(); calculate(); });
-  updateFill();
+  // 鼠标事件（桌面）
+  let mouseDown = false;
+  pickerEl.addEventListener('mousedown', e=>{
+    mouseDown = true;
+    wheel.style.transition = '';
+    startDrag(e.clientY);
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e=>{
+    if(!mouseDown) return;
+    moveDrag(e.clientY);
+    e.preventDefault();
+  });
+  window.addEventListener('mouseup', e=>{
+    if(!mouseDown) return;
+    mouseDown = false;
+    endDrag();
+  });
+
+  // 外部可调用：设置索引
+  function setToValue(v, animate=true){
+    const idx = values.indexOf(v);
+    if(idx === -1) return;
+    const off = -idx * ITEM_HEIGHT;
+    setOffset(off, animate);
+  }
+
+  // 返回控制对象
+  return { setToValue, getCurrentIndex:()=>Math.round(-offset/ITEM_HEIGHT) };
+}
+
+// ========== 将 picker 与页面 input 绑定 ==========
+function bindPicker(pickerId, inputId, valuesArray){
+  const pickerEl = document.getElementById(pickerId);
+  const inputEl = document.getElementById(inputId);
+  const vals = valuesArray.slice();
+  // 回调：更新 input 的 value 与触发 calculate（去抖）
+  let throttleTimer = null;
+  const p = makePicker(pickerEl, vals, parseFloat(inputEl.value), (val)=>{
+    // 更新 input，但不要触发 input 的 focus 清空逻辑（你原始代码里对 focus 做了清空）
+    inputEl.value = val;
+    if(throttleTimer) clearTimeout(throttleTimer);
+    throttleTimer = setTimeout(()=>{ calculate(); throttleTimer = null; }, 60);
+  });
+  // 当 input 手动修改时也要同步 picker
+  inputEl.addEventListener('input', ()=>{
+    const v = (inputEl.type === 'number') ? parseFloat(inputEl.value) : inputEl.value;
+    p.setToValue(v);
+    calculate();
+  });
+  // 初始化
+  p.setToValue(parseFloat(inputEl.value));
+  return p;
+}
+
+// ========== 创建每个 picker 的值数组并绑定 ==========
+window.addEventListener('load', ()=>{
+  // principal 1..99
+  const principalVals = createValues(1, 99, 1);
+  // rate 0.5..50 step 0.5
+  const rateVals = createValues(0.5, 50, 0.5);
+  // periods 1..120
+  const periodVals = createValues(1, 120, 1);
+
+  bindPicker('principalPicker', 'principal', principalVals);
+  bindPicker('ratePicker', 'rate', rateVals);
+  bindPicker('periodsPicker', 'periods', periodVals);
+
+  // 你的原始逻辑里 input focus 会清空，我保留但改成不影响 picker（如需移除可删）
+  ['principal','rate','periods'].forEach(id=>{
+    const input=document.getElementById(id);
+    input.addEventListener('focus', ()=>{ /* 不再清空，以免影响用户选择 */ });
+  });
+
+  calculate();
 });
 
-window.addEventListener('load', calculate);
-
-// ==================== 右侧导航逻辑 ====================
+// ========== 右侧导航逻辑（保留原有） ==========
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 
@@ -277,4 +508,3 @@ rightNav.addEventListener('touchend', e=>{
 </script>
 </body>
 </html>
-

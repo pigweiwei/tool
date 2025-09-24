@@ -40,9 +40,6 @@
       color: #333;
       scroll-snap-align: center;
     }
-    .picker-item:hover {
-      background: #e0e0e0;
-    }
     .picker-wheel::before {
       content: '';
       position: absolute;
@@ -91,7 +88,7 @@
       }
 
       // 滚动吸附和选中逻辑
-      [column1Wheel, column2Wheel].forEach((wheel, index) => {
+      function handleScroll(wheel, columnIndex) {
         wheel.addEventListener('scroll', () => {
           clearTimeout(wheel.scrollTimeout);
           wheel.scrollTimeout = setTimeout(() => {
@@ -106,19 +103,29 @@
               if (Math.abs(itemCenter - centerY) < 15) {
                 selectedItem = item.textContent;
                 item.classList.add('selected');
+                // 确保滚动精确吸附
+                wheel.scrollTop = item.offsetTop - (wheel.clientHeight - item.clientHeight) / 2;
               } else {
                 item.classList.remove('selected');
               }
             });
 
-            console.log(`Column ${index + 1} Selected: ${selectedItem}`);
+            console.log(`Column ${columnIndex} Selected: ${selectedItem}`);
           }, 100);
         });
-      });
+      }
+
+      // 为两列绑定滚动事件
+      handleScroll(column1Wheel, 1);
+      handleScroll(column2Wheel, 2);
 
       // 初始滚动到默认值（例如 10 和 20）
       column1Wheel.scrollTop = 10 * 30;
       column2Wheel.scrollTop = 20 * 30;
+
+      // 初始触发滚动事件以选中默认值
+      column1Wheel.dispatchEvent(new Event('scroll'));
+      column2Wheel.dispatchEvent(new Event('scroll'));
     });
   </script>
 </body>

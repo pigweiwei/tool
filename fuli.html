@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>仿 iPhone 滚轮（带惯性）</title>
+<title>仿 iPhone 滚轮（惯性+动态高亮）</title>
 <style>
   body {
     display: flex;
@@ -36,7 +36,7 @@
     height: 40px;
     line-height: 40px;
     text-align: center;
-    font-size: 20px;
+    font-size: 18px;
     opacity: 0.4;
     transition: opacity 0.2s, font-size 0.2s;
   }
@@ -64,21 +64,20 @@
 <body>
 
 <div class="picker" id="picker">
-  <ul id="list">
-    <li>0.5</li>
-    <li>1.0</li>
-    <li>1.5</li>
-    <li>2.0</li>
-    <li>2.5</li>
-    <li>3.0</li>
-    <li>3.5</li>
-    <li>4.0</li>
-  </ul>
+  <ul id="list"></ul>
 </div>
 
 <script>
 const picker = document.getElementById("picker");
 const list = document.getElementById("list");
+
+// 生成 0.5 - 10.0，步进 0.5
+for (let i = 0.5; i <= 10; i += 0.5) {
+  const li = document.createElement("li");
+  li.textContent = i.toFixed(1);
+  list.appendChild(li);
+}
+
 const items = list.querySelectorAll("li");
 
 let startY = 0, offsetY = 0, currentIndex = 1;
@@ -87,6 +86,7 @@ const itemHeight = 40;
 
 updateActive();
 
+// 触摸开始
 picker.addEventListener("touchstart", e => {
   const touch = e.touches[0];
   startY = touch.clientY - offsetY;
@@ -96,6 +96,7 @@ picker.addEventListener("touchstart", e => {
   lastTime = Date.now();
 }, { passive: false });
 
+// 移动中
 picker.addEventListener("touchmove", e => {
   e.preventDefault();
   const touch = e.touches[0];
@@ -110,8 +111,11 @@ picker.addEventListener("touchmove", e => {
   velocity = deltaY / deltaTime; // px/ms
   lastY = touch.clientY;
   lastTime = now;
+
+  updateActive(); // 滚动时动态高亮
 }, { passive: false });
 
+// 触摸结束
 picker.addEventListener("touchend", () => {
   // 惯性滚动
   let momentum = velocity * 200; // 惯性强度
@@ -128,9 +132,13 @@ picker.addEventListener("touchend", () => {
   updateActive();
 });
 
+// 更新高亮
 function updateActive() {
+  const center = -offsetY / itemHeight;
+  const nearestIndex = Math.round(center);
+
   items.forEach((li, i) => {
-    li.classList.toggle("active", i === currentIndex);
+    li.classList.toggle("active", i === nearestIndex);
   });
 }
 </script>

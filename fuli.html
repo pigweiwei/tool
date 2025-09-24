@@ -85,8 +85,8 @@ function render() {
 function spring(o){
     const maxOffset = picker.clientHeight/2 - itemHeight/2;
     const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-    if(o > maxOffset) return (o - maxOffset)*0.3;
-    if(o < minOffset) return (o - minOffset)*0.3;
+    if(o > maxOffset) return (o - maxOffset)*0.5; // 增强边界回弹
+    if(o < minOffset) return (o - minOffset)*0.5;
     return 0;
 }
 
@@ -95,28 +95,32 @@ function animate() {
     const springForce = spring(offset);
 
     const speed = Math.abs(velocity);
-    // 优化阻尼曲线：中速/快速滑动更低阻尼
-    let damping = speed < 5 ? 0.995 : Math.min(0.995, 0.88 - speed * 0.0015);
+    // 优化阻尼曲线：模拟物理摩擦
+    let damping = speed < 5 ? 0.995 : Math.min(0.995, 0.90 - speed * 0.001 * Math.sqrt(speed));
     velocity *= damping;
+
+    // 添加微小摩擦力，增强重力感
+    const friction = velocity > 0 ? -0.05 : 0.05;
+    velocity += friction;
 
     offset += velocity - springForce;
 
-    const maxVel = 400; // 提高到400，增强快速滑动的滚动距离
+    const maxVel = 500; // 提高到500，增强快速滑动的惯性
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
 
     render();
 
     // 延迟吸附触发，确保中速/快速滑动滚动多格
-    if(Math.abs(velocity) < 0.6 && Math.abs(springForce) < 0.5) {
+    if(Math.abs(velocity) < 0.8 && Math.abs(springForce) < 0.5) {
         let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2 - spacerHeight)/itemHeight);
         const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
         
-        // 保持干净的吸附动画
+        // 优化吸附动画，增强超调
         const diff = targetOffset - offset;
         if(Math.abs(diff) > 0.5) {
-            offset += diff * 0.35; // 略提高吸附速度
-            velocity = diff * 0.04; // 微调超调，保持弹性
+            offset += diff * 0.4; // 加速吸附
+            velocity = diff * 0.06; // 增强超调，模拟物理弹簧
             animFrame = requestAnimationFrame(animate);
         } else {
             offset = targetOffset;
@@ -146,7 +150,7 @@ picker.addEventListener('touchmove', e=>{
     startY = y;
 
     // 增强速度灵敏度
-    velocity = delta / dt * 80; // 放大系数从60提高到80
+    velocity = delta / dt * 100; // 放大系数从80提高到100
     offset += delta;
     render();
 }, {passive:true});

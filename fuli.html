@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>非循环 3D 滚轮选择器</title>
+  <title>非循环滚轮选择器</title>
   <style>
     body {
       margin: 0;
@@ -12,13 +12,14 @@
       justify-content: center;
       align-items: center;
       background: #f0f0f0;
+      overflow: hidden;      /* 禁止页面整体滚动 */
+      touch-action: none;    /* 阻止系统手势 */
     }
     .picker {
       position: relative;
       width: 120px;
       height: 200px;
       overflow: hidden;
-      perspective: 1000px;
       border: 1px solid #ccc;
       border-radius: 10px;
       background: #fff;
@@ -27,8 +28,7 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      transform-style: preserve-3d;
-      transform: translate(-50%, -50%) rotateX(0deg);
+      transform: translate(-50%, -50%) translateY(0);
       transition: transform 0.2s ease-out;
     }
     .option {
@@ -39,7 +39,7 @@
       height: 30px;
       line-height: 30px;
       color: #666;
-      transition: color 0.3s;
+      transition: color 0.3s, font-size 0.3s;
     }
     .option.active {
       color: #000;
@@ -67,29 +67,25 @@
 
   <script>
     const wheel = document.getElementById('wheel');
-    const optionCount = 30; // 改为 30 个
+    const optionCount = 30;  // 30个选项
     const optionHeight = 30;
-    const radius = 100;
-    let angle = 0;
     let currentIndex = 0;
     let startY = 0;
     let startTime = 0;
-    let velocity = 0;
+    let offsetY = 0;
 
-    // 生成 30 个选项
+    // 生成竖直堆叠的选项
     for (let i = 0; i < optionCount; i++) {
       const option = document.createElement('div');
       option.className = 'option';
       option.textContent = `选项 ${i + 1}`;
-      const rotateX = i * (360 / optionCount);
-      option.style.transform = `rotateX(${rotateX}deg) translateZ(${radius}px) translateX(-50%)`;
+      option.style.top = `${i * optionHeight}px`;
       wheel.appendChild(option);
     }
-
     const options = document.querySelectorAll('.option');
 
     function updateWheel() {
-      wheel.style.transform = `translate(-50%, -50%) rotateX(${angle}deg)`;
+      wheel.style.transform = `translate(-50%, -50%) translateY(${-currentIndex * optionHeight}px)`;
       options.forEach((opt, i) => {
         opt.classList.toggle('active', i === currentIndex);
       });
@@ -101,11 +97,10 @@
 
     function setIndex(index) {
       currentIndex = clampIndex(index);
-      angle = -currentIndex * (360 / optionCount);
       updateWheel();
     }
 
-    // 拖拽逻辑
+    // 触摸逻辑
     wheel.addEventListener('touchstart', (e) => {
       startY = e.touches[0].clientY;
       startTime = Date.now();
@@ -114,25 +109,23 @@
 
     wheel.addEventListener('touchmove', (e) => {
       const deltaY = e.touches[0].clientY - startY;
-      angle += deltaY * 0.3;
-      startY = e.touches[0].clientY;
-      updateWheel();
+      offsetY = deltaY;
+      wheel.style.transform = `translate(-50%, -50%) translateY(${-(currentIndex * optionHeight - deltaY)}px)`;
     });
 
     wheel.addEventListener('touchend', (e) => {
-      const deltaTime = Date.now() - startTime;
       const deltaY = e.changedTouches[0].clientY - startY;
-      velocity = deltaY / deltaTime;
+      const deltaTime = Date.now() - startTime;
+      let velocity = deltaY / deltaTime;
 
       let move = Math.round(velocity * 10);
       if (Math.abs(move) < 1) move = deltaY > 0 ? -1 : 1;
 
-      setIndex(currentIndex + move);
-
+      setIndex(currentIndex - move); // 向下滑动增加index
       wheel.style.transition = 'transform 0.3s ease-out';
     });
 
-    // 初始状态
+    // 初始
     setIndex(0);
   </script>
 </body>

@@ -7,8 +7,8 @@
 <style>
 html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
 .picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
-.picker-list { position:absolute; top:0; left:0; right:0; transform-style: preserve-3d; }
-.picker-item { height:70px; display:flex; justify-content:center; align-items:center; font-size:28px; color:#aaa; transition: all 0.1s; }
+.picker-list { position:absolute; top:0; left:0; right:0; transform-style: preserve-3d; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.picker-item { height:70px; display:flex; justify-content:center; align-items:center; font-size:28px; color:#aaa; transition: all 0.1s; -webkit-backface-visibility: hidden; backface-visibility: hidden; will-change: transform, color; }
 .selected-bar { 
   position:absolute; 
   top:50%; 
@@ -133,8 +133,8 @@ function animate(timestamp) {
     if (!isSnapping && Math.abs(velocity) < 60 && Math.abs(spring(offset)) < 60) {
         isSnapping = true;
         const center = picker.clientHeight/2; // Center of the picker
-        const index = Math.round((center - offset - itemHeight/2 - spacerHeight) / itemHeight);
-        targetOffset = center - (index * itemHeight + spacerHeight);
+        const index = Math.round(( -offset - spacerHeight - itemHeight/2 ) / itemHeight);
+        targetOffset = center - spacerHeight - index * itemHeight - itemHeight/2;
         // Ensure targetOffset is within bounds
         const maxOffset = picker.clientHeight/2 - itemHeight/2;
         const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;

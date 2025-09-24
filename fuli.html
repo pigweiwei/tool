@@ -56,7 +56,7 @@ let lastTime = 0;
 
 function updateHighlight() {
     const center = picker.clientHeight/2;
-    let closestItem=null,closestDist=Infinity;
+    let closestItem = null, closestDist = Infinity;
     items.forEach(item => {
         const itemCenter = item.offsetTop + itemHeight/2 + offset;
         const dist = Math.abs(center - itemCenter);
@@ -64,16 +64,16 @@ function updateHighlight() {
         const rotateX = Math.max(-40, Math.min(40, (center-itemCenter)/5));
         const colorVal = Math.round(Math.max(170, 255-dist/2));
         item.style.transform = `scale(${scale}) rotateX(${rotateX}deg)`;
-        if(dist<closestDist){
+        if(dist < closestDist){
             closestDist = dist;
             closestItem = item;
         }
-        item.style.color=`rgb(${colorVal},${colorVal},${colorVal})`;
-        item.style.fontWeight="normal";
+        item.style.color = `rgb(${colorVal},${colorVal},${colorVal})`;
+        item.style.fontWeight = "normal";
     });
     if(closestItem){
-        closestItem.style.color="#1e90ff";
-        closestItem.style.fontWeight="bold";
+        closestItem.style.color = "#1e90ff";
+        closestItem.style.fontWeight = "bold";
     }
 }
 
@@ -82,45 +82,50 @@ function render() {
     updateHighlight(); 
 }
 
-function spring(o){
+function spring(o) {
     const maxOffset = picker.clientHeight/2 - itemHeight/2;
     const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-    if(o > maxOffset) return (o - maxOffset)*0.5; // 增强边界回弹
-    if(o < minOffset) return (o - minOffset)*0.5;
+    if(o > maxOffset) return (o - maxOffset)*0.4; // 边界弹簧力稍增强
+    if(o < minOffset) return (o - minOffset)*0.4;
     return 0;
 }
 
-// 高级阻尼 + 可控快速惯性
+// 改进后的 animate 函数
 function animate() {
     const springForce = spring(offset);
-
     const speed = Math.abs(velocity);
-    // 优化阻尼曲线：模拟物理摩擦
-    let damping = speed < 5 ? 0.995 : Math.min(0.995, 0.90 - speed * 0.001 * Math.sqrt(speed));
+
+    // 非线性阻尼：低速时更强，高速时稍弱但平滑
+    let damping = speed < 5 ? 0.98 : 0.92 * Math.exp(-speed / 200);
     velocity *= damping;
 
-    // 添加微小摩擦力，增强重力感
-    const friction = velocity > 0 ? -0.05 : 0.05;
-    velocity += friction;
+    // 模拟重力阻力，增加“重量感”
+    const gravity = 0.1; // 微小重力加速度
+    velocity -= Math.sign(velocity) * gravity;
 
     offset += velocity - springForce;
 
-    const maxVel = 500; // 提高到500，增强快速滑动的惯性
-    if(velocity>maxVel) velocity=maxVel;
-    if(velocity<-maxVel) velocity=-maxVel;
+    // 提高速度上限，增强快速滑动的惯性
+    const maxVel = 600; // 从 400 提高到 600
+    if(velocity > maxVel) velocity = maxVel;
+    if(velocity < -maxVel) velocity = -maxVel;
 
     render();
 
-    // 延迟吸附触发，确保中速/快速滑动滚动多格
-    if(Math.abs(velocity) < 0.8 && Math.abs(springForce) < 0.5) {
+    // 优化吸附逻辑：延迟触发，增加弹性
+    if(Math.abs(velocity) < 0.8 && Math.abs(springForce) < 0.6) {
         let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2 - spacerHeight)/itemHeight);
         const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
         
-        // 优化吸附动画，增强超调
+        // 使用弹簧-阻尼系统进行吸附
         const diff = targetOffset - offset;
-        if(Math.abs(diff) > 0.5) {
-            offset += diff * 0.4; // 加速吸附
-            velocity = diff * 0.06; // 增强超调，模拟物理弹簧
+        const k = 0.25; // 弹簧刚度
+        const d = 0.85; // 阻尼系数
+        const springAccel = diff * k;
+        velocity += springAccel;
+        velocity *= d;
+
+        if(Math.abs(diff) > 0.3 || Math.abs(velocity) > 0.3) {
             animFrame = requestAnimationFrame(animate);
         } else {
             offset = targetOffset;
@@ -133,7 +138,7 @@ function animate() {
     }
 }
 
-// ================== 触摸事件 ==================
+// 触摸事件
 picker.addEventListener('touchstart', e=>{
     cancelAnimationFrame(animFrame);
     startY = e.touches[0].clientY;
@@ -149,8 +154,8 @@ picker.addEventListener('touchmove', e=>{
     const delta = y - startY;
     startY = y;
 
-    // 增强速度灵敏度
-    velocity = delta / dt * 100; // 放大系数从80提高到100
+    // 速度灵敏度略降低，增加“重量感”
+    velocity = delta / dt * 70; // 从 80 降低到 70
     offset += delta;
     render();
 }, {passive:true});

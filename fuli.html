@@ -1,190 +1,972 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iOS-like 3D Wheel Picker</title>
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #f0f0f0;
-      font-family: Arial, sans-serif;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>popoPicker Demo</title>
+    <style>
+        /* Inline demo.css */
+        @charset "UTF-8";
+        input,textarea{
+            -webkit-appearance: none;
+            outline: none;
+            border-radius: 0;
+        }
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        body{
+            background: #fff;
+            font-size: 14px;
+        }
+        .page-header{
+            padding: 100px 60px;
+            color: #fff;
+            text-align: center;
+            background-color: #272824;
+            background-image: linear-gradient(120deg, #272824, #0d1b2c)
+        }
+        .page-header .btn{
+            margin: 0 5px;
+            padding: 10px 15px;
+            display: inline-block;
+            color: rgba(255,255,255,0.7);
+            background-color: rgba(255,255,255,0.08);
+            border: solid 1px rgba(255,255,255,0.2);
+            border-radius: 5px;
+            transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+            text-decoration: none;
+        }
+        .page-header .btn:hover{
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            background-color: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.3);
+        }
+        .page-header .project-name{
+            margin: auto;
+            max-width: 1200px;
+            font-size: 36px;
+            color: #ff8400;
+        }
+        .page-header  .project-tagline{
+            margin: auto;
+            max-width: 900px;
+            padding: 15px 0 30px;
+            font-size: 18px;
+            line-height: 1.8;
+            font-weight: normal;
+        }
 
-    .picker {
-      position: relative;
-      width: 200px;
-      height: 200px;
-      perspective: 800px;
-      overflow: hidden;
-      background-color: #fff;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
+        .content{
+            margin: auto;
+            width: 1200px;
+            box-sizing: border-box;
+        }
+        .content pre{
+            font-size: 14px;
+        }
+        .content .inp{
+            padding: 0 15px;
+            width: 100%;
+            height: 40px;
+            line-height: 1;
+            border: solid 1px #ccc;
+            font-size: 14px;
+            box-sizing: border-box;
+            background-color: #fff;
+            color: #333;
+        }
+        .content .main-box{
+            display: -webkit-flex;
+            padding: 15px;
+        }
+        .content .main-box .flex-1{
+            min-width: 380px;
+            -webkit-flex: 1;
+        }
+        .content .phone-box{
+            margin-top: 50px;
+            position: relative;
+            height: 750px;
+            width:380px;
+        }
+        .content .phone-box:before{
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:url("../img/phone.png") center top no-repeat;
+            background-size: auto 100%;
+            z-index: 12;
+            pointer-events: none;
+        }
+        .content .phone-box .screen{
+            position: absolute;
+            top: 23px;
+            left: 28px;
+            right: 27px;
+            bottom: 23px;
+            background-color: #f5f5f5;
+            border-radius: 25px;
+            overflow: hidden;
+        }
+        .content .phone-box header{
+            padding-top: 22px;
+            background-color: #ff8400;
+            color: #fff;
+        }
+        .content .phone-box header p{
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .content .phone-box .tit{
+            padding: 10px 10px 5px;
+            font-size: 14px;
+            color: #999;
+            text-shadow: 1px 1px 0 #fff;
+        }
+        .content .tb-wrap{
+            padding-left: 25px;
+        }
+        .content .tb-wrap .title{
+            padding: 15px 0;
+            font-size: 24px;
+            text-align: center;
+            font-weight: bold;
+            color: #ff8400;
+        }
+        .content .tb-wrap .tb{
+            width: 100%;
+            margin-bottom: 15px;
+            border: solid 1px #ccc;
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+        .content .tb-wrap .tb th,
+        .content .tb-wrap .tb td{
+            padding: 8px 10px;
+            border-bottom: solid 1px #ccc;
+            border-right: solid 1px #ccc;
+            background-color: #f9f9f9;
+        }
+        .content .tb-wrap .tb th{
+            white-space: nowrap;
+        }
+        .content .tb-wrap .tb tr:nth-child(odd) td{
+            background-color: #fff;
+        }
+        .content .p-scroll{
+            position: absolute;
+        }
 
-    .wheel {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      transform-style: preserve-3d;
-      transition: transform 0.3s ease-out;
-    }
+        @media (max-width: 768px){
+            .page-header{
+                display: none;
+            }
+            body{
+                background-color: #f5f5f5;
+            }
+            .content{
+                width: 100%;
+            }
+            .content .main-box{
+                padding: 0;
+            }
+            .content .main-box .flex-1{
+                min-width: 0;
+            }
+            .content .phone-box {
+                margin-top: 0;
+                width: 100%;
+                height: auto;
+            }
+            .content .phone-box:before,
+            .content .phone-box header{
+                display: none;
+            }
+            .content .phone-box .screen{
+                border-radius: 0;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 100vh;
+                margin-top: 0;
+            }
+            .content .tb-wrap{
+                display: none;
+            }
+        }
 
-    .item {
-      position: absolute;
-      width: 100%;
-      height: 40px;
-      line-height: 40px;
-      text-align: center;
-      backface-visibility: hidden;
-      color: #333;
-      font-size: 16px;
-    }
+        /* Inline popoPicker.css */
+        .p-scroll{
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system,Helvetica Neue,Helvetica,Arial,sans-serif;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+            font-size: 14px;
+            z-index: 9;
+        }
+        .p-select-mask{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            background: rgba(0,0,0,.7);
+            -webkit-animation: p-scroll-fade-in .3s ease both;
+        }
+        .p-scroll.hide .p-select-mask{
+            -webkit-animation: p-scroll-fade-out .3s ease both;
+        }
+        .p-select-wrap{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: -webkit-flex;
+            -webkit-align-items: center;
+            -webkit-justify-content: center;
+        }
+        .p-select-main{
+            display: -webkit-flex;
+            -webkit-flex-direction: column;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 2;
+            background: #fff;
+            box-shadow: 0 -5px 10px rgba(0,0,0,.1);
+            -webkit-animation: p-scroll-in .3s ease both;
+        }
+        .p-scroll.hide .p-select-main{
+            -webkit-animation: p-scroll-out .3s ease both;
+        }
+        @-webkit-keyframes p-scroll-in {
+            0%{ -webkit-transform: translate3d(0,100%,0);}
+            100%{ -webkit-transform: translate3d(0,0,0);}
+        }
+        @-webkit-keyframes p-scroll-out {
+            0%{ -webkit-transform: translate3d(0,0,0);}
+            100%{ -webkit-transform: translate3d(0,100%,0);}
+        }
+        @-webkit-keyframes p-scroll-fade-in {
+            0%{ opacity: 0;}
+            100%{ opacity: 1;}
+        }
+        @-webkit-keyframes p-scroll-fade-out {
+            0%{ opacity: 1;}
+            100%{ opacity: 0;}
+        }
+        .p-select-head{
+            position: relative;
+            height: 45px;
+            line-height: 45px;
+            display: -webkit-flex;
+            -webkit-align-items: center;
+            -webkit-justify-content: space-between;
+            background: #f2f2f2;
+            z-index: 5;
+        }
+        .p-select-head:before{
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            -webkit-transform: scaleY(.5);
+            background-color: #d5d5d6;
+        }
+        .p-select-title{
+            -webkit-flex: 1;
+            font-size: 18px;
+            color: #333;
+            text-align: center;
+        }
+        .p-select-head a{
+            display: block;
+            padding: 0 15px;
+            height: 45px;
+            line-height: 45px;
+            font-size: 18px;
+            text-decoration: none;
+            color: #007aff;
+        }
+        .p-select-foot{
+            position: relative;
+            display: -webkit-flex;
+            -webkit-align-items: center;
+            background-color: #fff;
+        }
+        .p-select-foot:before{
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background-color: #d5d5d6;
+            -webkit-transform: scaleY(0.5);
+        }
+        .p-select-foot a{
+            position: relative;
+            display: block;
+            height: 45px;
+            line-height: 45px;
+            font-size: 18px;
+            text-decoration: none;
+            color: #007aff;
+            -webkit-flex: 1;
+            text-align: center;
+        }
+        .p-select-foot a:before{
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 1px;
+            background-color: #d5d5d6;
+            -webkit-transform: scaleX(0.5);
+        }
+        .p-select-foot a:last-child:before{
+            display: none;
+        }
+        .p-select-body{
+            position: relative;
+            margin: 20px auto;
+            width: 100%;
+            display: -webkit-flex;
+            -webkit-align-items: center;
+            -webkit-justify-content: center;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .p-select-body ul{
+            list-style-type: none;
+        }
+        .p-select-item {
+            position: relative;
+            display: -webkit-flex;
+            -webkit-align-items: center;
+            height: 170px;
+            text-align: center;
+            /* overflow: hidden; */
+        }
+        .p-select-col{
+            height: 100%;
+            position: relative;
+        }
+        .p-select-ul {
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
+        .p-select-list,
+        .p-select-wheel,
+        .p-select-line{
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 34px;
+            margin-top: -17px;
+            box-sizing: border-box;
+            -webkit-transition: all .3s;
+        }
+        .p-select-wheel {
+            padding: 0;
+            -webkit-transform-style: preserve-3d;
+            height: 34px;
+            z-index: 1;
 
-    .highlight {
-      position: absolute;
-      top: 80px;
-      left: 0;
-      width: 100%;
-      height: 40px;
-      background-color: rgba(0, 0, 255, 0.1);
-      pointer-events: none;
-    }
-  </style>
+        }
+        .p-select-list{
+            position: relative;
+            top: 68px;
+            margin-top: 0;
+            z-index: 45;
+        }
+        .p-select-line {
+            height: 34px;
+            z-index: 100;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+        .p-select-line:before,
+        .p-select-line:after{
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            -webkit-transform: scaleY(.5);
+            background: #a5a5a5;
+        }
+        .p-select-line:after{...(truncated 70 characters)...    min-width: 10px;
+            display: -webkit-flex;
+            -webkit-align-items: center;
+            -webkit-justify-content: center;
+            box-sizing: border-box;
+            white-space: nowrap;
+            z-index: 100;
+            color: #666;
+        }
+        .p-select-label span{
+            display: block;
+            position: relative;
+            top: -3px;
+            font-size: 22px;
+            font-weight: normal;
+            text-align: center;
+            z-index: 50;
+        }
+
+        .p-select-ul>li,
+        .p-select-wheel>li{
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            padding: 0 10px;
+            line-height: 34px;
+            font-size: 21px;
+            box-sizing: border-box;
+            cursor: pointer;
+            -webkit-user-select: none;
+            text-align: center;
+        }
+        .p-select-ul>li{
+            color: #666;
+            font-size: 22px;
+        }
+        .p-select-wheel>li {
+            -webkit-backface-visibility: hidden;
+            position: absolute;
+            top: 0;
+            color: #999;
+        }
+        .p-select-wheel>li:active{
+            /* opacity: .7;*/
+        }
+        .p-select-wheel>li.visible{
+            display: list-item;
+        }
+        .p-select-time-split-1{
+            position: relative;
+            top: 0;
+            right: 0;
+            bottom: 15px;
+            margin: 0 15px;
+            width: 1px;
+            height: 160px;
+            -webkit-transform: scaleX(.7) translateZ(200px);
+            background: -webkit-linear-gradient(90deg,#fff,#ccc 15%,#ccc 85%,#fff);
+        }
+
+        /*is3d*/
+        .p-select-wrap.p-3d .p-select-body{
+            -webkit-perspective: 1200;
+        }
+        .p-select-wrap.p-3d .p-select-list{
+            height: 34px;
+            overflow:hidden;
+            background-color: #fff;
+        }
+        .p-select-wrap.p-3d .p-select-ul>li,
+        .p-select-wrap.p-3d .p-select-label{
+            color: #2a2b2c;
+        }
+        .p-select-wrap.p-3d .p-select-body:before{
+            content: "";
+            position: absolute;
+            top: -15px;
+            bottom: -15px;
+            left: 0;
+            right: 0;
+            background: -webkit-linear-gradient(#fff,rgba(255,255,255,0) 52%,rgba(2555,255,255,0) 48%,#fff);
+            pointer-events: none;
+            -webkit-transform: translate3d(0,0,120px);
+            z-index: 5;
+        }
+        .p-select-wrap.p-3d .p-select-line:before{
+            top: 1px;
+        }
+        .p-select-wrap.p-3d .p-select-line:after{
+            bottom: 1px;
+        }
+
+
+        .p-select-wrap.dark .p-select-main,
+        .p-select-wrap.dark .p-select-body{
+            background-color: #080808;
+        }
+        .p-select-wrap.dark .p-select-body:before{
+            background: -webkit-linear-gradient(#080808,rgba(8,8,8,0) 52%,rgba(8,8,8,0) 48%,#080808);
+        }
+        .p-select-wrap.dark .p-select-head{
+            background-color: #1c1c1c;
+            border-bottom: none;
+        }
+        .p-select-wrap.dark .p-select-head:before{
+            background-color: transparent;
+        }
+        .p-select-wrap.dark .p-select-head a{
+            color: #ff8400;
+        }
+        .p-select-wrap.dark .p-select-list,
+        .p-select-wrap.dark .p-select-ul>li,
+        .p-select-wrap.dark .p-select-wheel>li{
+            background-color: #080808;
+        }
+        .p-select-wrap.dark .p-select-line:before,
+        .p-select-wrap.dark .p-select-line:after{
+            background-color: #444;
+        }
+        .p-select-wrap.dark .p-select-time-split-1{
+            background: -webkit-linear-gradient(90deg,transparent,#333 15%,#333 85%,transparent);
+        }
+        .p-select-wrap.dark .p-select-title,
+        .p-select-wrap.dark .p-select-label,
+        .p-select-wrap.dark .p-select-ul>li{
+            color: #fff;
+        }
+        .p-select-wrap.dark .p-select-foot{
+            border-top: none;
+            background-color: #444;
+        }
+        .p-select-wrap.dark .p-select-foot a{
+            color: #ff8400;
+        }
+        .p-select-wrap.dark .p-select-foot:before,
+        .p-select-wrap.dark .p-select-foot a:before{
+            background-color: #444;
+        }
+
+        /*center*/
+        .p-center{
+            position: relative;
+            top: auto;
+            left: auto;
+            -webkit-transform: none;
+            width: auto;
+        }
+        .p-center .p-select-head{
+            background-color: #f2f2f2;
+        }
+        .p-center .p-select-body{
+            min-width: 300px;
+            padding: 0 25px;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+        .p-center .p-select-body:before{
+            background: -webkit-linear-gradient(#f7f7f7,rgba(245,245,245,0) 52%,rgba(245,245,245,0) 48%,#f7f7f7);
+        }
+        .p-center .p-select-main{
+            position: relative;
+            margin: auto;
+            bottom: auto;
+            max-width: 400px;
+            border-radius: 10px;
+            overflow: hidden;
+            -webkit-animation: p-scroll-fade-in .3s ease both;
+        }
+        .p-scroll.hide .p-center .p-select-main{
+            -webkit-animation: p-scroll-fade-out .3s ease both;
+        }
+        .p-center .p-select-line{
+            border-color: #ccc;
+        }
+        .p-center .p-select-list{
+            background-color: #fff;
+        }
+
+
+        /*center dark*/
+        .p-center.dark .p-select-wrap.dark{
+            border: none;
+        }
+        .p-center.dark .p-select-head{
+            background-color: #000;
+        }
+        .p-center.dark .p-select-head:before{
+            background-color: #444;
+        }
+        .p-center.dark .p-select-foot{
+            background-color: #000;
+        }
+
+        /* Inline prism.css (for code highlighting in demo) */
+        code[class*="language-"],
+        pre[class*="language-"] {
+            color: black;
+            background: none;
+            text-shadow: 0 1px white;
+            font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+            text-align: left;
+            white-space: pre;
+            word-spacing: normal;
+            word-break: normal;
+            word-wrap: normal;
+            line-height: 1.5;
+
+            -moz-tab-size: 4;
+            -o-tab-size: 4;
+            tab-size: 4;
+
+            -webkit-hyphens: none;
+            -moz-hyphens: none;
+            -ms-hyphens: none;
+            hyphens: none;
+        }
+
+        pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+        code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+            text-shadow: none;
+            background: #b3d4fc;
+        }
+
+        pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+        code[class*="language-"]::selection, code[class*="language-"] ::selection {
+            text-shadow: none;
+            background: #b3d4fc;
+        }
+
+        @media print {
+            code[class*="language-"],
+            pre[class*="language-"] {
+                text-shadow: none;
+            }
+        }
+
+        /* Code blocks */
+        pre[class*="language-"] {
+            padding: 1em;
+            margin: .5em 0;
+            overflow: auto;
+        }
+
+        :not(pre) > code[class*="language-"],
+        pre[class*="language-"] {
+            background: #f5f5f5;
+            border: solid 1px #ccc;
+        }
+
+        /* Inline code */
+        :not(pre) > code[class*="language-"] {
+            padding: .1em;
+            border-radius: .3em;
+            white-space: normal;
+        }
+
+        .token.comment,
+        .token.prolog,
+        .token.doctype,
+        .token.cdata {
+            color: slategray;
+        }
+
+        .token.punctuation {
+            color: #999;
+        }
+
+        .namespace {
+            opacity: .7;
+        }
+
+        .token.property,
+        .token.tag,
+        .token.boolean,
+        .token.number,
+        .token.constant,
+        .token.symbol,
+        .token.deleted {
+            color: #905;
+        }
+
+        .token.selector,
+        .token.attr-name,
+        .token.string,
+        .token.char,
+        .token.builtin,
+        .token.inserted {
+            color: #690;
+        }
+
+        .token.operator,
+        .token.entity,
+        .token.url,
+        .language-css .token.string,
+        .style .token.string {
+            color: #9a6e3a;
+            background: hsla(0, 0%, 100%, .5);
+        }
+
+        .token.atrule,
+        .token.attr-value,
+        .token.keyword {
+            color: #07a;
+        }
+
+        .token.function,
+        .token.class-name {
+            color: #DD4A68;
+        }
+
+        .token.regex,
+        .token.important,
+        .token.variable {
+            color: #e90;
+        }
+
+        .token.important,
+        .token.bold {
+            font-weight: bold;
+        }
+        .token.italic {
+            font-style: italic;
+        }
+
+        .token.entity {
+            cursor: help;
+        }
+    </style>
 </head>
 <body>
-  <div class="picker">
-    <div class="wheel" id="wheel">
-      <!-- Items will be added via JS -->
+    <!-- From index.html -->
+    <div class="page-header">
+        <h1 class="project-name">popoPicker</h1>
+        <h2 class="project-tagline">popoPicker是一个仿ios的3D滚轮选择器，支持无限循环滚动，采用原生js，不依赖任何第三方库，速度更快；popoDatetime是建立在popoPicker之上的3D日期时间选择器，可自定义滚动循环，背景主题、位置等信息，具备时间选择、日期选择、日期时间同时选择的功能，具体配置请阅读参数文档。</h2>
+        <a href="https://github.com/po-po/popoPicker" class="btn">View on GitHub</a>
+        <a href="https://github.com/po-po/popoPicker/zipball/master" class="btn">Download .zip</a>
+        <a href="https://github.com/po-po/popoPicker/tarball/master" class="btn">Download .tar.gz</a>
     </div>
-    <div class="highlight"></div>
-  </div>
 
-  <script>
-    const items = [
-      'Option 1',
-      'Option 2',
-      'Option 3',
-      'Option 4',
-      'Option 5',
-      'Option 6',
-      'Option 7',
-      'Option 8',
-      'Option 9',
-      'Option 10'
-    ];
+    <div class="content">
+        <div class="main-box">
+            <div class="phone-box">
+                <div class="screen">
+                    <header>
+                        <p>popopicker</p>
+                    </header>
+                    <div class="tit">Picker</div>
+                    <input type="text" class="inp js-picker" readonly="readonly" placeholder="click me">
+                    <div class="tit">Date</div>
+                    <input type="text" class="inp js-date" readonly="readonly" placeholder="click me">
+                    <div class="tit">Time</div>
+                    <input type="text" class="inp js-time" readonly="readonly" placeholder="click me">
+                    <div class="tit">DateTime</div>
+                    <input type="text" class="inp js-datetime" readonly="readonly" placeholder="click me">
+                </div>
+            </div>
+            <div class="flex-1 tb-wrap">
+                <div class="title">popoPicker</div>
+                <table class="tb">
+                    <tr>
+                        <th>属性property</th>
+                        <th>类型type</th>
+                        <th>默认default</th>
+                        <th>描述description</th>
+                    </tr>
+                    <tr>
+                        <td>wheels</td>
+                        <td>Array</td>
+                        <td>[]</td>
+                        <td>wheels为滚轮的数据内容<br>例如：wheels: [{ infinite: false, selected: 3, data:[ {value:0,display:'选项一'}]}]<br>infinit: bool 是否无限循环滚轮<br>selected: Number 选中的value<br>data: Array 滚轮数据</td>
+                    </tr>
+                    <tr>
+                        <td>container</td>
+                        <td>String</td>
+                        <td>'body'</td>
+                        <td>选择器所在的父级</td>
+                    </tr>
+                    <tr>
+                        <td>scrollType</td>
+                        <td>String</td>
+                        <td>'3d'</td>
+                        <td>滚轮的显示模式，分2d,和3d</td>
+                    </tr>
+                    <tr>
+                        <td>background</td>
+                        <td>String</td>
+                        <td>'light'</td>
+                        <td>主题背景颜色</td>
+                    </tr>
+                    <tr>
+                        <td>display</td>
+                        <td>String</td>
+                        <td>"bottom"</td>
+                        <td>滚轮显示位置</td>
+                    </tr>
+                    <tr>
+                        <td>headTitle</td>
+                        <td>String</td>
+                        <td>''</td>
+                        <td>滚轮顶部标题</td>
+                    </tr>
+                    <tr>
+                        <td>init</td>
+                        <td>Function</td>
+                        <td>*</td>
+                        <td>初始加载完成后执行</td>
+                    </tr>
+                    <tr>
+                        <td>getResult</td>
+                        <td>Function</td>
+                        <td>*</td>
+                        <td>返回滚动时的结果</td>
+                    </tr>
+                    <tr>
+                        <td>save</td>
+                        <td>Function</td>
+                        <td>*</td>
+                        <td>点击确定</td>
+                    </tr>
+                    <tr>
+                        <td>cancel</td>
+                        <td>Function</td>
+                        <td>*</td>
+                        <td>点击取消</td>
+                    </tr>
+                </table>
+                <div class="title">popoDateTime</div>
+                <table class="tb">
+                    <tr>
+                        <th>属性property</th>
+                        <th>类型type</th>
+                        <th>默认default</th>
+                        <th>描述description</th>
+                    </tr>
+                    <tr>
+                        <td>container</td>
+                        <td>String</td>
+                        <td>'body'</td>
+                        <td>选择器所在的父级</td>
+                    </tr>
+                    <tr>
+                        <td>scrollType</td>
+                        <td>String</td>
+                        <td>'3d'</td>
+                        <td>滚轮的显示模式，分2d,和3d</td>
+                    </tr>
+                    <tr>
+                        <td>background</td>
+                        <td>String</td>
+                        <td>'light'</td>
+                        <td>主题背景颜色'light'和'dark'</td>
+                    </tr>
+                    <tr>
+                        <td>labelType</td>
+                        <td>String</td>
+                        <td>'symbol'</td>
+                        <td>滚轮label 类型有symbol符号，text文字，split分割线(需date和time同时存在)</td>
+                    </tr>
+                    <tr>
+                        <td>display</td>
+                        <td>String</td>
+                        <td>'bottom'</td>
+                        <td>滚轮显示位置</td>
+                    </tr>
+                    <tr>
+                        <td>headResult</td>
+                        <td>Bool</td>
+                        <td>false</td>
+                        <td>滚轮顶部栏目显示结果</td>
+                    </tr>
+                    <tr>
+                        <td>date</td>
+                        <td>Bool</td>
+                        <td>true</td>
+                        <td>是否显示日期</td>
+                    </tr>
+                    <tr>
+                        <td>time</td>
+                        <td>Bool</td>
+                        <td>true</td>
+                        <td>是否显示时间</td>
+                    </tr>
+                    <tr>
+                        <td>beginYear</td>
+                        <td>Number</td>
+                        <td>new Date().getFullYear()-100</td>
+                        <td>开始年份</td>
+                    </tr>
+                    <tr>
+                        <td>endYear</td>
+                        <td>Number</td>
+                        <td>new Date().getFullYear()+100</td>
+                        <td>结束年份</td>
+                    </tr>
+                    <tr>
+                        <td>save</td>
+                        <td>Function</td>
+                        <td>*</td>
+                        <td>点击确定</td>
+                    </tr>
+                    <tr>
+                        <td>cancel</td>
+                        <td>Function</td>
+                        <td>*</td>
+                        <td>点击取消</td>
+                    </tr>
+                </table>
+                <div class="title">examples</div>
+                <pre class="language-javascript"><code>//Picker
+new popoPicker('.js-picker',{
+    container:'.screen',
+    wheels: [{
+        infinite: false,
+        //selected: 3,
+        data:[
+            {value:0,display:'选项一'},
+            {value:1,display:'选项二'},
+            {value:2,display:'选项三'},
+            {value:3,display:'选项四'},
+            {value:4,display:'选项五'},
+            {value:5,display:'选项六'},
+            {value:6,display:'选项七'}
+        ]
+    }],
+    background:'dark'
+});
 
-    const itemHeight = 40;
-    const visibleItems = 5; // Number of visible items
-    const radius = itemHeight * visibleItems / (2 * Math.PI); // Approximate radius for 3D effect
+//Date
+new popoDateTime('.js-date',{
+   container:'.screen',
+   time: false
+});
 
-    const wheel = document.getElementById('wheel');
+//Time
+new popoDateTime('.js-time',{
+   container:'.screen',
+   date: false
+});
 
-    // Create items
-    items.forEach((text, index) => {
-      const item = document.createElement('div');
-      item.className = 'item';
-      item.textContent = text;
-      item.style.transform = `rotateX(${index * -360 / items.length}deg) translateZ(${radius}px)`;
-      wheel.appendChild(item);
-    });
+//DateTime
+new popoDateTime('.js-datetime',{
+   container:'.screen',
+});</code></pre>
+            </div>
+        </div>
+    </div>
 
-    // Total angle range
-    const totalAngle = 360;
-
-    // Initial setup
-    let currentAngle = 0;
-    let startY = 0;
-    let currentY = 0;
-    let velocity = 0;
-    let lastTime = 0;
-    let animationFrame;
-
-    const friction = 0.95; // Friction for inertia
-
-    function updateWheel() {
-      currentAngle = Math.max(0, Math.min(currentAngle, totalAngle - (360 / items.length)));
-      wheel.style.transform = `rotateX(${currentAngle}deg)`;
-    }
-
-    function animate(time) {
-      if (!lastTime) lastTime = time;
-      const deltaTime = time - lastTime;
-      lastTime = time;
-
-      currentAngle += velocity * deltaTime / 10;
-      velocity *= friction;
-
-      updateWheel();
-
-      if (Math.abs(velocity) > 0.1) {
-        animationFrame = requestAnimationFrame(animate);
-      } else {
-        snapToItem();
-      }
-    }
-
-    function snapToItem() {
-      const itemAngle = 360 / items.length;
-      const closest = Math.round(currentAngle / itemAngle) * itemAngle;
-      currentAngle = closest;
-      updateWheel();
-    }
-
-    wheel.addEventListener('touchstart', (e) => {
-      startY = e.touches[0].pageY;
-      currentY = startY;
-      velocity = 0;
-      cancelAnimationFrame(animationFrame);
-      lastTime = 0;
-    });
-
-    wheel.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      const deltaY = e.touches[0].pageY - currentY;
-      currentAngle -= deltaY * 0.5; // Adjust sensitivity
-      currentY = e.touches[0].pageY;
-      updateWheel();
-    });
-
-    wheel.addEventListener('touchend', (e) => {
-      const deltaY = e.changedTouches[0].pageY - startY;
-      velocity = -deltaY / 5; // Initial velocity based on swipe
-      animationFrame = requestAnimationFrame(animate);
-    });
-
-    // For mouse support
-    wheel.addEventListener('mousedown', (e) => {
-      startY = e.pageY;
-      currentY = startY;
-      velocity = 0;
-      cancelAnimationFrame(animationFrame);
-      lastTime = 0;
-    });
-
-    wheel.addEventListener('mousemove', (e) => {
-      if (e.buttons !== 1) return;
-      e.preventDefault();
-      const deltaY = e.pageY - currentY;
-      currentAngle -= deltaY * 0.5;
-      currentY = e.pageY;
-      updateWheel();
-    });
-
-    wheel.addEventListener('mouseup', (e) => {
-      const deltaY = e.pageY - startY;
-      velocity = -deltaY / 5;
-      animationFrame = requestAnimationFrame(animate);
-    });
-
-    // Initial update
-    updateWheel();
-  </script>
-</html>
+    <script>
+        /* Inline prism.js */
+        /* PrismJS 1.14.0
+        https://prismjs.com/download.html#themes=prism-okaidia&languages=markup+css+clike+javascript */
+        var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(){var e=/\blang(?:uage)?-([\w-]+)\b/i,t=0,n=_self.Prism={manual:_self.Prism&&_self.Prism.manual,disableWorkerMessageHandler:_self.Prism&&_self.Prism.disableWorkerMessageHandler,util:{encode:function(e){return e instanceof r?new r(e.type,n.util.encode(e.content),e.alias):"Array"===n.util.type(e)?e.map(n.util.encode):e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).match(/\[object (\w+)\]/)[1]},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function(e,t){var r=n.util.type(e);switch(t=t||{},r){case"Object":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a={};t[n.util.objId(e)]=a;for(var l in e)e.hasOwnProperty(l)&&(a[l]=n.util.clone(e[l],t));return a;case"Array":if(t[n.util.objId(e)])return t[n.util.objId(e)];var a=[];return t[n.util.objId(e)]=a,e.forEach(function(e,r){a[r]=n.util.clone(e,t)}),a}return e}},languages:{extend:function(e,t){var r=n.util.clone(n.languages[e]);for(var a in t)r[a]=t[a];return r},insertBefore:function(e,t,r,a){a=a||n.languages;var l=a[e];if(2==arguments.length){r=arguments[1];for(var i in r)r.hasOwnProperty(i)&&(l[i]=r[i]);return l}var o={};for(var s in l)if(l.hasOwnProperty(s)){if(s==t)for(var i in r)r.hasOwnProperty(i)&&(o[i]=r[i]);o[s]=l[s]}return n.languages.DFS(n.languages,function(t,n){n===a[e]&&t!=e&&(this[t]=o)}),a[e]=o},DFS:function(e,t,r,a){a=a||{};for(var l in e)e.hasOwnProperty(l)&&(t.call(e,l,e[l],r||l),"Object"!==n.util.type(e[l])||a[n.util.objId(e[l])]?"Array"!==n.util.type(e[l])||a[n.util.objId(e[l])]||(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,l,a)):(a[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,null,a)))}},plugins:{},highlightAll:function(e,t){n.highlightAllUnder(document,e,t)},highlightAllUnder:function(e,t,r){var a={callback:r,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};n.hooks.run("before-highlightall",a);for(var l,i=a.elements||e.querySelectorAll(a.selector),o=0;l=i[o++];)n.highlightElement(l,t===!0,a.callback)},highlightElement:function(t,r,a){for(var l,i,o=t;o&&!e.test(o.className);)o=o.parentNode;o&&(l=(o.className.match(e)||[,""])[1].toLowerCase(),i=n.languages[l]),t.className=t.className.replace(e,"").replace(/\s+/g," ")+" language-"+l,t.parentNode&&(o=t.parentNode,/pre/i.test(o.nodeName)&&(o.className=o.className.replace(e,"").replace(/\s+/g," ")+" language-"+l));var s=t.textContent,u={element:t,language:l,grammar:i,code:s};if(n.hooks.run("before-sanity-check",u),!u.code||!u.grammar)return u.code&&(n.hooks.run("before-highlight",u),u.element.textContent=u.code,n.hooks.run("after-highlight",u)),n.hooks.run("complete",u),void 0;if(n.hooks.run("before-highlight",u),r&&_self.Worker){var g=new Worker(n.filename);g.onmessage=function(e){u.highlightedCode=e.data,n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,a&&a.call(u.element),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},g.postMessage(JSON.stringify({language:u.language,code

@@ -3,89 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>滚动选择器</title>
+<title>iOS 风格滚轮+弹簧阻尼</title>
 <style>
-  html, body {
-    margin: 0;
-    height: 100%;
-    overflow: hidden; /* 禁止整个页面上下滚动 */
-    background: #111;
-    color: #fff;
-    font-family: sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .picker-container {
-    position: relative;
-    height: 400px;   /* 显示区高度 */
-    width: 140px;    /* 显示区宽度 */
-    overflow-y: scroll;
-    scroll-snap-type: y mandatory;
-    -webkit-overflow-scrolling: touch;
-    border-left: 2px solid #555;
-    border-right: 2px solid #555;
-  }
-  .picker-item {
-    height: 70px;    /* 每个项高度 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 28px;
-    scroll-snap-align: center;
-    transition: all 0.2s;
-    color: #aaa;
-  }
-  .picker-item.active {
-    font-size: 38px;
-    font-weight: bold;
-    color: #4cafef;
-  }
+html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
+.picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
+.picker-list { position:absolute; top:0; left:0; right:0; transform-style: preserve-3d; }
+.picker-item { height:70px; display:flex; justify-content:center; align-items:center; font-size:28px; color:#aaa; transition: all 0.1s;}
+.center-line { position:absolute; top:50%; left:0; width:100%; height:0; border-top:2px solid #4cafef; pointer-events:none; z-index:10;}
+.spacer { height:200px; }
+.mask-top, .mask-bottom { position:absolute; left:0; width:100%; height:100px; z-index:5; pointer-events:none;}
+.mask-top { top:0; background: linear-gradient(to bottom, #111 0%, transparent 100%);}
+.mask-bottom { bottom:0; background: linear-gradient(to top, #111 0%, transparent 100%);}
+.picker-container::before, .picker-container::after { content:""; position:absolute; top:0; width:30px; height:100%; z-index:5; pointer-events:none;}
+.picker-container::before { left:0; background: linear-gradient(to right, #111, transparent); }
+.picker-container::after { right:0; background: linear-gradient(to left, #111, transparent); }
 </style>
 </head>
 <body>
-  <div class="picker-container" id="picker">
-    <div class="picker-item">0.5</div>
-    <div class="picker-item">1</div>
-    <div class="picker-item">2</div>
-    <div class="picker-item">5</div>
-    <div class="picker-item">10</div>
-    <div class="picker-item">20</div>
-    <div class="picker-item">30</div>
-    <div class="picker-item">50</div>
-  </div>
+<div class="picker-container" id="picker">
+  <div class="picker-list" id="pickerList"></div>
+  <div class="center-line"></div>
+  <div class="mask-top"></div>
+  <div class="mask-bottom"></div>
+</div>
+
+<audio id="tickSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
 <script>
-  const picker = document.getElementById('picker');
-  const items = document.querySelectorAll('.picker-item');
+(function(){
+const picker=document.getElementById('picker');
+const list=document.getElementById('pickerList');
+const tickSound=document.getElementById('tickSound');
+const itemHeight=70;
+const min=0.5,max=50,step=0.5;
+const values=[]; for(let v=min;v<=max;v+=step) values.push(v.toFixed(1));
 
-  function highlightClosest() {
-    let containerRect = picker.getBoundingClientRect();
-    let centerY = containerRect.top + containerRect.height / 2;
+list.innerHTML='<div class="spacer"></div>'+values.map(v=>`<div class="picker-item">${v}</div>`).join('')+'<div class="spacer"></div>';
+const items=list.querySelectorAll('.picker-item');
+let offset=-itemHeight*2,startY=0,velocity=0,lastTickIndex=null,animFrame,lastTime=0;
 
-    let closestItem = null;
-    let closestDistance = Infinity;
-
-    items.forEach(item => {
-      let rect = item.getBoundingClientRect();
-      let itemCenter = rect.top + rect.height / 2;
-      let distance = Math.abs(centerY - itemCenter);
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestItem = item;
-      }
+function updateHighlight(){
+    const center=picker.clientHeight/2;
+    let closestItem=null,closestDist=Infinity;
+    items.forEach((item,i)=>{
+        const itemCenter=item.offsetTop+itemHeight/2+offset;
+        const dist=center-itemCenter;
+        const absDist=Math.abs(dist);
+        const scale=Math.max(0.7,1-absDist/200);
+        const rotateX=Math.max(-40, Math.min(40, dist/5));
+        const colorVal=Math.round(Math.max(170,255-absDist/2));
+        item.style.transform=`scale(${scale}) rotateX(${rotateX}deg)`;
+        item.style.color=`rgb(${colorVal},${colorVal},${colorVal})`;
+        if(absDist<closestDist){
+            closestDist=absDist;
+            closestItem=item;
+            if(lastTickIndex!==i){
+                lastTickIndex=i;
+                tickSound.currentTime=0;
+                tickSound.play().catch(()=>{});
+                if(navigator.vibrate) navigator.vibrate(5);
+            }
+        }
     });
+    items.forEach(item=>item.classList.remove('active'));
+    if(closestItem) closestItem.classList.add('active');
+}
 
-    items.forEach(item => item.classList.remove('active'));
-    if (closestItem) closestItem.classList.add('active');
-  }
+function render(){ list.style.transform=`translateY(${offset}px)`; updateHighlight(); }
 
-  picker.addEventListener('scroll', () => {
-    requestAnimationFrame(highlightClosest);
-  });
+// 阻尼 + 弹簧
+function damping(v){ return v * 0.92; }
+function spring(o){
+    const maxOffset=0, minOffset=-(itemHeight*(values.length-1));
+    if(o>maxOffset) return (o - maxOffset)*0.2; // 上弹簧
+    if(o<minOffset) return (o - minOffset)*0.2; // 下弹簧
+    return 0;
+}
 
-  highlightClosest(); // 初始高亮
+function animate(){
+    const springForce = spring(offset);
+    offset += velocity - springForce;
+    velocity = damping(velocity);
+    render();
+    if(Math.abs(velocity) > 0.5 || Math.abs(springForce)>0.5) animFrame=requestAnimationFrame(animate);
+    else{
+        let index=Math.round(-offset/itemHeight);
+        offset=-index*itemHeight;
+        render();
+    }
+}
+
+picker.addEventListener('touchstart', e=>{
+    cancelAnimationFrame(animFrame);
+    startY=e.touches[0].clientY;
+    velocity=0;
+    lastTime=Date.now();
+}, {passive:true});
+
+picker.addEventListener('touchmove', e=>{
+    const y=e.touches[0].clientY;
+    const now=Date.now();
+    const dt=now-lastTime;
+    lastTime=now;
+    const delta=y-startY;
+    startY=y;
+    offset+=delta;
+    velocity = delta/(dt/16);
+    render();
+}, {passive:true});
+
+picker.addEventListener('touchend', ()=>{
+    animFrame=requestAnimationFrame(animate);
+});
+
+render();
+})();
 </script>
 </body>
 </html>

@@ -88,7 +88,7 @@ const items = ["苹果","香蕉","橙子","西瓜","葡萄","菠萝","草莓","�
 const itemHeight = 40;
 const pickerList = document.getElementById('pickerList');
 
-// 只用一份数组
+// 渲染一份数组
 items.forEach(text=>{
   const div = document.createElement('div');
   div.className = 'picker-item';
@@ -96,11 +96,13 @@ items.forEach(text=>{
   pickerList.appendChild(div);
 });
 
-let currentIndex = 0; // 默认第一个
+let currentIndex = 0; 
 let startY = 0;
 let lastY = 0;
+let startTime = 0;
 let totalDelta = 0;
 let isDragging = false;
+let velocity = 0;
 
 function updatePicker(animate = true){
   pickerList.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
@@ -111,7 +113,7 @@ function updatePicker(animate = true){
   });
 }
 
-// 限制范围（取消循环）
+// 限制范围
 function clampIndex(){
   if(currentIndex < 0) currentIndex = 0;
   if(currentIndex >= items.length) currentIndex = items.length - 1;
@@ -122,6 +124,7 @@ function startDrag(e){
   isDragging = true;
   startY = e.touches ? e.touches[0].clientY : e.clientY;
   lastY = startY;
+  startTime = Date.now();
   totalDelta = 0;
   pickerList.style.transition = 'none';
 }
@@ -134,7 +137,13 @@ function moveDrag(e){
   totalDelta += delta;
   lastY = y;
 
-  // 临时跟随拖动
+  const now = Date.now();
+  const dt = now - startTime;
+  if(dt > 0){
+    velocity = delta / dt; // px/ms
+  }
+  startTime = now;
+
   const offset = -currentIndex*itemHeight + Math.floor(5/2)*itemHeight + totalDelta;
   pickerList.style.transform = `translateY(${offset}px)`;
 }
@@ -143,10 +152,22 @@ function endDrag(){
   if(!isDragging) return;
   isDragging = false;
 
-  // 计算滚动几个 item，轻轻滑一下最多 ±1
+  // 基于位移判断最少移动
   let moved = Math.round(totalDelta / itemHeight);
-  if(moved > 1) moved = 1;
-  if(moved < -1) moved = -1;
+
+  // 如果速度足够快，加上惯性
+  if(Math.abs(velocity) > 0.5){ 
+    moved += Math.round(velocity * 10); // 惯性因子
+  }
+
+  // 限制不要太夸张
+  if(moved > 5) moved = 5;
+  if(moved < -5) moved = -5;
+
+  // 轻滑最多 ±1
+  if(Math.abs(totalDelta) < itemHeight/2 && Math.abs(moved) === 0){
+    moved = (totalDelta > 0) ? -1 : 1;
+  }
 
   currentIndex -= moved;
   clampIndex();

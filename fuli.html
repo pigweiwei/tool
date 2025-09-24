@@ -13,6 +13,7 @@
     align-items: center;
     justify-content: center;
     background: #f0f0f0;
+    overflow: hidden; /* 禁止页面滚动 */
   }
 
   .picker-container {
@@ -87,28 +88,33 @@
   const visibleCount = 5;
   const pickerList = document.getElementById('pickerList');
 
-  // 填充列表，复制前后以实现无限滚动
-  const extendedItems = [...items.slice(-items.length), ...items, ...items.slice(0, items.length)];
-  extendedItems.forEach(text => {
+  // 填充列表
+  items.forEach(text => {
     const div = document.createElement('div');
     div.className = 'picker-item';
     div.innerText = text;
     pickerList.appendChild(div);
   });
 
-  let currentIndex = items.length; // 初始选中第一个
-  const totalItems = extendedItems.length;
-  const halfVisible = Math.floor(visibleCount / 2);
+  let currentIndex = 0;
+  const totalItems = items.length;
 
   function updatePicker() {
-    const rotateX = -currentIndex * itemHeight;
-    pickerList.style.transform = `translateY(calc(50% - ${itemHeight/2}px)) translateY(${rotateX}px)`;
+    const offset = -currentIndex * itemHeight;
+    pickerList.style.transform = `translateY(calc(50% - ${itemHeight/2}px)) translateY(${offset}px)`;
     document.querySelectorAll('.picker-item').forEach((el, idx) => {
       el.classList.toggle('selected', idx === currentIndex);
     });
   }
 
   updatePicker();
+
+  // 阻止滚动穿透页面
+  function preventScroll(e) {
+    e.preventDefault();
+  }
+
+  pickerList.addEventListener('wheel', preventScroll, {passive: false});
 
   // 鼠标拖动 / 触摸滑动
   let startY = 0;
@@ -126,8 +132,8 @@
     if(Math.abs(delta) >= itemHeight) {
       const step = Math.floor(delta / itemHeight);
       currentIndex -= step;
-      if(currentIndex < 0) currentIndex += items.length;
-      if(currentIndex >= totalItems) currentIndex -= items.length;
+      if(currentIndex < 0) currentIndex = 0;
+      if(currentIndex >= totalItems) currentIndex = totalItems -1;
       startY = y;
       updatePicker();
     }
@@ -142,7 +148,7 @@
   pickerList.addEventListener('mouseup', endDrag);
   pickerList.addEventListener('mouseleave', endDrag);
   pickerList.addEventListener('touchstart', startDrag);
-  pickerList.addEventListener('touchmove', moveDrag);
+  pickerList.addEventListener('touchmove', moveDrag, {passive: false});
   pickerList.addEventListener('touchend', endDrag);
 
 </script>

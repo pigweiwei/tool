@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚轮（无音效）</title>
+<title>iOS 风格滚轮（居中数字）</title>
 <style>
 html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
 .picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
@@ -36,7 +36,8 @@ for(let v=min; v<=max; v+=step) values.push(v.toFixed(1));
 list.innerHTML = '<div class="spacer"></div>' + values.map(v=>`<div class="picker-item">${v}</div>`).join('') + '<div class="spacer"></div>';
 const items = list.querySelectorAll('.picker-item');
 
-let offset = -itemHeight*2;
+// 修正 offset，让第一个数字正好居中
+let offset = picker.clientHeight/2 - itemHeight/2 - itemHeight*2;
 let startY = 0;
 let velocity = 0;
 let animFrame;
@@ -56,7 +57,6 @@ function updateHighlight() {
             closestDist = dist;
             closestItem = item;
         }
-        // 先清空样式
         item.style.color=`rgb(${colorVal},${colorVal},${colorVal})`;
         item.style.fontWeight="normal";
     });
@@ -72,7 +72,8 @@ function render() {
 }
 
 function spring(o){
-    const maxOffset = 0, minOffset = -(itemHeight*(values.length-1));
+    const maxOffset = picker.clientHeight/2 - itemHeight/2; // 修正边界
+    const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2;
     if(o > maxOffset) return (o - maxOffset)*0.2;
     if(o < minOffset) return (o - minOffset)*0.2;
     return 0;
@@ -92,8 +93,8 @@ function animate() {
     if(Math.abs(velocity) > 0.5 || Math.abs(springForce) > 0.5) animFrame=requestAnimationFrame(animate);
     else{
         // 平滑对齐最近数字
-        let index = Math.round(-offset/itemHeight);
-        offset = -index*itemHeight;
+        let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2)/itemHeight);
+        offset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2;
         render();
     }
 }

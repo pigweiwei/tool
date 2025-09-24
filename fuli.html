@@ -5,104 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>双滚轮选择器 - 深色模式</title>
 <style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-    background: #121212;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    overflow: hidden;
-  }
+/* 原网站样式保留，略微调整深色模式与布局 */
+body {
+  margin:0; font-family: Arial, sans-serif; background:#121212; color:#fff;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh;
+}
 
-  .result {
-    font-size: 28px;
-    margin-bottom: 30px;
-    color: #0ff;
-  }
+.result {
+  font-size:28px; margin-bottom:30px; color:#0ff;
+}
 
-  .picker-wrapper {
-    display: flex;
-    gap: 30px;
-    justify-content: center;
-    align-items: flex-start;
-  }
+.picker-wrapper { display:flex; gap:30px; justify-content:center; align-items:flex-start; }
 
-  .picker-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
+.picker-block { display:flex; flex-direction:column; align-items:center; }
 
-  .picker-title {
-    margin-bottom: 5px;
-    font-size: 16px;
-    text-align: center;
-  }
+.picker-title { margin-bottom:5px; font-size:16px; }
 
-  .picker-container {
-    width: 150px;
-    height: 400px;
-    overflow: hidden;
-    position: relative;
-    background: #1e1e1e;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    touch-action: none;
-  }
+.picker-container {
+  width:150px; height:400px; overflow:hidden; position:relative; 
+  background:#1e1e1e; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.5); touch-action:none;
+}
 
-  .picker-list {
-    position: absolute;
-    width: 100%;
-    top: 0;
-    left: 0;
-  }
+.picker-list { position:absolute; width:100%; top:0; left:0; }
 
-  .picker-item {
-    height: 40px;
-    line-height: 40px;
-    text-align: center;
-    font-size: 18px;
-    color: #aaa;
-    user-select: none;
-  }
+.picker-item { height:40px; line-height:40px; text-align:center; font-size:18px; color:#aaa; user-select:none; }
 
-  .picker-item.selected {
-    color: #0ff;
-    font-weight: bold;
-  }
+.picker-item.selected { color:#0ff; font-weight:bold; }
 
-  .picker-mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, #121212 0%, rgba(18,18,18,0) 30%, rgba(18,18,18,0) 70%, #121212 100%);
-    pointer-events: none;
-  }
+.picker-mask {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background: linear-gradient(to bottom, #121212 0%, rgba(18,18,18,0) 30%, rgba(18,18,18,0) 70%, #121212 100%);
+  pointer-events:none;
+}
 
-  .picker-center-line {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 40px;
-    margin-top: -20px;
-    border-top: 1px solid #0ff;
-    border-bottom: 1px solid #0ff;
-    pointer-events: none;
-  }
+.picker-center-line {
+  position:absolute; top:50%; left:0; width:100%; height:40px; margin-top:-20px;
+  border-top:1px solid #0ff; border-bottom:1px solid #0ff; pointer-events:none;
+}
 
-  .picker-info {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #0ff;
-    text-align: center;
-  }
+.picker-info { margin-top:10px; font-size:14px; color:#0ff; text-align:center; }
 </style>
 </head>
 <body>
@@ -132,26 +73,26 @@
 </div>
 
 <script>
-// 基于原始网址的滚动逻辑，取消循环
-function createPicker(containerId, items, titleId, callback){
+// 核心逻辑参考 po-po/popoPicker
+function PopoPicker(containerId, items, titleId, callback){
   const container = document.getElementById(containerId);
   const pickerList = container.querySelector('.picker-list');
   const title = document.getElementById(titleId);
   const itemHeight = 40;
 
-  items.forEach(text=>{
+  // 填充内容
+  items.forEach(item=>{
     const div = document.createElement('div');
-    div.className = 'picker-item';
-    div.innerText = text;
+    div.className='picker-item';
+    div.innerText=item;
     pickerList.appendChild(div);
   });
 
-  let currentIndex = 0;
-  let startY = 0, lastY = 0, lastTime = 0, velocity = 0, isDragging = false;
-  let frameId = null;
+  let currentIndex=0;
+  let startY=0, lastY=0, lastTime=0, velocity=0, isDragging=false, frameId=null;
 
-  function updatePicker(){
-    const offset = -currentIndex * itemHeight + Math.floor(container.offsetHeight/itemHeight/2)*itemHeight - itemHeight/2;
+  function update(){
+    const offset = -currentIndex*itemHeight + Math.floor(container.offsetHeight/itemHeight/2)*itemHeight - itemHeight/2;
     pickerList.style.transform = `translateY(${offset}px)`;
     pickerList.querySelectorAll('.picker-item').forEach((el, idx)=>{
       el.classList.toggle('selected', idx===currentIndex);
@@ -162,47 +103,47 @@ function createPicker(containerId, items, titleId, callback){
 
   function momentum(){
     velocity *= 0.95;
-    if(Math.abs(velocity) < 0.02){
-      currentIndex = Math.round(currentIndex);
-      if(currentIndex < 0) currentIndex = 0;
-      if(currentIndex >= items.length) currentIndex = items.length-1;
-      updatePicker();
+    if(Math.abs(velocity)<0.02){
+      currentIndex=Math.round(currentIndex);
+      if(currentIndex<0) currentIndex=0;
+      if(currentIndex>=items.length) currentIndex=items.length-1;
+      update();
       return;
     }
     currentIndex -= velocity;
-    if(currentIndex < 0) currentIndex = 0;
-    if(currentIndex >= items.length) currentIndex = items.length-1;
-    updatePicker();
-    frameId = requestAnimationFrame(momentum);
+    if(currentIndex<0) currentIndex=0;
+    if(currentIndex>=items.length) currentIndex=items.length-1;
+    update();
+    frameId=requestAnimationFrame(momentum);
   }
 
   function startDrag(e){
     cancelAnimationFrame(frameId);
-    isDragging = true;
-    startY = e.touches ? e.touches[0].clientY : e.clientY;
-    lastY = startY;
-    lastTime = Date.now();
-    velocity = 0;
+    isDragging=true;
+    startY=e.touches?e.touches[0].clientY:e.clientY;
+    lastY=startY;
+    lastTime=Date.now();
+    velocity=0;
   }
 
   function moveDrag(e){
     if(!isDragging) return;
     e.preventDefault();
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-    const delta = y - lastY;
-    currentIndex -= delta / itemHeight;
-    if(currentIndex < 0) currentIndex = 0;
-    if(currentIndex >= items.length) currentIndex = items.length-1;
-    updatePicker();
-    const now = Date.now();
-    velocity = delta / (now - lastTime);
-    lastTime = now;
-    lastY = y;
+    const y=e.touches?e.touches[0].clientY:e.clientY;
+    const delta=y-lastY;
+    currentIndex-=delta/itemHeight;
+    if(currentIndex<0) currentIndex=0;
+    if(currentIndex>=items.length) currentIndex=items.length-1;
+    update();
+    const now=Date.now();
+    velocity=delta/(now-lastTime);
+    lastTime=now;
+    lastY=y;
   }
 
   function endDrag(){
     if(!isDragging) return;
-    isDragging = false;
+    isDragging=false;
     momentum();
   }
 
@@ -214,46 +155,46 @@ function createPicker(containerId, items, titleId, callback){
   container.addEventListener('touchmove', moveDrag, {passive:false});
   container.addEventListener('touchend', endDrag);
 
-  container.addEventListener('wheel', function(e){
+  container.addEventListener('wheel', e=>{
     e.preventDefault();
-    currentIndex += e.deltaY > 0 ? 1 : -1;
-    if(currentIndex < 0) currentIndex = 0;
-    if(currentIndex >= items.length) currentIndex = items.length-1;
-    updatePicker();
+    currentIndex += e.deltaY>0?1:-1;
+    if(currentIndex<0) currentIndex=0;
+    if(currentIndex>=items.length) currentIndex=items.length-1;
+    update();
   }, {passive:false});
 
-  updatePicker();
+  update();
 }
 
-// 数据初始化
+// 数据
 const totalPosition = ["1","1/2","1/3","1/4","1/5","1/6","1/7","1/8","1/9","1/10"];
-const profitLoss = [];
+const profitLoss=[];
 for(let i=0.5;i<=50;i+=0.5) profitLoss.push(i.toFixed(1));
 
-let selectedTotal = 1;
-let selectedProfit = 0.5;
+let selectedTotal=1;
+let selectedProfit=0.5;
 
 function updateResult(){
-  let total = selectedTotal;
-  if(typeof total === 'string' && total.includes('/')){
-    const [n,d] = total.split('/').map(Number);
-    total = n/d;
+  let total=selectedTotal;
+  if(typeof total==='string' && total.includes('/')){
+    const [n,d]=total.split('/').map(Number);
+    total=n/d;
   }
-  const value = total * selectedProfit;
-  document.getElementById('result').innerText = value.toFixed(2) + '%';
+  const value=total*selectedProfit;
+  document.getElementById('result').innerText=value.toFixed(2)+'%';
 }
 
 // 创建滚轮
-createPicker('picker1', totalPosition, 'title1', val=>{
-  selectedTotal = val;
-  updateResult();
-});
-createPicker('picker2', profitLoss, 'title2', val=>{
-  selectedProfit = parseFloat(val);
+PopoPicker('picker1', totalPosition, 'title1', val=>{
+  selectedTotal=val;
   updateResult();
 });
 
-// 初始化顶部显示
+PopoPicker('picker2', profitLoss, 'title2', val=>{
+  selectedProfit=parseFloat(val);
+  updateResult();
+});
+
 updateResult();
 </script>
 

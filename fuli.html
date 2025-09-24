@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>仿 iPhone 滚轮（惯性+动态高亮）</title>
+<title>仿 iPhone 滚轮</title>
 <style>
   body {
     display: flex;
@@ -18,11 +18,11 @@
   .picker {
     position: relative;
     width: 120px;
-    height: 200px;
+    height: 200px; /* 可见窗口 */
     overflow: hidden;
     border-radius: 12px;
     background: #222;
-    touch-action: none; /* 防止页面跟随滚动 */
+    touch-action: none; /* 禁止默认页面滚动 */
   }
 
   .picker ul {
@@ -30,19 +30,20 @@
     padding: 0;
     margin: 0;
     transition: transform 0.2s ease-out;
+    will-change: transform;
   }
 
   .picker li {
-    height: 40px;
-    line-height: 40px;
+    height: 45px;   /* 原 40px × 1.8 ≈ 72，但为了平衡调成 45 */
+    line-height: 45px;
     text-align: center;
-    font-size: 18px;
+    font-size: 20px;
     opacity: 0.4;
-    transition: opacity 0.2s, font-size 0.2s;
+    transition: all 0.15s;
   }
 
   .picker li.active {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: bold;
     opacity: 1;
     color: #4CAF50;
@@ -51,10 +52,10 @@
   .picker::after {
     content: "";
     position: absolute;
-    top: 80px;
+    top: 78px;
     left: 0;
     right: 0;
-    height: 40px;
+    height: 45px;
     border-top: 2px solid #4CAF50;
     border-bottom: 2px solid #4CAF50;
     pointer-events: none;
@@ -71,74 +72,92 @@
 const picker = document.getElementById("picker");
 const list = document.getElementById("list");
 
-// 生成 0.5 - 10.0，步进 0.5
-for (let i = 0.5; i <= 10; i += 0.5) {
-  const li = document.createElement("li");
-  li.textContent = i.toFixed(1);
-  list.appendChild(li);
+const values = [];
+for (let v = 0.5; v <= 50; v += 0.5) {
+  values.push(v.toFixed(1));
 }
+values.forEach(v => {
+  const li = document.createElement("li");
+  li.textContent = v;
+  list.appendChild(li);
+});
 
 const items = list.querySelectorAll("li");
 
-let startY = 0, offsetY = 0, currentIndex = 1;
-let velocity = 0, lastY = 0, lastTime = 0;
-const itemHeight = 40;
+let startY = 0, offsetY = 0, velocity = 0, animationFrame;
+const itemHeight = 45;
+let currentIndex = 1; // 默认选中 1.0
 
 updateActive();
 
 // 触摸开始
 picker.addEventListener("touchstart", e => {
-  const touch = e.touches[0];
-  startY = touch.clientY - offsetY;
-  list.style.transition = "none";
+  cancelAnimationFrame(animationFrame);
+  startY = e.touches[0].clientY - offsetY;
   velocity = 0;
-  lastY = touch.clientY;
-  lastTime = Date.now();
+  list.style.transition = "none";
 }, { passive: false });
 
-// 移动中
+// 触摸移动
 picker.addEventListener("touchmove", e => {
   e.preventDefault();
-  const touch = e.touches[0];
-  const now = Date.now();
-
-  offsetY = touch.clientY - startY;
+  const y = e.touches[0].clientY - startY;
+  velocity = y - offsetY; // 计算速度
+  offsetY = y;
   list.style.transform = `translateY(${offsetY}px)`;
-
-  // 计算速度
-  const deltaY = touch.clientY - lastY;
-  const deltaTime = now - lastTime;
-  velocity = deltaY / deltaTime; // px/ms
-  lastY = touch.clientY;
-  lastTime = now;
-
-  updateActive(); // 滚动时动态高亮
+  updateActive(); // 👉 动态高亮
 }, { passive: false });
 
-// 触摸结束
+// 触摸结束，惯性滚动
 picker.addEventListener("touchend", () => {
-  // 惯性滚动
-  let momentum = velocity * 200; // 惯性强度
-  offsetY += momentum;
+  function momentum() {
+    offsetY += velocity;
+    velocity *= 0.92; // 摩擦力
 
-  // 吸附到最近项
-  currentIndex = Math.round(-offsetY / itemHeight);
-  if (currentIndex < 0) currentIndex = 0;
-  if (currentIndex > items.length - 1) currentIndex = items.length - 1;
+    // 边界处理
+    if (offsetY > 0) {
+      offsetY = 0;
+      velocity = 0;
+    }
+    const minOffset = -(items.length - 1) * itemHeight;
+    if (offsetY < minOffset) {
+      offsetY = minOffset;
+      velocity = 0;
+    }
 
-  offsetY = -currentIndex * itemHeight;
-  list.style.transition = "transform 0.4s cubic-bezier(0.1, 0.57, 0.1, 1)";
-  list.style.transform = `translateY(${offsetY}px)`;
-  updateActive();
+    list.style.transform = `translateY(${offsetY}px)`;
+    updateActive();
+
+    if (Math.abs(velocity) > 0.5) {
+      animationFrame = requestAnimationFrame(momentum);
+    } else {
+      // 自动吸附到最近的刻度
+      currentIndex = Math.round(-offsetY / itemHeight);
+      offsetY = -currentIndex * itemHeight;
+      list.style.transition = "transform 0.2s ease-out";
+      list.style.transform = `translateY(${offsetY}px)`;
+      updateActive();
+    }
+  }
+  momentum();
 });
 
-// 更新高亮
 function updateActive() {
-  const center = -offsetY / itemHeight;
-  const nearestIndex = Math.round(center);
+  const center = picker.clientHeight / 2;
+  let closestIndex = 0;
+  let closestDistance = Infinity;
 
   items.forEach((li, i) => {
-    li.classList.toggle("active", i === nearestIndex);
+    const itemCenter = offsetY + i * itemHeight + itemHeight / 2;
+    const distance = Math.abs(center - itemCenter);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = i;
+    }
+  });
+
+  items.forEach((li, i) => {
+    li.classList.toggle("active", i === closestIndex);
   });
 }
 </script>

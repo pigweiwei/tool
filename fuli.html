@@ -17,6 +17,19 @@
       border-radius: 12px;
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    .number-picker::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 40px; /* 横条高度 */
+      background: rgba(200, 200, 200, 0.3); /* 浅色横条 */
+      border-radius: 20px; /* 椭圆形 */
+      transform: translateY(-50%);
+      z-index: 1;
     }
     .picker-wheel {
       width: 80px;
@@ -40,18 +53,6 @@
       color: #999; /* 非选中选项变淡 */
       scroll-snap-align: center;
       transition: color 0.2s, font-weight 0.2s;
-    }
-    .picker-wheel::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 40px; /* 增加横条高度，接近图片样式 */
-      background: rgba(100, 100, 100, 0.5); /* 灰色横条 */
-      border-radius: 20px; /* 椭圆形 */
-      transform: translateY(-50%);
-      z-index: 1;
     }
     .picker-item.selected {
       color: #fff; /* 选中项白色 */

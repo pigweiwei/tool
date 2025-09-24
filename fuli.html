@@ -31,28 +31,34 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
 }
 
 .wheel {
     width: 120px;
-    height: 400px; /* 高度加倍 */
-    overflow-y: scroll;
-    border-radius: 15px;
+    height: 400px;
+    overflow: hidden;
+    border-radius: 20px;
     background: rgba(255,255,255,0.9);
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    scroll-snap-type: y mandatory;
-    -webkit-overflow-scrolling: touch;
     text-align: center;
     position: relative;
-    mask-image: linear-gradient(to bottom, transparent 10%, black 40%, black 60%, transparent 90%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 10%, black 40%, black 60%, transparent 90%);
 }
 
-.wheel div {
-    height: 80px; /* 高度加倍 */
+.wheel-content {
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    overflow-y: scroll;
+    height: 100%;
+    mask-image: linear-gradient(to bottom, transparent 15%, black 35%, black 65%, transparent 85%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 15%, black 35%, black 65%, transparent 85%);
+}
+
+.wheel-content div {
+    height: 80px;
     line-height: 80px;
     scroll-snap-align: center;
-    font-size: 32px; /* 字号增大 */
+    font-size: 32px;
     transition: transform 0.2s, color 0.2s, opacity 0.2s;
 }
 
@@ -60,25 +66,33 @@ body {
     margin-top: 10px;
     font-size: 18px;
     font-weight: bold;
+    text-align: center;
 }
 
+.wheel::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(255,77,79,0.6);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
 </style>
 </head>
 <body>
 
-<!-- 总仓盈亏显示在最上方 -->
 <div class="result" id="totalProfit">总仓盈亏：0</div>
 
 <div class="wheel-container">
-    <!-- 左侧滚轮列 -->
     <div class="wheel-column">
-        <div id="ratioWheel" class="wheel"></div>
+        <div id="ratioWheel" class="wheel"><div class="wheel-content"></div></div>
         <div class="wheel-label">仓位</div>
     </div>
-
-    <!-- 右侧滚轮列 -->
     <div class="wheel-column">
-        <div id="multiplierWheel" class="wheel"></div>
+        <div id="multiplierWheel" class="wheel"><div class="wheel-content"></div></div>
         <div class="wheel-label">盈亏</div>
     </div>
 </div>
@@ -88,8 +102,8 @@ body {
 const ratios = Array.from({length:10}, (_,i)=>(1/(i+1)).toFixed(2));
 const multipliers = Array.from({length:40}, (_,i)=>(0.5*(i+1)).toFixed(1));
 
-const ratioWheel = document.getElementById('ratioWheel');
-const multiplierWheel = document.getElementById('multiplierWheel');
+const ratioWheel = document.querySelector('#ratioWheel .wheel-content');
+const multiplierWheel = document.querySelector('#multiplierWheel .wheel-content');
 const totalProfitDisplay = document.getElementById('totalProfit');
 
 function populateWheel(wheel, items){
@@ -102,12 +116,10 @@ function populateWheel(wheel, items){
 populateWheel(ratioWheel, ratios);
 populateWheel(multiplierWheel, multipliers);
 
-// 获取选中索引
 function getSelectedIndex(wheel){
-    return Math.round(wheel.scrollTop / 80); // 对应高度80
+    return Math.round(wheel.scrollTop / 80);
 }
 
-// 更新滚轮视觉效果和总仓盈亏
 function updateSelection(){
     [ratioWheel, multiplierWheel].forEach(wheel=>{
         Array.from(wheel.children).forEach((child, i)=>{
@@ -127,19 +139,80 @@ function updateSelection(){
     totalProfitDisplay.textContent = `总仓盈亏：${profitLoss}`;
 }
 
-// 阻尼惯性滚动与自动对齐
-function attachWheel(wheel){
-    let isScrolling;
-    wheel.addEventListener('scroll', ()=>{
-        window.clearTimeout(isScrolling);
+// 弹性曲线函数 (类似 iOS 弹性)
+function elasticScroll(target, velocity){
+    let pos = target.scrollTop;
+    function step(){
+        velocity *= 0.95; // 缓动减速
+        pos += velocity;
+        // 弹性边缘
+        if(pos < 0){
+            pos = pos * 0.3;
+            velocity = 0;
+        } else if(pos > target.scrollHeight - target.clientHeight){
+            const excess = pos - (target.scrollHeight - target.clientHeight);
+            pos = (target.scrollHeight - target.clientHeight) + excess*0.3;
+            velocity = 0;
+        }
+        target.scrollTop = pos;
         updateSelection();
-        isScrolling = setTimeout(()=>{
-            wheel.scrollTo({
-                top: getSelectedIndex(wheel)*80, // 对应高度80
-                behavior: 'smooth'
-            });
+        if(Math.abs(velocity) > 0.1){
+            requestAnimationFrame(step);
+        } else {
+            // 自动对齐到最近索引
+            const index = getSelectedIndex(target);
+            target.scrollTo({top: index*80, behavior: 'smooth'});
+        }
+    }
+    requestAnimationFrame(step);
+}
+
+// 支持触摸和鼠标
+function attachWheel(wheel){
+    let isTouching = false;
+    let lastY = 0;
+    let velocity = 0;
+
+    wheel.addEventListener('touchstart', e=>{
+        isTouching = true;
+        lastY = e.touches[0].clientY;
+        velocity = 0;
+    });
+
+    wheel.addEventListener('touchmove', e=>{
+        const delta = lastY - e.touches[0].clientY;
+        lastY = e.touches[0].clientY;
+        wheel.scrollTop += delta;
+        velocity = delta;
+        updateSelection();
+    });
+
+    wheel.addEventListener('touchend', e=>{
+        isTouching = false;
+        elasticScroll(wheel, velocity);
+    });
+
+    // 鼠标拖动
+    let isMouseDown = false;
+    wheel.addEventListener('mousedown', e=>{
+        isMouseDown = true;
+        lastY = e.clientY;
+        velocity = 0;
+    });
+    window.addEventListener('mousemove', e=>{
+        if(isMouseDown){
+            const delta = lastY - e.clientY;
+            lastY = e.clientY;
+            wheel.scrollTop += delta;
+            velocity = delta;
             updateSelection();
-        }, 100);
+        }
+    });
+    window.addEventListener('mouseup', e=>{
+        if(isMouseDown){
+            isMouseDown = false;
+            elasticScroll(wheel, velocity);
+        }
     });
 }
 

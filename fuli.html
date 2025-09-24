@@ -47,7 +47,8 @@ for(let v=min; v<=max; v+=step) values.push(v.toFixed(1));
 list.innerHTML = '<div class="spacer"></div>' + values.map(v=>`<div class="picker-item">${v}</div>`).join('') + '<div class="spacer"></div>';
 const items = list.querySelectorAll('.picker-item');
 
-let offset = picker.clientHeight/2 - itemHeight/2 - itemHeight*2;
+// 修改初始偏移量，确保第一个选项的中心对齐横条中心
+let offset = picker.clientHeight/2 - itemHeight/2;
 let startY = 0;
 let velocity = 0;
 let animFrame;
@@ -101,7 +102,7 @@ function animate() {
     offset += velocity - springForce;
 
     // 放宽最大速度限制
-    const maxVel = 120; // 增大最大速度，模拟iPhone更强的惯性
+    const maxVel = 120;
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
 
@@ -109,6 +110,7 @@ function animate() {
 
     // 判断是否需要吸附到最近刻度
     if(Math.abs(velocity) < 0.5 && Math.abs(springForce) < 0.5) {
+        // 计算最近的刻度索引
         let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2)/itemHeight);
         const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2;
         
@@ -143,7 +145,7 @@ picker.addEventListener('touchmove', e=>{
     startY = y;
 
     // 放大速度，增强快速滑动的效果
-    velocity = delta / dt * 32; // 放大系数，从16调整到32
+    velocity = delta / dt * 32;
     offset += delta;
     render();
 }, {passive:true});

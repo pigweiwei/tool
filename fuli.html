@@ -45,13 +45,28 @@ body {
     position: relative;
 }
 
+.wheel::before, .wheel::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    pointer-events: none;
+}
+.wheel::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(240,240,240,1), rgba(240,240,240,0));
+}
+.wheel::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(240,240,240,1), rgba(240,240,240,0));
+}
+
 .wheel-content {
     scroll-snap-type: y mandatory;
     -webkit-overflow-scrolling: touch;
     overflow-y: scroll;
     height: 100%;
-    mask-image: linear-gradient(to bottom, transparent 15%, black 35%, black 65%, transparent 85%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 15%, black 35%, black 65%, transparent 85%);
 }
 
 .wheel-content div {
@@ -60,6 +75,7 @@ body {
     scroll-snap-align: center;
     font-size: 32px;
     transition: transform 0.2s, color 0.2s, opacity 0.2s;
+    transform-origin: center center -40px;
 }
 
 .wheel-label {
@@ -69,8 +85,7 @@ body {
     text-align: center;
 }
 
-.wheel::after {
-    content: '';
+.wheel-line {
     position: absolute;
     top: 50%;
     left: 0;
@@ -88,11 +103,17 @@ body {
 
 <div class="wheel-container">
     <div class="wheel-column">
-        <div id="ratioWheel" class="wheel"><div class="wheel-content"></div></div>
+        <div class="wheel" id="ratioWheel">
+            <div class="wheel-content"></div>
+            <div class="wheel-line"></div>
+        </div>
         <div class="wheel-label">仓位</div>
     </div>
     <div class="wheel-column">
-        <div id="multiplierWheel" class="wheel"><div class="wheel-content"></div></div>
+        <div class="wheel" id="multiplierWheel">
+            <div class="wheel-content"></div>
+            <div class="wheel-line"></div>
+        </div>
         <div class="wheel-label">盈亏</div>
     </div>
 </div>
@@ -123,10 +144,11 @@ function getSelectedIndex(wheel){
 function updateSelection(){
     [ratioWheel, multiplierWheel].forEach(wheel=>{
         Array.from(wheel.children).forEach((child, i)=>{
-            const centerOffset = Math.abs(getSelectedIndex(wheel) - i);
-            const scale = Math.max(0.5, 1 - centerOffset*0.2);
-            const opacity = Math.max(0.3, 1 - centerOffset*0.3);
-            child.style.transform = `scale(${scale})`;
+            const centerOffset = getSelectedIndex(wheel) - i;
+            const scale = Math.max(0.5, 1 - Math.abs(centerOffset)*0.2);
+            const opacity = Math.max(0.3, 1 - Math.abs(centerOffset)*0.3);
+            const rotateX = centerOffset * 25;
+            child.style.transform = `scale(${scale}) rotateX(${rotateX}deg)`;
             child.style.color = centerOffset === 0 ? '#ff4d4f' : '#000';
             child.style.fontWeight = centerOffset === 0 ? 'bold' : 'normal';
             child.style.opacity = opacity;
@@ -139,27 +161,30 @@ function updateSelection(){
     totalProfitDisplay.textContent = `总仓盈亏：${profitLoss}`;
 }
 
-// 弹性曲线函数 (类似 iOS 弹性)
+// 弹性缓动滚动 + 吸附效果
 function elasticScroll(target, velocity){
     let pos = target.scrollTop;
     function step(){
-        velocity *= 0.95; // 缓动减速
+        const damping = 0.93 + Math.min(Math.abs(velocity)/50, 0.05);
+        velocity *= damping;
         pos += velocity;
-        // 弹性边缘
+
         if(pos < 0){
-            pos = pos * 0.3;
+            pos = pos*0.3;
             velocity = 0;
         } else if(pos > target.scrollHeight - target.clientHeight){
             const excess = pos - (target.scrollHeight - target.clientHeight);
             pos = (target.scrollHeight - target.clientHeight) + excess*0.3;
             velocity = 0;
         }
+
         target.scrollTop = pos;
         updateSelection();
+
         if(Math.abs(velocity) > 0.1){
             requestAnimationFrame(step);
         } else {
-            // 自动对齐到最近索引
+            // 吸附停留到最接近索引
             const index = getSelectedIndex(target);
             target.scrollTo({top: index*80, behavior: 'smooth'});
         }
@@ -167,18 +192,17 @@ function elasticScroll(target, velocity){
     requestAnimationFrame(step);
 }
 
-// 支持触摸和鼠标
 function attachWheel(wheel){
-    let isTouching = false;
     let lastY = 0;
     let velocity = 0;
+    let isTouching = false;
+    let isMouseDown = false;
 
     wheel.addEventListener('touchstart', e=>{
         isTouching = true;
         lastY = e.touches[0].clientY;
         velocity = 0;
     });
-
     wheel.addEventListener('touchmove', e=>{
         const delta = lastY - e.touches[0].clientY;
         lastY = e.touches[0].clientY;
@@ -186,14 +210,11 @@ function attachWheel(wheel){
         velocity = delta;
         updateSelection();
     });
-
     wheel.addEventListener('touchend', e=>{
         isTouching = false;
         elasticScroll(wheel, velocity);
     });
 
-    // 鼠标拖动
-    let isMouseDown = false;
     wheel.addEventListener('mousedown', e=>{
         isMouseDown = true;
         lastY = e.clientY;
@@ -218,8 +239,6 @@ function attachWheel(wheel){
 
 attachWheel(ratioWheel);
 attachWheel(multiplierWheel);
-
-// 初始化
 updateSelection();
 </script>
 </body>

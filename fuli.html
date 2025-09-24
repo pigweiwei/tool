@@ -3,179 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iOS 风格滚动选择器</title>
+  <title>时间选择器示例</title>
+  <!-- 引入 popoPicker 样式 -->
+  <link rel="stylesheet" href="popoPicker.css">
   <style>
     body {
-      margin: 0;
       font-family: sans-serif;
+      margin: 0;
+      padding: 0;
       display: flex;
-      height: 100vh;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
+      height: 100vh;
       background: #f0f0f0;
-      overflow: hidden;
     }
-
     .picker-container {
-      width: 200px;
-      height: 200px;
-      overflow: hidden;
-      position: relative;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      touch-action: none;
+      width: 300px;
+      margin-top: 20px;
     }
-
-    .picker-list {
-      position: absolute;
-      width: 100%;
-      top: 0;
-      left: 0;
-      transition: transform 0.2s ease-out;
-    }
-
-    .picker-item {
-      height: 40px;
-      line-height: 40px;
-      text-align: center;
-      font-size: 18px;
-      color: #666;
-      user-select: none;
-    }
-
-    .picker-item.selected {
-      color: #000;
+    .selected-time {
+      font-size: 24px;
       font-weight: bold;
-    }
-
-    .picker-mask {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to bottom, rgba(240,240,240,1) 0%, rgba(240,240,240,0) 30%, rgba(240,240,240,0) 70%, rgba(240,240,240,1) 100%);
-      pointer-events: none;
-    }
-
-    .picker-center-line {
-      position: absolute;
-      top: 50%;
-      left: 0;
-      width: 100%;
-      height: 40px;
-      margin-top: -20px;
-      border-top: 1px solid #ccc;
-      border-bottom: 1px solid #ccc;
-      pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <div class="picker-container">
-    <div class="picker-list" id="pickerList"></div>
-    <div class="picker-mask"></div>
-    <div class="picker-center-line"></div>
-  </div>
 
+  <div class="selected-time" id="selectedTime">请选择时间</div>
+
+  <!-- 滚轮容器 -->
+  <div class="picker-container js-time"></div>
+
+  <!-- 引入 popoPicker 核心 JS -->
+  <script src="popoPicker.js"></script>
   <script>
-    const items = ["苹果", "香蕉", "橙子", "西瓜", "葡萄", "菠萝", "草莓", "芒果", "樱桃", "梨", "选项1", "选项2", "选项3", "选项4", "选项5", "选项6", "选项7", "选项8", "选项9", "选项10"];
-    const itemHeight = 40;
-    const pickerList = document.getElementById('pickerList');
-
-    // 创建元素
-    items.forEach(text => {
-      const div = document.createElement('div');
-      div.className = 'picker-item';
-      div.innerText = text;
-      pickerList.appendChild(div);
+    // 初始化时间选择器，只显示时间
+    const timePicker = new popoDateTime('.js-time', {
+      container: '.picker-container', // 滚轮容器
+      date: false,                     // 不显示日期，只显示时间
+      onChange: function(result) {
+        // 滚动变化时显示选择的时间
+        document.getElementById('selectedTime').textContent = result.join(':');
+      }
     });
-
-    let currentIndex = 0;
-    let startY = 0;
-    let startTime = 0;
-    let lastY = 0;
-    let velocity = 0;
-    let isDragging = false;
-    let animationFrameId = null;
-
-    function clampIndex() {
-      if (currentIndex < 0) currentIndex = 0;
-      if (currentIndex > items.length - 1) currentIndex = items.length - 1;
-    }
-
-    function updatePicker(animate = true) {
-      pickerList.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
-      const offset = -currentIndex * itemHeight + Math.floor(5 / 2) * itemHeight;
-      pickerList.style.transform = `translateY(${offset}px)`;
-      document.querySelectorAll('.picker-item').forEach((el, idx) => {
-        el.classList.toggle('selected', idx === currentIndex);
-      });
-    }
-
-    function momentumScroll() {
-      // 使用 Popmotion 的惯性滚动 API
-      inertia({
-        velocity,
-        from: currentIndex,
-        modifyTarget: v => Math.round(v),
-        bounceStiffness: 500,
-        bounceDamping: 30,
-        power: 0.8,
-        timeConstant: 350
-      }).start(v => {
-        currentIndex = v;
-        clampIndex();
-        updatePicker();
-      });
-    }
-
-    function startDrag(e) {
-      cancelAnimationFrame(animationFrameId);
-      isDragging = true;
-      startY = e.touches ? e.touches[0].clientY : e.clientY;
-      lastY = startY;
-      startTime = Date.now();
-      velocity = 0;
-    }
-
-    function moveDrag(e) {
-      if (!isDragging) return;
-      e.preventDefault();
-      const y = e.touches ? e.touches[0].clientY : e.clientY;
-      const delta = y - lastY;
-      currentIndex -= delta / itemHeight;
-      clampIndex();
-      updatePicker(false);
-      const now = Date.now();
-      velocity = delta / (now - startTime);
-      startTime = now;
-      lastY = y;
-    }
-
-    function endDrag() {
-      if (!isDragging) return;
-      isDragging = false;
-      momentumScroll();
-    }
-
-    pickerList.addEventListener('mousedown', startDrag);
-    pickerList.addEventListener('mousemove', moveDrag);
-    pickerList.addEventListener('mouseup', endDrag);
-    pickerList.addEventListener('mouseleave', endDrag);
-    pickerList.addEventListener('touchstart', startDrag);
-    pickerList.addEventListener('touchmove', moveDrag, { passive: false });
-    pickerList.addEventListener('touchend', endDrag);
-
-    pickerList.addEventListener('wheel', function (e) {
-      e.preventDefault();
-      currentIndex += e.deltaY > 0 ? 1 : -1;
-      clampIndex();
-      updatePicker();
-    }, { passive: false });
-
-    updatePicker(false);
   </script>
 </body>
 </html>

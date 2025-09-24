@@ -3,183 +3,127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚轮（快速惯性+阻尼+收窄横条）</title>
+<title>滚轮分仓计算器</title>
 <style>
-html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
-.picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
-.picker-list { position:absolute; top:0; left:0; right:0; transform-style: preserve-3d; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
-.picker-item { height:70px; display:flex; justify-content:center; align-items:center; font-size:28px; color:#aaa; transition: all 0.1s; -webkit-backface-visibility: hidden; backface-visibility: hidden; will-change: transform, color; }
-.selected-bar { 
-  position:absolute; 
-  top:50%; 
-  transform:translateY(-50%); 
-  left:0; 
-  right:0; 
-  height:49px; /* 收窄 30% */
-  background: rgba(30,144,255,0.2); 
-  pointer-events:none; 
-  border-radius:8px; 
-  z-index:10;
+body {
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 50px;
 }
-.spacer { height:200px; }
-.mask-top, .mask-bottom { position:absolute; left:0; width:100%; height:100px; z-index:5; pointer-events:none;}
-.mask-top { top:0; background: linear-gradient(to bottom, #111 0%, transparent 100%);}
-.mask-bottom { bottom:0; background: linear-gradient(to top, #111 0%, transparent 100%);}
+
+.wheel-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.wheel {
+    width: 100px;
+    height: 200px;
+    overflow-y: scroll;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    text-align: center;
+}
+
+.wheel div {
+    height: 40px;
+    line-height: 40px;
+    scroll-snap-align: center;
+    font-size: 18px;
+}
+
+.selected {
+    color: #ff4d4f;
+    font-weight: bold;
+    font-size: 22px;
+}
+
+.result {
+    font-size: 20px;
+}
 </style>
 </head>
 <body>
-<div class="picker-container" id="picker">
-  <div class="picker-list" id="pickerList"></div>
-  <div class="selected-bar"></div>
-  <div class="mask-top"></div>
-  <div class="mask-bottom"></div>
+
+<h2>分仓倍数计算器</h2>
+<div class="wheel-container">
+    <div id="ratioWheel" class="wheel"></div>
+    <div id="multiplierWheel" class="wheel"></div>
 </div>
 
+<div class="result" id="resultDisplay">盈亏：0</div>
+
 <script>
-(function(){
-const picker = document.getElementById('picker');
-const list = document.getElementById('pickerList');
-const itemHeight = 70;
-const min = 0.5, max = 50, step = 0.5;
-const values = [];
-for(let v=min; v<=max; v+=step) values.push(v.toFixed(1));
+// 生成分仓比例数据
+const ratios = [];
+for(let i=1; i<=10; i++){
+    ratios.push((1/i).toFixed(2));
+}
 
-list.innerHTML = '<div class="spacer"></div>' + values.map(v=>`<div class="picker-item">${v}</div>`).join('') + '<div class="spacer"></div>';
-const items = list.querySelectorAll('.picker-item');
+// 生成倍数数据
+const multipliers = [];
+for(let i=0.5; i<=20; i+=0.5){
+    multipliers.push(i.toFixed(1));
+}
 
-const spacerHeight = 200;
-let offset = picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-let startY = 0;
-let velocity = 0;
-let animFrame;
-let lastTime = performance.now();
-let isSnapping = false;
-let targetOffset = 0;
+const ratioWheel = document.getElementById('ratioWheel');
+const multiplierWheel = document.getElementById('multiplierWheel');
+const resultDisplay = document.getElementById('resultDisplay');
 
-const decelerationRate = 0.998; // Faster deceleration for more weight
-const maxVel = 6000; // Lowered for controlled fast scrolling
-const snapK = 20000; // Strong spring for quick snap
-const snapD = 2.2 * Math.sqrt(snapK); // Slightly over-damped for no oscillation
-const boundaryK = 2000; // Strong boundary spring
-
-function updateHighlight() {
-    const center = picker.clientHeight/2;
-    let closestItem = null, closestDist = Infinity;
+function populateWheel(wheel, items) {
     items.forEach(item => {
-        const itemCenter = item.offsetTop + itemHeight/2 + offset;
-        const dist = Math.abs(center - itemCenter);
-        const scale = Math.max(0.7, 1 - dist/200);
-        const rotateX = Math.max(-40, Math.min(40, (center-itemCenter)/5));
-        const colorVal = Math.round(Math.max(170, 255-dist/2));
-        item.style.transform = `scale(${scale}) rotateX(${rotateX}deg)`;
-        if(dist < closestDist){
-            closestDist = dist;
-            closestItem = item;
-        }
-        item.style.color = `rgb(${colorVal},${colorVal},${colorVal})`;
-        item.style.fontWeight = "normal";
+        const div = document.createElement('div');
+        div.textContent = item;
+        wheel.appendChild(div);
     });
-    if(closestItem){
-        closestItem.style.color = "#1e90ff";
-        closestItem.style.fontWeight = "bold";
-    }
 }
 
-function render() { 
-    // Ensure offset stays within bounds
-    const maxOffset = picker.clientHeight/2 - itemHeight/2;
-    const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-    offset = Math.max(minOffset, Math.min(maxOffset, offset));
-    list.style.transform = `translateY(${offset}px)`; 
-    updateHighlight(); 
+populateWheel(ratioWheel, ratios);
+populateWheel(multiplierWheel, multipliers);
+
+function getSelectedIndex(wheel){
+    return Math.round(wheel.scrollTop / 40);
 }
 
-function spring(o) {
-    const maxOffset = picker.clientHeight/2 - itemHeight/2;
-    const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-    if(o > maxOffset) return (o - maxOffset) * boundaryK;
-    if(o < minOffset) return (o - minOffset) * boundaryK;
-    return 0;
+function updateSelection() {
+    const ratioIndex = getSelectedIndex(ratioWheel);
+    const multiplierIndex = getSelectedIndex(multiplierWheel);
+
+    Array.from(ratioWheel.children).forEach((child,i)=>{
+        child.classList.toggle('selected', i === ratioIndex);
+    });
+    Array.from(multiplierWheel.children).forEach((child,i)=>{
+        child.classList.toggle('selected', i === multiplierIndex);
+    });
+
+    const ratio = parseFloat(ratios[ratioIndex]);
+    const multiplier = parseFloat(multiplierIndex >= multipliers.length ? multipliers[multipliers.length-1] : multipliers[multiplierIndex]);
+    
+    const profitLoss = (1 * ratio * multiplier).toFixed(2);
+    resultDisplay.textContent = `盈亏：${profitLoss}`;
 }
 
-function animate(timestamp) {
-    if (lastTime === 0) lastTime = timestamp;
-    const dt = Math.min((timestamp - lastTime) / 1000, 0.05); // Cap dt to avoid jumps
-    lastTime = timestamp;
-
-    let accel = -spring(offset); // Boundary spring force
-
-    if (isSnapping) {
-        const diff = targetOffset - offset;
-        accel += snapK * diff - snapD * velocity; // Snap spring and over-damping
-    } else {
-        // Free scrolling with iOS-like exponential deceleration
-        velocity *= Math.pow(decelerationRate, dt * 1000);
-        // Add gravity-like resistance
-        const gravity = 60; // Increased for more weight
-        velocity -= Math.sign(velocity) * gravity * dt;
-    }
-
-    velocity += accel * dt;
-    offset += velocity * dt;
-
-    // Cap velocity
-    if (velocity > maxVel) velocity = maxVel;
-    if (velocity < -maxVel) velocity = -maxVel;
-
-    render();
-
-    // Check if should start snapping
-    if (!isSnapping && Math.abs(velocity) < 60 && Math.abs(spring(offset)) < 60) {
-        isSnapping = true;
-        const center = picker.clientHeight/2; // Center of the picker
-        const index = Math.round(( -offset - spacerHeight - itemHeight/2 ) / itemHeight);
-        targetOffset = center - spacerHeight - index * itemHeight - itemHeight/2;
-        // Ensure targetOffset is within bounds
-        const maxOffset = picker.clientHeight/2 - itemHeight/2;
-        const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-        targetOffset = Math.max(minOffset, Math.min(maxOffset, targetOffset));
-    }
-
-    // Check if snapping is complete
-    if (isSnapping && Math.abs(targetOffset - offset) < 0.1 && Math.abs(velocity) < 1) {
-        offset = targetOffset;
-        velocity = 0;
-        isSnapping = false;
-        render();
-        cancelAnimationFrame(animFrame);
-    } else {
-        animFrame = requestAnimationFrame(animate);
-    }
-}
-
-// Touch events
-picker.addEventListener('touchstart', e => {
-    cancelAnimationFrame(animFrame);
-    isSnapping = false;
-    startY = e.touches[0].clientY;
-    velocity = 0;
-    lastTime = performance.now();
-}, {passive: true});
-
-picker.addEventListener('touchmove', e => {
-    const now = performance.now();
-    const dt = (now - lastTime) / 1000 || 0.016;
-    lastTime = now;
-    const y = e.touches[0].clientY;
-    const delta = y - startY;
-    startY = y;
-    velocity = (delta / dt) * 1.4; // Slightly lowered sensitivity
-    offset += delta;
-    render();
-}, {passive: true});
-
-picker.addEventListener('touchend', () => {
-    animFrame = requestAnimationFrame(animate);
+// 滚动事件加阻尼更新选中
+let timeout;
+ratioWheel.addEventListener('scroll', ()=>{
+    clearTimeout(timeout);
+    timeout = setTimeout(updateSelection, 100);
+});
+multiplierWheel.addEventListener('scroll', ()=>{
+    clearTimeout(timeout);
+    timeout = setTimeout(updateSelection, 100);
 });
 
-render();
-})();
+// 初始化显示
+updateSelection();
 </script>
+
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚轮（距离触发音效）</title>
+<title>iOS 风格滚轮（无音效）</title>
 <style>
 html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
 .picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
@@ -24,13 +24,10 @@ html, body { margin:0; height:100%; overflow:hidden; background:#111; font-famil
   <div class="mask-bottom"></div>
 </div>
 
-<audio id="tickSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
-
 <script>
 (function(){
 const picker = document.getElementById('picker');
 const list = document.getElementById('pickerList');
-const tickSound = document.getElementById('tickSound');
 const itemHeight = 70;
 const min = 0.5, max = 50, step = 0.5;
 const values = [];
@@ -44,10 +41,10 @@ let startY = 0;
 let velocity = 0;
 let animFrame;
 let lastTime = 0;
-let tickAccum = 0; // 累计滚动距离，用于触发音效
 
 function updateHighlight() {
     const center = picker.clientHeight/2;
+    let closestItem=null,closestDist=Infinity;
     items.forEach(item => {
         const itemCenter = item.offsetTop + itemHeight/2 + offset;
         const dist = Math.abs(center - itemCenter);
@@ -55,14 +52,18 @@ function updateHighlight() {
         const rotateX = Math.max(-40, Math.min(40, (center-itemCenter)/5));
         const colorVal = Math.round(Math.max(170, 255-dist/2));
         item.style.transform = `scale(${scale}) rotateX(${rotateX}deg)`;
-        if(dist<itemHeight/2){
-            item.style.color="#1e90ff";
-            item.style.fontWeight="bold";
-        } else {
-            item.style.color=`rgb(${colorVal},${colorVal},${colorVal})`;
-            item.style.fontWeight="normal";
+        if(dist<closestDist){
+            closestDist = dist;
+            closestItem = item;
         }
+        // 先清空样式
+        item.style.color=`rgb(${colorVal},${colorVal},${colorVal})`;
+        item.style.fontWeight="normal";
     });
+    if(closestItem){
+        closestItem.style.color="#1e90ff";
+        closestItem.style.fontWeight="bold";
+    }
 }
 
 function render() { 
@@ -81,20 +82,10 @@ function animate() {
     const springForce = spring(offset);
     offset += velocity - springForce;
 
-    // 阻尼与非线性衰减
     velocity = Math.sign(velocity) * Math.pow(Math.abs(velocity)*0.88, 1.05);
     const maxVel = 20;
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
-
-    // 累计滚动距离触发音效
-    tickAccum += Math.abs(velocity);
-    if(tickAccum > itemHeight/2) {
-        tickAccum = 0;
-        tickSound.currentTime = 0;
-        tickSound.play().catch(()=>{});
-        if(navigator.vibrate) navigator.vibrate(5);
-    }
 
     render();
 
@@ -112,7 +103,6 @@ picker.addEventListener('touchstart', e=>{
     startY = e.touches[0].clientY;
     velocity = 0;
     lastTime = Date.now();
-    tickAccum = 0;
 }, {passive:true});
 
 picker.addEventListener('touchmove', e=>{
@@ -124,14 +114,6 @@ picker.addEventListener('touchmove', e=>{
     startY = y;
     offset += delta;
     velocity = delta/(dt/16) * 0.5;
-    // 累计滚动距离触发音效（移动过程中也触发）
-    tickAccum += Math.abs(delta);
-    if(tickAccum > itemHeight/2){
-        tickAccum = 0;
-        tickSound.currentTime = 0;
-        tickSound.play().catch(()=>{});
-        if(navigator.vibrate) navigator.vibrate(5);
-    }
     render();
 }, {passive:true});
 

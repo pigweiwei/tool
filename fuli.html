@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>popoPicker Demo</title>
+    <title>popoPicker Time Demo - Direct Show</title>
     <style>
-        /* 严格搬运自文档和仓库的示例，添加基本布局以使组件可用。样式和逻辑基于提供的文档。实际的完整CSS和JS需要从仓库源代码提取，但根据工具结果，这里提供一个基本的HTML框架。 */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background-color: #f5f5f5;
         }
         .screen {
@@ -17,102 +16,27 @@
             height: 100vh;
             overflow: hidden;
         }
-        .js-picker, .js-date, .js-time, .js-datetime {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px;
-            background: white;
-            border: 1px solid #ccc;
-            cursor: pointer;
-        }
-        /* 由于工具无法提取完整CSS，这里添加占位符。实际使用需下载popoPicker.css */
-        .popo-picker-placeholder {
-            width: 300px;
-            height: 200px;
-            background: #eee;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            text-align: center;
-            color: #666;
-        }
     </style>
-    <!-- 引入样式 - 实际需下载 https://raw.githubusercontent.com/po-po/popoPicker/master/popoPicker.css -->
-    <link href="popoPicker.css" rel="stylesheet">
+    <!-- 直接从 GitHub raw 加载 CSS，无需下载 -->
+    <link href="https://raw.githubusercontent.com/po-po/popoPicker/master/popoPicker.css" rel="stylesheet">
 </head>
 <body>
-    <div class="screen">
-        <!-- Picker 示例 -->
-        <div class="js-picker">
-            <div class="popo-picker-placeholder">点击打开 Picker (选项滚轮)</div>
-        </div>
+    <div class="screen"></div>
+    <!-- 隐藏的触发元素 -->
+    <div class="js-time" style="display: none;"></div>
 
-        <!-- Date 示例 -->
-        <div class="js-date">
-            <div class="popo-picker-placeholder">点击打开 Date (日期滚轮)</div>
-        </div>
-
-        <!-- Time 示例 -->
-        <div class="js-time">
-            <div class="popo-picker-placeholder">点击打开 Time (时间滚轮)</div>
-        </div>
-
-        <!-- DateTime 示例 -->
-        <div class="js-datetime">
-            <div class="popo-picker-placeholder">点击打开 DateTime (日期时间滚轮)</div>
-        </div>
-    </div>
-
-    <!-- 引入脚本 - 实际需下载 https://raw.githubusercontent.com/po-po/popoPicker/master/popodatetime.js -->
-    <script src="popodatetime.js"></script>
+    <!-- 直接从 GitHub raw 加载 JS，无需下载 -->
+    <script src="https://raw.githubusercontent.com/po-po/popoPicker/master/popodatetime.js"></script>
     <script>
-        // Picker 示例 - 严格根据文档
-        new popoPicker('.js-picker', {
-            container: '.screen',
-            wheels: [{
-                infinite: false,
-                // selected: 3, // 可选，默认0
-                data: [
-                    {value: 0, display: '选项一'},
-                    {value: 1, display: '选项二'},
-                    {value: 2, display: '选项三'},
-                    {value: 3, display: '选项四'},
-                    {value: 4, display: '选项五'},
-                    {value: 5, display: '选项六'},
-                    {value: 6, display: '选项七'}
-                ]
-            }],
-            background: 'dark',
-            // init: function() { console.log('init'); },
-            // getResult: function(result) { console.log(result); },
-            // save: function(result) { console.log('save', result); },
-            // cancel: function() { console.log('cancel'); }
-        });
-
-        // Date 示例
-        new popoDateTime('.js-date', {
-            container: '.screen',
-            time: false
-            // save: function(result) { console.log('date save', result); },
-            // cancel: function() { console.log('date cancel'); }
-        });
-
-        // Time 示例
+        // Time 示例 - 严格根据文档
         new popoDateTime('.js-time', {
             container: '.screen',
             date: false
-            // save: function(result) { console.log('time save', result); },
-            // cancel: function() { console.log('time cancel'); }
         });
 
-        // DateTime 示例
-        new popoDateTime('.js-datetime', {
-            container: '.screen'
-            // save: function(result) { console.log('datetime save', result); },
-            // cancel: function() { console.log('datetime cancel'); }
+        // 页面加载完成后自动触发点击，打开时间滚轮
+        window.addEventListener('load', function() {
+            document.querySelector('.js-time').click();
         });
     </script>
 </body>

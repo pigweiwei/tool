@@ -84,22 +84,26 @@ const items = ["苹果","香蕉","橙子","西瓜","葡萄","菠萝","草莓","�
 const itemHeight = 40;
 const pickerList = document.getElementById('pickerList');
 
-// 无限循环数组：前后各复制一份
-const extendedItems = [...items, ...items, ...items];
-extendedItems.forEach(text=>{
+// 直接使用原始数组
+items.forEach(text=>{
   const div = document.createElement('div');
   div.className = 'picker-item';
   div.innerText = text;
   pickerList.appendChild(div);
 });
 
-let currentIndex = items.length; // 初始为中间一组第一个
+let currentIndex = 0; // 初始第一个
 let startY = 0;
 let startTime = 0;
 let lastY = 0;
 let velocity = 0;
 let isDragging = false;
 let animationFrameId = null;
+
+function clampIndex(){
+  if(currentIndex < 0) currentIndex = 0;
+  if(currentIndex > items.length-1) currentIndex = items.length-1;
+}
 
 function updatePicker(animate = true){
   pickerList.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
@@ -110,25 +114,17 @@ function updatePicker(animate = true){
   });
 }
 
-// 调整循环
-function adjustLoop(){
-  if(currentIndex < items.length) currentIndex += items.length;
-  if(currentIndex >= items.length*2) currentIndex -= items.length;
-  updatePicker(false);
-}
-
 // 惯性滚动
 function momentumScroll(){
   velocity *= 0.95;
   if(Math.abs(velocity) < 0.02){
-    // 吸附到最近选项
     currentIndex = Math.round(currentIndex - velocity);
-    adjustLoop();
+    clampIndex();
     updatePicker();
     return;
   }
   currentIndex -= velocity;
-  adjustLoop();
+  clampIndex();
   updatePicker(false);
   animationFrameId = requestAnimationFrame(momentumScroll);
 }
@@ -149,6 +145,7 @@ function moveDrag(e){
   const y = e.touches ? e.touches[0].clientY : e.clientY;
   const delta = y - lastY;
   currentIndex -= delta/itemHeight;
+  clampIndex();
   updatePicker(false);
   const now = Date.now();
   velocity = delta / (now - startTime);
@@ -174,7 +171,7 @@ pickerList.addEventListener('touchend', endDrag);
 pickerList.addEventListener('wheel', function(e){
   e.preventDefault();
   currentIndex += e.deltaY>0?1:-1;
-  adjustLoop();
+  clampIndex();
   updatePicker();
 },{passive:false});
 

@@ -1,133 +1,117 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>Number Swiper 内嵌示例</title>
-<style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-    background: #f5f5f5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-  .number-swiper {
-    display: flex;
-    background: #fff;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    width: 120px; /* 宽度根据列数调整 */
-    height: 200px; /* 固定高度 */
-    position: relative;
-  }
-  .number-swiper-column {
-    flex: 1;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    text-align: center;
-    transform: translateY(0);
-    transition: transform 0.2s ease-out;
-    cursor: grab;
-    user-select: none;
-  }
-  .number-swiper-column li {
-    height: 40px;
-    line-height: 40px;
-    color: #666;
-    font-size: 20px;
-  }
-  .number-swiper-column li.active {
-    color: #000;
-    font-weight: bold;
-    font-size: 22px;
-  }
-  /* 中间高亮条 */
-  .number-swiper::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 40px;
-    border-top: 1px solid #999;
-    border-bottom: 1px solid #999;
-    transform: translateY(-50%);
-    pointer-events: none;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
+  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
+  <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+  <style>
+    .time-picker {
+      width: 300px;
+      margin: 20px auto;
+      display: flex;
+      justify-content: space-around;
+      background: #f5f5f5;
+      border-radius: 12px;
+      padding: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .picker-wheel {
+      width: 80px;
+      height: 150px;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+      overscroll-behavior: contain;
+      position: relative;
+    }
+    .picker-item {
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      scroll-snap-align: center;
+    }
+    .picker-item:hover {
+      background: #e0e0e0;
+    }
+    /* 高亮选中区域 */
+    .picker-wheel::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 30px;
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+      background: rgba(0, 0, 0, 0.05);
+      transform: translateY(-50%);
+    }
+  </style>
 </head>
 <body>
+  <div class="time-picker">
+    <div class="picker-wheel" id="hours"></div>
+    <div class="picker-wheel" id="minutes"></div>
+  </div>
 
-<div class="number-swiper" id="numberSwiper">
-  <ol class="number-swiper-column" id="column1">
-    <li>0</li><li>1</li><li>2</li><li>3</li><li>4</li>
-    <li>5</li><li>6</li><li>7</li><li>8</li><li>9</li>
-  </ol>
-</div>
+  <script>
+    ons.ready(() => {
+      // 初始化小时和分钟
+      const hoursWheel = document.querySelector('#hours');
+      const minutesWheel = document.querySelector('#minutes');
 
-<script>
-  const column = document.getElementById('column1');
-  const items = Array.from(column.querySelectorAll('li'));
-  let startY = 0, offsetY = 0, currentIndex = 0;
+      // 生成小时选项 (0-23)
+      for (let i = 0; i < 24; i++) {
+        const item = document.createElement('div');
+        item.className = 'picker-item';
+        item.textContent = i.toString().padStart(2, '0');
+        hoursWheel.appendChild(item);
+      }
 
-  function updateActive() {
-    items.forEach((el, i) => el.classList.toggle('active', i === currentIndex));
-    const value = items[currentIndex].innerText;
-    console.log('当前选中：', value);
-  }
+      // 生成分钟选项 (0-59)
+      for (let i = 0; i < 60; i++) {
+        const item = document.createElement('div');
+        item.className = 'picker-item';
+        item.textContent = i.toString().padStart(2, '0');
+        minutesWheel.appendChild(item);
+      }
 
-  column.addEventListener('touchstart', e => {
-    startY = e.touches[0].clientY;
-  });
+      // 监听滚动停止以获取选中值
+      [hoursWheel, minutesWheel].forEach(wheel => {
+        wheel.addEventListener('scroll', () => {
+          clearTimeout(wheel.scrollTimeout);
+          wheel.scrollTimeout = setTimeout(() => {
+            const items = wheel.querySelectorAll('.picker-item');
+            const wheelRect = wheel.getBoundingClientRect();
+            const centerY = wheelRect.top + wheelRect.height / 2;
+            let selectedItem = null;
 
-  column.addEventListener('touchmove', e => {
-    const moveY = e.touches[0].clientY - startY;
-    startY = e.touches[0].clientY;
-    offsetY += moveY;
+            items.forEach(item => {
+              const itemRect = item.getBoundingClientRect();
+              if (Math.abs(itemRect.top + itemRect.height / 2 - centerY) < 15) {
+                selectedItem = item.textContent;
+              }
+            });
 
-    const step = 40; // 每项高度
-    currentIndex = Math.round(-offsetY / step);
-    currentIndex = Math.max(0, Math.min(items.length - 1, currentIndex));
-    offsetY = -currentIndex * step;
+            if (wheel === hoursWheel) {
+              console.log(`Selected Hour: ${selectedItem}`);
+            } else {
+              console.log(`Selected Minute: ${selectedItem}`);
+            }
+          }, 100);
+        });
+      });
 
-    column.style.transform = `translateY(${offsetY}px)`;
-    updateActive();
-  });
-
-  // 鼠标拖拽也支持
-  let isDragging = false;
-  column.addEventListener('mousedown', e => {
-    isDragging = true;
-    startY = e.clientY;
-    column.style.cursor = 'grabbing';
-  });
-  window.addEventListener('mousemove', e => {
-    if (!isDragging) return;
-    const moveY = e.clientY - startY;
-    startY = e.clientY;
-    offsetY += moveY;
-
-    const step = 40;
-    currentIndex = Math.round(-offsetY / step);
-    currentIndex = Math.max(0, Math.min(items.length - 1, currentIndex));
-    offsetY = -currentIndex * step;
-
-    column.style.transform = `translateY(${offsetY}px)`;
-    updateActive();
-  });
-  window.addEventListener('mouseup', e => {
-    if (!isDragging) return;
-    isDragging = false;
-    column.style.cursor = 'grab';
-  });
-
-  // 初始化
-  updateActive();
-</script>
-
+      // 初始滚动到当前时间
+      const now = new Date();
+      hoursWheel.scrollTop = now.getHours() * 30;
+      minutesWheel.scrollTop = now.getMinutes() * 30;
+    });
+  </script>
 </body>
 </html>

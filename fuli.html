@@ -47,8 +47,9 @@ for(let v=min; v<=max; v+=step) values.push(v.toFixed(1));
 list.innerHTML = '<div class="spacer"></div>' + values.map(v=>`<div class="picker-item">${v}</div>`).join('') + '<div class="spacer"></div>';
 const items = list.querySelectorAll('.picker-item');
 
-// 修改初始偏移量，确保第一个选项的中心对齐横条中心
-let offset = picker.clientHeight/2 - itemHeight/2;
+// 修正初始偏移量：考虑spacer高度，使第一个选项中心对齐横条中心
+const spacerHeight = 200; // spacer的高度
+let offset = picker.clientHeight/2 - itemHeight/2 - spacerHeight;
 let startY = 0;
 let velocity = 0;
 let animFrame;
@@ -84,7 +85,7 @@ function render() {
 
 function spring(o){
     const maxOffset = picker.clientHeight/2 - itemHeight/2;
-    const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2;
+    const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
     if(o > maxOffset) return (o - maxOffset)*0.2;
     if(o < minOffset) return (o - minOffset)*0.2;
     return 0;
@@ -95,13 +96,11 @@ function animate() {
     const springForce = spring(offset);
 
     const speed = Math.abs(velocity);
-    // 动态阻尼：快速滑动时阻尼更低，慢速时更高
     let damping = speed < 5 ? 0.98 : (speed < 20 ? 0.92 : 0.88);
     velocity *= damping;
 
     offset += velocity - springForce;
 
-    // 放宽最大速度限制
     const maxVel = 120;
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
@@ -110,9 +109,9 @@ function animate() {
 
     // 判断是否需要吸附到最近刻度
     if(Math.abs(velocity) < 0.5 && Math.abs(springForce) < 0.5) {
-        // 计算最近的刻度索引
-        let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2)/itemHeight);
-        const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2;
+        // 计算最近的刻度索引，考虑spacer
+        let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2 - spacerHeight)/itemHeight);
+        const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
         
         // 平滑吸附动画
         const diff = targetOffset - offset;
@@ -144,7 +143,6 @@ picker.addEventListener('touchmove', e=>{
     const delta = y - startY;
     startY = y;
 
-    // 放大速度，增强快速滑动的效果
     velocity = delta / dt * 32;
     offset += delta;
     render();

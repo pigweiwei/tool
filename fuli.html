@@ -11,19 +11,31 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 50px;
+    padding-top: 30px;
+}
+
+.result {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
 }
 
 .wheel-container {
     display: flex;
-    gap: 20px;
-    margin-bottom: 30px;
+    gap: 40px;
     perspective: 1000px;
+    margin-bottom: 20px;
+}
+
+.wheel-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .wheel {
-    width: 100px;
-    height: 200px;
+    width: 120px;
+    height: 400px; /* 高度加倍 */
     overflow-y: scroll;
     border-radius: 15px;
     background: rgba(255,255,255,0.9);
@@ -37,28 +49,39 @@ body {
 }
 
 .wheel div {
-    height: 40px;
-    line-height: 40px;
+    height: 80px; /* 高度加倍 */
+    line-height: 80px;
     scroll-snap-align: center;
-    font-size: 18px;
+    font-size: 32px; /* 字号增大 */
     transition: transform 0.2s, color 0.2s, opacity 0.2s;
 }
 
-.result {
-    font-size: 20px;
+.wheel-label {
+    margin-top: 10px;
+    font-size: 18px;
     font-weight: bold;
 }
+
 </style>
 </head>
 <body>
 
-<h2>分仓倍数计算器</h2>
-<div class="wheel-container">
-    <div id="ratioWheel" class="wheel"></div>
-    <div id="multiplierWheel" class="wheel"></div>
-</div>
+<!-- 总仓盈亏显示在最上方 -->
+<div class="result" id="totalProfit">总仓盈亏：0</div>
 
-<div class="result" id="resultDisplay">盈亏：0</div>
+<div class="wheel-container">
+    <!-- 左侧滚轮列 -->
+    <div class="wheel-column">
+        <div id="ratioWheel" class="wheel"></div>
+        <div class="wheel-label">仓位</div>
+    </div>
+
+    <!-- 右侧滚轮列 -->
+    <div class="wheel-column">
+        <div id="multiplierWheel" class="wheel"></div>
+        <div class="wheel-label">盈亏</div>
+    </div>
+</div>
 
 <script>
 // 数据
@@ -67,7 +90,7 @@ const multipliers = Array.from({length:40}, (_,i)=>(0.5*(i+1)).toFixed(1));
 
 const ratioWheel = document.getElementById('ratioWheel');
 const multiplierWheel = document.getElementById('multiplierWheel');
-const resultDisplay = document.getElementById('resultDisplay');
+const totalProfitDisplay = document.getElementById('totalProfit');
 
 function populateWheel(wheel, items){
     items.forEach(item=>{
@@ -81,10 +104,10 @@ populateWheel(multiplierWheel, multipliers);
 
 // 获取选中索引
 function getSelectedIndex(wheel){
-    return Math.round(wheel.scrollTop / 40);
+    return Math.round(wheel.scrollTop / 80); // 对应高度80
 }
 
-// 更新视觉效果和盈亏
+// 更新滚轮视觉效果和总仓盈亏
 function updateSelection(){
     [ratioWheel, multiplierWheel].forEach(wheel=>{
         Array.from(wheel.children).forEach((child, i)=>{
@@ -101,7 +124,7 @@ function updateSelection(){
     const ratio = parseFloat(ratios[getSelectedIndex(ratioWheel)]);
     const multiplier = parseFloat(multipliers[getSelectedIndex(multiplierWheel)]);
     const profitLoss = (1 * ratio * multiplier).toFixed(2);
-    resultDisplay.textContent = `盈亏：${profitLoss}`;
+    totalProfitDisplay.textContent = `总仓盈亏：${profitLoss}`;
 }
 
 // 阻尼惯性滚动与自动对齐
@@ -112,7 +135,7 @@ function attachWheel(wheel){
         updateSelection();
         isScrolling = setTimeout(()=>{
             wheel.scrollTo({
-                top: getSelectedIndex(wheel)*40,
+                top: getSelectedIndex(wheel)*80, // 对应高度80
                 behavior: 'smooth'
             });
             updateSelection();

@@ -47,8 +47,7 @@ for(let v=min; v<=max; v+=step) values.push(v.toFixed(1));
 list.innerHTML = '<div class="spacer"></div>' + values.map(v=>`<div class="picker-item">${v}</div>`).join('') + '<div class="spacer"></div>';
 const items = list.querySelectorAll('.picker-item');
 
-// 修正初始偏移量：考虑spacer高度，使第一个选项中心对齐横条中心
-const spacerHeight = 200; // spacer的高度
+const spacerHeight = 200;
 let offset = picker.clientHeight/2 - itemHeight/2 - spacerHeight;
 let startY = 0;
 let velocity = 0;
@@ -86,8 +85,8 @@ function render() {
 function spring(o){
     const maxOffset = picker.clientHeight/2 - itemHeight/2;
     const minOffset = -(itemHeight*(values.length-1)) + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
-    if(o > maxOffset) return (o - maxOffset)*0.2;
-    if(o < minOffset) return (o - minOffset)*0.2;
+    if(o > maxOffset) return (o - maxOffset)*0.3; // 增强边界回弹
+    if(o < minOffset) return (o - minOffset)*0.3;
     return 0;
 }
 
@@ -96,31 +95,35 @@ function animate() {
     const springForce = spring(offset);
 
     const speed = Math.abs(velocity);
-    let damping = speed < 5 ? 0.98 : (speed < 20 ? 0.92 : 0.88);
+    // 动态阻尼：基于速度的平滑曲线
+    let damping = Math.min(0.99, 0.99 - speed * 0.002);
     velocity *= damping;
 
     offset += velocity - springForce;
 
-    const maxVel = 120;
+    // 放宽最大速度限制
+    const maxVel = 200; // 提高到200，增强快速滑动的滚动距离
     if(velocity>maxVel) velocity=maxVel;
     if(velocity<-maxVel) velocity=-maxVel;
 
     render();
 
     // 判断是否需要吸附到最近刻度
-    if(Math.abs(velocity) < 0.5 && Math.abs(springForce) < 0.5) {
-        // 计算最近的刻度索引，考虑spacer
+    if(Math.abs(velocity) < 0.3 || Math.abs(springForce) < 0.5) { // 降低速度阈值，慢速滑动更快停止
         let index = Math.round((-offset + picker.clientHeight/2 - itemHeight/2 - spacerHeight)/itemHeight);
         const targetOffset = -index*itemHeight + picker.clientHeight/2 - itemHeight/2 - spacerHeight;
         
-        // 平滑吸附动画
+        // 加速吸附动画，添加轻微超调
         const diff = targetOffset - offset;
         if(Math.abs(diff) > 0.5) {
-            offset += diff * 0.2; // ease-out 效果
+            offset += diff * 0.3; // 提高吸附速度，从0.2到0.3
+            velocity = diff * 0.05; // 添加轻微超调，模拟iPhone的弹性感
             animFrame = requestAnimationFrame(animate);
         } else {
             offset = targetOffset;
+            velocity = 0;
             render();
+            cancelAnimationFrame(animFrame);
         }
     } else {
         animFrame = requestAnimationFrame(animate);
@@ -143,7 +146,8 @@ picker.addEventListener('touchmove', e=>{
     const delta = y - startY;
     startY = y;
 
-    velocity = delta / dt * 32;
+    // 增强速度灵敏度
+    velocity = delta / dt * 48; // 放大系数从32提高到48
     offset += delta;
     render();
 }, {passive:true});

@@ -17,16 +17,16 @@
             overflow: hidden;
         }
     </style>
-    <!-- 直接从 GitHub raw 加载 CSS，无需下载 -->
-    <link href="https://raw.githubusercontent.com/po-po/popoPicker/master/popoPicker.css" rel="stylesheet">
+    <!-- 使用 jsDelivr CDN 加载 CSS，以避免 raw.githubusercontent.com 被阻塞 -->
+    <link href="https://cdn.jsdelivr.net/gh/po-po/popoPicker@master/popoPicker.css" rel="stylesheet">
 </head>
 <body>
     <div class="screen"></div>
     <!-- 隐藏的触发元素 -->
     <div class="js-time" style="display: none;"></div>
 
-    <!-- 直接从 GitHub raw 加载 JS，无需下载 -->
-    <script src="https://raw.githubusercontent.com/po-po/popoPicker/master/popodatetime.js"></script>
+    <!-- 使用 jsDelivr CDN 加载 JS -->
+    <script src="https://cdn.jsdelivr.net/gh/po-po/popoPicker@master/popoDateTime.js"></script>
     <script>
         // Time 示例 - 严格根据文档
         new popoDateTime('.js-time', {

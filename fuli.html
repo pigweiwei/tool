@@ -88,13 +88,13 @@
 const frictionFast = 0.95;
 
 // 轻轻滑动时的惯性衰减系数（范围 0~1，越小停得越快）
-const frictionSlow = 0.75;
+const frictionSlow = 0.4;
 
 // 停止的速度阈值（越大越容易停下来，越小越丝滑）
 const stopThreshold = 0.1;
 
 // 判断“快速滑动”的速度阈值（值越大，需要更快的速度才算快速滑动）
-const fastVelocityLimit = 2;
+const fastVelocityLimit = 4;
 
 
 /***********************
@@ -214,3 +214,4 @@ updatePicker(false);
 </script>
 </body>
 </html>
+

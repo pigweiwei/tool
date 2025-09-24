@@ -1,43 +1,190 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>popoPicker Time Demo - Direct Show</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-        }
-        .screen {
-            position: relative;
-            height: 100vh;
-            overflow: hidden;
-        }
-    </style>
-    <!-- 使用 jsDelivr CDN 加载 CSS，以避免 raw.githubusercontent.com 被阻塞 -->
-    <link href="https://cdn.jsdelivr.net/gh/po-po/popoPicker@master/popoPicker.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iOS-like 3D Wheel Picker</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+
+    .picker {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      perspective: 800px;
+      overflow: hidden;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .wheel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.3s ease-out;
+    }
+
+    .item {
+      position: absolute;
+      width: 100%;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      backface-visibility: hidden;
+      color: #333;
+      font-size: 16px;
+    }
+
+    .highlight {
+      position: absolute;
+      top: 80px;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background-color: rgba(0, 0, 255, 0.1);
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-    <div class="screen"></div>
-    <!-- 隐藏的触发元素 -->
-    <div class="js-time" style="display: none;"></div>
+  <div class="picker">
+    <div class="wheel" id="wheel">
+      <!-- Items will be added via JS -->
+    </div>
+    <div class="highlight"></div>
+  </div>
 
-    <!-- 使用 jsDelivr CDN 加载 JS -->
-    <script src="https://cdn.jsdelivr.net/gh/po-po/popoPicker@master/popoDateTime.js"></script>
-    <script>
-        // Time 示例 - 严格根据文档
-        new popoDateTime('.js-time', {
-            container: '.screen',
-            date: false
-        });
+  <script>
+    const items = [
+      'Option 1',
+      'Option 2',
+      'Option 3',
+      'Option 4',
+      'Option 5',
+      'Option 6',
+      'Option 7',
+      'Option 8',
+      'Option 9',
+      'Option 10'
+    ];
 
-        // 页面加载完成后自动触发点击，打开时间滚轮
-        window.addEventListener('load', function() {
-            document.querySelector('.js-time').click();
-        });
-    </script>
-</body>
+    const itemHeight = 40;
+    const visibleItems = 5; // Number of visible items
+    const radius = itemHeight * visibleItems / (2 * Math.PI); // Approximate radius for 3D effect
+
+    const wheel = document.getElementById('wheel');
+
+    // Create items
+    items.forEach((text, index) => {
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.textContent = text;
+      item.style.transform = `rotateX(${index * -360 / items.length}deg) translateZ(${radius}px)`;
+      wheel.appendChild(item);
+    });
+
+    // Total angle range
+    const totalAngle = 360;
+
+    // Initial setup
+    let currentAngle = 0;
+    let startY = 0;
+    let currentY = 0;
+    let velocity = 0;
+    let lastTime = 0;
+    let animationFrame;
+
+    const friction = 0.95; // Friction for inertia
+
+    function updateWheel() {
+      currentAngle = Math.max(0, Math.min(currentAngle, totalAngle - (360 / items.length)));
+      wheel.style.transform = `rotateX(${currentAngle}deg)`;
+    }
+
+    function animate(time) {
+      if (!lastTime) lastTime = time;
+      const deltaTime = time - lastTime;
+      lastTime = time;
+
+      currentAngle += velocity * deltaTime / 10;
+      velocity *= friction;
+
+      updateWheel();
+
+      if (Math.abs(velocity) > 0.1) {
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        snapToItem();
+      }
+    }
+
+    function snapToItem() {
+      const itemAngle = 360 / items.length;
+      const closest = Math.round(currentAngle / itemAngle) * itemAngle;
+      currentAngle = closest;
+      updateWheel();
+    }
+
+    wheel.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].pageY;
+      currentY = startY;
+      velocity = 0;
+      cancelAnimationFrame(animationFrame);
+      lastTime = 0;
+    });
+
+    wheel.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const deltaY = e.touches[0].pageY - currentY;
+      currentAngle -= deltaY * 0.5; // Adjust sensitivity
+      currentY = e.touches[0].pageY;
+      updateWheel();
+    });
+
+    wheel.addEventListener('touchend', (e) => {
+      const deltaY = e.changedTouches[0].pageY - startY;
+      velocity = -deltaY / 5; // Initial velocity based on swipe
+      animationFrame = requestAnimationFrame(animate);
+    });
+
+    // For mouse support
+    wheel.addEventListener('mousedown', (e) => {
+      startY = e.pageY;
+      currentY = startY;
+      velocity = 0;
+      cancelAnimationFrame(animationFrame);
+      lastTime = 0;
+    });
+
+    wheel.addEventListener('mousemove', (e) => {
+      if (e.buttons !== 1) return;
+      e.preventDefault();
+      const deltaY = e.pageY - currentY;
+      currentAngle -= deltaY * 0.5;
+      currentY = e.pageY;
+      updateWheel();
+    });
+
+    wheel.addEventListener('mouseup', (e) => {
+      const deltaY = e.pageY - startY;
+      velocity = -deltaY / 5;
+      animationFrame = requestAnimationFrame(animate);
+    });
+
+    // Initial update
+    updateWheel();
+  </script>
 </html>

@@ -116,7 +116,7 @@ function updatePicker(animate = true){
 
 // 惯性滚动
 function momentumScroll(){
-  velocity *= 0.95;
+  velocity *= 0.8;
   if(Math.abs(velocity) < 0.02){
     currentIndex = Math.round(currentIndex - velocity);
     clampIndex();
@@ -179,3 +179,4 @@ updatePicker(false);
 </script>
 </body>
 </html>
+

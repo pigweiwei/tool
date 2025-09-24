@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iOS 风格滚轮+弹簧阻尼</title>
+<title>iOS 风格滚轮</title>
 <style>
 html, body { margin:0; height:100%; overflow:hidden; background:#111; font-family:sans-serif; display:flex; justify-content:center; align-items:center;}
 .picker-container { position:relative; height:400px; width:140px; overflow:hidden; touch-action:none; perspective: 800px; }
 .picker-list { position:absolute; top:0; left:0; right:0; transform-style: preserve-3d; }
-.picker-item { height:70px; display:flex; justify-content:center; align-items:center; font-size:28px; color:#aaa; transition: all 0.1s;}
-.center-line { position:absolute; top:50%; left:0; width:100%; height:0; border-top:2px solid #4cafef; pointer-events:none; z-index:10;}
+.picker-item { height:70px; display:flex; justify-content:center; align-items:center; font-size:28px; color:#aaa; transition: all 0.1s; }
+.selected-bar { position:absolute; top:50%; transform:translateY(-50%); left:0; right:0; height:70px; background: rgba(30,144,255,0.2); pointer-events:none; border-radius:8px; z-index:10;}
 .spacer { height:200px; }
 .mask-top, .mask-bottom { position:absolute; left:0; width:100%; height:100px; z-index:5; pointer-events:none;}
 .mask-top { top:0; background: linear-gradient(to bottom, #111 0%, transparent 100%);}
@@ -22,7 +22,7 @@ html, body { margin:0; height:100%; overflow:hidden; background:#111; font-famil
 <body>
 <div class="picker-container" id="picker">
   <div class="picker-list" id="pickerList"></div>
-  <div class="center-line"></div>
+  <div class="selected-bar"></div>
   <div class="mask-top"></div>
   <div class="mask-bottom"></div>
 </div>
@@ -53,7 +53,6 @@ function updateHighlight(){
         const rotateX=Math.max(-40, Math.min(40, dist/5));
         const colorVal=Math.round(Math.max(170,255-absDist/2));
         item.style.transform=`scale(${scale}) rotateX(${rotateX}deg)`;
-        item.style.color=`rgb(${colorVal},${colorVal},${colorVal})`;
         if(absDist<closestDist){
             closestDist=absDist;
             closestItem=item;
@@ -64,28 +63,35 @@ function updateHighlight(){
                 if(navigator.vibrate) navigator.vibrate(5);
             }
         }
+        // 高亮选中
+        if(absDist<itemHeight/2){
+            item.style.color="#1e90ff";
+            item.style.fontWeight="bold";
+        }else{
+            item.style.color=`rgb(${colorVal},${colorVal},${colorVal})`;
+            item.style.fontWeight="normal";
+        }
     });
-    items.forEach(item=>item.classList.remove('active'));
-    if(closestItem) closestItem.classList.add('active');
 }
 
 function render(){ list.style.transform=`translateY(${offset}px)`; updateHighlight(); }
 
-// 阻尼 + 弹簧
-function damping(v){ return v * 0.92; }
+// 阻尼 + 弹簧 + iOS 式加速度
+function damping(v){ return v*0.92; }
 function spring(o){
     const maxOffset=0, minOffset=-(itemHeight*(values.length-1));
-    if(o>maxOffset) return (o - maxOffset)*0.2; // 上弹簧
-    if(o<minOffset) return (o - minOffset)*0.2; // 下弹簧
+    if(o>maxOffset) return (o - maxOffset)*0.2;
+    if(o<minOffset) return (o - minOffset)*0.2;
     return 0;
 }
 
 function animate(){
     const springForce = spring(offset);
     offset += velocity - springForce;
-    velocity = damping(velocity);
+    // iOS 式非线性阻尼（快速滚动加速）
+    velocity = Math.sign(velocity) * Math.pow(Math.abs(velocity)*0.92,1.05);
     render();
-    if(Math.abs(velocity) > 0.5 || Math.abs(springForce)>0.5) animFrame=requestAnimationFrame(animate);
+    if(Math.abs(velocity)>0.5 || Math.abs(springForce)>0.5) animFrame=requestAnimationFrame(animate);
     else{
         let index=Math.round(-offset/itemHeight);
         offset=-index*itemHeight;

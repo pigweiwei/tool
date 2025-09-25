@@ -86,7 +86,7 @@ html, body {
 
   /* 背景：毛玻璃 + 浅色 */
   padding: 12px 40px;
-  min-width: 240px;   /* 长度加倍 */
+  min-width: 120px;   /* 缩短到50% */
   text-align: center;
   border-radius: 12px;
   background: rgba(60, 60, 60, 0.3);
@@ -188,6 +188,15 @@ const calcResult = document.getElementById('calcResult');
 function updateCalcResult(){
   let result = (profitValueLogical * positionValueLogical).toFixed(1) + '%';
   calcResult.textContent = result;
+
+  // 仓位 >= 1/2 时背景红色，否则灰色
+  if(positionValueLogical >= 0.5){
+    calcResult.style.background = 'rgba(200,0,0,0.3)';
+    calcResult.style.border = '1px solid rgba(255,0,0,0.3)';
+  } else {
+    calcResult.style.background = 'rgba(60, 60, 60, 0.3)';
+    calcResult.style.border = '1px solid rgba(255,255,255,0.15)';
+  }
 }
 
 function animateBarHeight(bar,valueDisplay,value,isPercent=false){
@@ -276,18 +285,10 @@ const gestureRight = document.getElementById('gestureRight');
 function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
 function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 
-// 点击遮罩层关闭
 overlay.addEventListener('click', closeNav);
-
-// 点击导航空白处关闭
 rightNav.addEventListener('click', e => { if(e.target === rightNav) closeNav(); });
+rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el => { el.addEventListener('click', e => { e.stopPropagation(); }); });
 
-// 阻止点击文字和链接关闭
-rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el => {
-  el.addEventListener('click', e => { e.stopPropagation(); });
-});
-
-// 屏幕右边缘向左滑打开导航
 let startX = 0, isSwiping = false;
 gestureRight.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isSwiping = true; });
 gestureRight.addEventListener('touchmove', e => {
@@ -297,7 +298,6 @@ gestureRight.addEventListener('touchmove', e => {
 });
 gestureRight.addEventListener('touchend', e => { isSwiping = false; });
 
-// 导航条左向右滑关闭
 let navStartX = 0, navSwiping = false;
 rightNav.addEventListener('touchstart', e => { navStartX = e.touches[0].clientX; navSwiping = true; });
 rightNav.addEventListener('touchmove', e => {

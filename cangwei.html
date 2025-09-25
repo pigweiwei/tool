@@ -262,8 +262,41 @@ function closeNav() {
   overlay.classList.remove('show');
 }
 
+// 点击遮罩层关闭导航
 overlay.addEventListener('click', closeNav);
 
+// 在导航内部点击空白处关闭导航（非文字或链接）
+rightNav.addEventListener('click', (e)=>{
+  if(e.target === rightNav) closeNav();
+});
+
+// 导航栏手势：左向右滑关闭导航
+let startXNav = 0;
+let draggingNavInside = false;
+
+rightNav.addEventListener('touchstart', e=>{
+  draggingNavInside = true;
+  startXNav = e.touches[0].clientX;
+});
+rightNav.addEventListener('touchmove', e=>{
+  if(!draggingNavInside) return;
+  const deltaX = e.touches[0].clientX - startXNav; // 左向右滑动
+  if(deltaX > 50) closeNav();
+});
+rightNav.addEventListener('touchend', ()=>{ draggingNavInside = false; });
+
+rightNav.addEventListener('mousedown', e=>{
+  draggingNavInside = true;
+  startXNav = e.clientX;
+});
+rightNav.addEventListener('mousemove', e=>{
+  if(!draggingNavInside) return;
+  const deltaX = e.clientX - startXNav;
+  if(deltaX > 50) closeNav();
+});
+rightNav.addEventListener('mouseup', ()=>{ draggingNavInside = false; });
+
+// 右侧边缘手势打开导航
 let startX = 0;
 let draggingNav = false;
 

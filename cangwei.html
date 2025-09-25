@@ -68,7 +68,7 @@ html, body {
   transform: translateX(-50%);
 }
 
-/* 顶部终值，半透明背景，炫彩动态 */
+/* ====== 顶部终值，方案二 ====== */
 .calc-result {
   position: fixed;
   top: 100px;
@@ -81,11 +81,17 @@ html, body {
   z-index: 100;
   padding: 8px 20px;
   border-radius: 12px;
-  background: rgba(0,0,0,0.2);
-  backdrop-filter: blur(6px);
+
+  /* 半透明黑底，可调透明度 */
+  background-color: rgba(0,0,0,0.2);
+
+  /* 渐变动画叠加 */
   background-image: linear-gradient(270deg, #ffdd00, #00ffff, #ff00ff);
   background-size: 600% 600%;
   animation: gradientAnim 5s ease infinite;
+
+  /* 保持模糊效果 */
+  backdrop-filter: blur(6px);
 }
 
 @keyframes gradientAnim {
@@ -165,6 +171,7 @@ html, body {
   </div>
 </div>
 
+<!-- ====== 顶部终值 ====== -->
 <div class="calc-result" id="calcResult"></div>
 
 <!-- ====== 右侧导航 ====== -->
@@ -285,27 +292,26 @@ rightNav.addEventListener('click', e => {
   if(e.target === rightNav) closeNav();
 });
 
-rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el=>{
-  el.addEventListener('click', e=>{
-    e.stopPropagation();
-  });
-});
-
+// 从屏幕右边向左滑打开导航
 let startX=0, draggingNav=false;
-
-rightNav.addEventListener('touchstart',e=>{
-  startX=e.touches[0].clientX;
-  draggingNav=true;
-});
-rightNav.addEventListener('touchmove',e=>{
+gestureRight.addEventListener('touchstart',e=>{ startX=e.touches[0].clientX; draggingNav=true; });
+gestureRight.addEventListener('touchmove',e=>{
   if(!draggingNav) return;
-  let deltaX=e.touches[0].clientX-startX;
-  if(deltaX>30) closeNav();
+  const delta = startX - e.touches[0].clientX;
+  if(delta>50){ openNav(); draggingNav=false; }
 });
-rightNav.addEventListener('touchend',e=>{ draggingNav=false; });
+gestureRight.addEventListener('touchend',()=>{ draggingNav=false; });
 
-gestureRight.addEventListener('touchstart', openNav);
-gestureRight.addEventListener('mousedown', openNav);
+// 在导航条上从左向右滑关闭
+let navStartX=0, navDragging=false;
+rightNav.addEventListener('touchstart',e=>{ navStartX=e.touches[0].clientX; navDragging=true; });
+rightNav.addEventListener('touchmove',e=>{
+  if(!navDragging) return;
+  const delta = e.touches[0].clientX - navStartX;
+  if(delta>30){ closeNav(); navDragging=false; }
+});
+rightNav.addEventListener('touchend',()=>{ navDragging=false; });
 </script>
+
 </body>
 </html>

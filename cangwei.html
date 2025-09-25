@@ -13,9 +13,18 @@ html, body {
   background: #1a1a1a;
   font-family: Arial, sans-serif;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
   overflow: hidden;
+}
+
+/* 顶部终值显示 */
+#finalValue {
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .bar-container {
@@ -23,9 +32,9 @@ html, body {
   justify-content: space-around;
   align-items: flex-end;
   width: 90vw;
-  height: 100vh;
+  flex: 1;
   gap: 20px;
-  padding-top: 15vh;
+  padding-bottom: 50px;
   box-sizing: border-box;
 }
 
@@ -37,7 +46,6 @@ html, body {
   height: 100%;
   position: relative;
   touch-action: none;
-  padding-bottom: 50px;
 }
 
 .bar {
@@ -58,21 +66,17 @@ html, body {
 #position { background: rgba(0,123,255,0.35); border:1px solid rgba(0,123,255,0.6); }
 #profit { background: rgba(40,167,69,0.35); border:1px solid rgba(40,167,69,0.6); }
 
-.bar-value, .bar-top-value {
+.bar-value {
   position: absolute;
   left: 50%;
   font-size: 16px;
   font-weight: bold;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  transform: translateX(-50%);
   white-space: nowrap;
   pointer-events: none;
   z-index: 10;
-  transform: translateX(-50%);
-}
-
-.bar-top-value {
-  bottom: auto;
 }
 
 .label {
@@ -84,17 +88,19 @@ html, body {
 </style>
 </head>
 <body>
+
+<!-- 顶部终值 -->
+<div id="finalValue">终值: 0</div>
+
 <div class="bar-container">
   <div class="bar-wrapper" id="wrapperPosition">
     <span class="bar-value" id="positionValue"></span>
     <div class="bar" id="position"></div>
-    <div class="bar-top-value" id="positionTopValue"></div>
     <div class="label">仓位</div>
   </div>
   <div class="bar-wrapper" id="wrapperProfit">
     <span class="bar-value" id="profitValue"></span>
     <div class="bar" id="profit"></div>
-    <div class="bar-top-value" id="profitTopValue"></div>
     <div class="label">盈亏</div>
   </div>
 </div>
@@ -104,11 +110,10 @@ const posBar = document.getElementById('position');
 const profitBar = document.getElementById('profit');
 const posValue = document.getElementById('positionValue');
 const profitValue = document.getElementById('profitValue');
-const posTopValue = document.getElementById('positionTopValue');
-const profitTopValue = document.getElementById('profitTopValue');
+const finalValue = document.getElementById('finalValue');
 
-let logicalPosition = 1;
-let logicalProfit = 50;
+let logicalPosition = 1; // 仓位
+let logicalProfit = 50;  // 盈亏%
 const fractions = [1,1/2,1/3,1/4,1/5,1/6,1/7,1/8,1/9,1/10,0];
 
 function getFractionDisplay(value){
@@ -123,26 +128,27 @@ function getFractionDisplay(value){
   else return "1/"+Math.round(1/bestFrac);
 }
 
-function animateBarHeight(){
+function updateBars(){
   const containerHeight = posBar.parentElement.clientHeight - 50;
 
-  // 仓位柱子高度
-  let posHeight = containerHeight * logicalPosition * 0.7;
+  // 仓位柱子
+  let posHeight = containerHeight * logicalPosition * 0.7; // 高度缩短30%
   posBar.style.height = posHeight + 'px';
   posValue.style.top = (containerHeight - posHeight - 20) + 'px';
   posValue.textContent = getFractionDisplay(logicalPosition);
-  posTopValue.textContent = (logicalProfit/logicalPosition).toFixed(2);
-  posTopValue.style.bottom = (posHeight + 5) + 'px';
 
-  // 盈亏柱子高度
-  let profitHeight = containerHeight * logicalProfit/50 * 0.7;
+  // 盈亏柱子
+  let profitHeight = containerHeight * logicalProfit / 50 * 0.7;
   profitBar.style.height = profitHeight + 'px';
   profitValue.style.top = (containerHeight - profitHeight - 20) + 'px';
   profitValue.textContent = Math.round(logicalProfit) + "%";
-  profitTopValue.textContent = (logicalProfit/logicalPosition).toFixed(2);
-  profitTopValue.style.bottom = (profitHeight + 5) + 'px';
+
+  // 顶部终值 = 盈亏 ÷ 仓位
+  let val = logicalPosition > 0 ? (logicalProfit / logicalPosition).toFixed(2) : "∞";
+  finalValue.textContent = "终值: " + val;
 }
 
+// 拖动逻辑
 function makeDraggable(wrapper, isPercent=false, callback=null){
   let dragging=false, startY=0, startValue=0;
   const containerHeight = wrapper.clientHeight - 50;
@@ -165,7 +171,7 @@ function makeDraggable(wrapper, isPercent=false, callback=null){
     if(isPercent) value=Math.max(0,Math.min(50,value));
     else value=Math.max(0,Math.min(1,value));
     if(callback) callback(value);
-    animateBarHeight();
+    updateBars();
   }
 
   function endDrag(){ dragging=false; }
@@ -181,7 +187,7 @@ makeDraggable(document.getElementById('wrapperPosition'), false, v=>logicalPosit
 makeDraggable(document.getElementById('wrapperProfit'), true, v=>logicalProfit=v);
 
 // 初始显示
-animateBarHeight();
+updateBars();
 </script>
 </body>
 </html>

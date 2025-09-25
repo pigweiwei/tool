@@ -85,7 +85,7 @@ html, body {
   font-weight: bold;
   color: #fff;
   z-index: 10000;
-  padding: 8px 20px;
+  padding: 8px 40px; /* 宽度增加一倍 */
   border-radius: 12px;
   pointer-events: none;
   background: linear-gradient(90deg, rgba(0,123,255,0.7), rgba(40,167,69,0.7));
@@ -142,7 +142,6 @@ html, body {
 </head>
 <body>
 
-<!-- ====== 竖条 ====== -->
 <div class="bar-container">
   <div class="bar-wrapper" id="wrapperPosition">
     <span class="bar-value" id="positionValue"></span>
@@ -156,10 +155,8 @@ html, body {
   </div>
 </div>
 
-<!-- ====== 顶部终值 ====== -->
 <div class="calc-result" id="calcResult"></div>
 
-<!-- ====== 右侧导航 ====== -->
 <div class="right-nav" id="rightNav">
   <div class="nav-item">首页</div>
   <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
@@ -281,8 +278,6 @@ gestureRight.addEventListener('touchmove',e=>{
 });
 gestureRight.addEventListener('touchend',()=>{ draggingNav=false; });
 
-rightNav.addEventListener('click',e=>{ if(e.target===rightNav) closeNav(); });
-
 let navStartX=0, navDragging=false;
 rightNav.addEventListener('touchstart',e=>{ navStartX=e.touches[0].clientX; navDragging=true; });
 rightNav.addEventListener('touchmove',e=>{
@@ -291,6 +286,7 @@ rightNav.addEventListener('touchmove',e=>{
   if(delta>30){ closeNav(); navDragging=false; }
 });
 rightNav.addEventListener('touchend',()=>{ navDragging=false; });
+rightNav.addEventListener('click',e=>{ if(e.target===rightNav) closeNav(); });
 
 </script>
 </body>

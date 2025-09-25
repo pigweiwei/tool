@@ -88,26 +88,8 @@ html, body {
   padding: 8px 20px;
   border-radius: 12px;
   pointer-events: none;
-
-  background-color: rgba(0,0,0,0.2);
+  background: linear-gradient(90deg, rgba(0,123,255,0.7), rgba(40,167,69,0.7));
   backdrop-filter: blur(6px);
-  overflow: hidden;
-}
-
-.calc-result span.bg {
-  position: absolute;
-  top:0; left:0; width:100%; height:100%;
-  background: linear-gradient(270deg,#ffdd00,#00ffff,#ff00ff);
-  background-size: 600% 600%;
-  z-index: -1;
-  animation: gradientAnim 5s ease infinite;
-  border-radius: 12px;
-}
-
-@keyframes gradientAnim{
-  0%{background-position:0% 50%;}
-  50%{background-position:100% 50%;}
-  100%{background-position:0% 50%;}
 }
 
 /* ====== 右侧导航 ====== */
@@ -175,9 +157,7 @@ html, body {
 </div>
 
 <!-- ====== 顶部终值 ====== -->
-<div class="calc-result" id="calcResult">
-  <span class="bg"></span>
-</div>
+<div class="calc-result" id="calcResult"></div>
 
 <!-- ====== 右侧导航 ====== -->
 <div class="right-nav" id="rightNav">
@@ -207,7 +187,7 @@ function updateCalcResult(){
 
 function animateBarHeight(bar,valueDisplay,value,isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
-  const scale = 0.7; // 高度缩短30%
+  const scale = 0.7;
   let displayVal, finalHeight;
 
   if(isPercent){
@@ -292,7 +272,6 @@ function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.re
 
 overlay.addEventListener('click',closeNav);
 
-// 从屏幕右侧向左滑出导航
 let startX=0, draggingNav=false;
 gestureRight.addEventListener('touchstart',e=>{ startX=e.touches[0].clientX; draggingNav=true; });
 gestureRight.addEventListener('touchmove',e=>{
@@ -302,10 +281,8 @@ gestureRight.addEventListener('touchmove',e=>{
 });
 gestureRight.addEventListener('touchend',()=>{ draggingNav=false; });
 
-// 导航条空白处点击关闭
 rightNav.addEventListener('click',e=>{ if(e.target===rightNav) closeNav(); });
 
-// 导航条左滑关闭
 let navStartX=0, navDragging=false;
 rightNav.addEventListener('touchstart',e=>{ navStartX=e.touches[0].clientX; navDragging=true; });
 rightNav.addEventListener('touchmove',e=>{
@@ -314,7 +291,7 @@ rightNav.addEventListener('touchmove',e=>{
   if(delta>30){ closeNav(); navDragging=false; }
 });
 rightNav.addEventListener('touchend',()=>{ navDragging=false; });
-</script>
 
+</script>
 </body>
 </html>

@@ -173,7 +173,7 @@ function calculateBreakeven(r) {
   return 100 / (1 + r);
 }
 
-// 统一最小数值显示位置
+// 全局的最小数值显示顶点（基于 盈亏比 = 0.5 计算），会在首次调用 animateBarHeight 时初始化
 let minValueTopGlobal = null;
 
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
@@ -181,6 +181,7 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   let minHeight = 5;
   let displayVal = targetVal;
   let heightVal = targetVal;
+
   if (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio)) {
     displayVal = 'Ⓟ';
     heightVal = isPercent ? 100 : maxProfitRatio;
@@ -188,27 +189,39 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
     displayVal = isPercent ? '0%' : '0.00';
     heightVal = 0;
   }
+
+  // 计算柱子高度（柱子本身可以继续缩小/增大）
   let targetHeight = isPercent ? containerHeight * heightVal / 100 : containerHeight * heightVal / maxProfitRatio;
   if (targetHeight < minHeight) targetHeight = minHeight;
   bar.style.height = targetHeight + 'px';
 
-  let valueTop = containerHeight - targetHeight - 20;
-
-  // 初始化全局最小位置（用盈亏比=0.5 计算一次）
-  if (minValueTopGlobal === null && !isPercent) {
+  // 初始化全局最小显示位置（基于盈亏比 = 0.5）
+  if (minValueTopGlobal === null) {
+    // tmpHeight 对应盈亏比 0.5 的高度
     let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
     minValueTopGlobal = containerHeight - tmpHeight - 20;
+    if (minValueTopGlobal < 0) minValueTopGlobal = 0;
   }
 
-  // 应用全局最小位置
-  if (minValueTopGlobal !== null) {
-    valueTop = Math.max(valueTop, minValueTopGlobal);
-  }
+  // 常规数值位置计算（不改变）
+  let valueTop = containerHeight - targetHeight - 20;
+
+  // 如果数值位置低于全局最小位置，则保持在全局最小位置（柱子本身继续变化）
+  valueTop = Math.max(valueTop, minValueTopGlobal);
 
   valueTop = Math.max(valueTop, 0);
   valueDisplay.style.top = valueTop + 'px';
+
   valueDisplay.textContent = (typeof displayVal === 'string') ? displayVal : isPercent ? Math.round(displayVal) + '%' : displayVal.toFixed(2);
 }
+
+// 在窗口大小改变时重置全局最小位置并重绘（保持响应式）
+window.addEventListener('resize', ()=>{
+  minValueTopGlobal = null;
+  // 重新渲染当前值（确保位置基于新尺寸重新计算）
+  animateBarHeight(profitBar, profitValue, profitLogical, false);
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
+});
 
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;

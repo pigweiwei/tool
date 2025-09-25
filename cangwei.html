@@ -18,7 +18,7 @@ html, body {
 /* ====== 竖条 ====== */
 .bar-container {
   display: flex;
-  justify-content: center; /* 水平居中 */
+  justify-content: center;
   align-items: flex-end;
   width: 100%;
   height: 100vh;
@@ -39,7 +39,7 @@ html, body {
 }
 
 .bar {
-  width: 40vw; /* 宽度固定 */
+  width: 40vw;
   max-height: calc(100% - 50px);
   border-radius: 20px 20px 0 0;
   display: flex;
@@ -133,10 +133,27 @@ html, body {
   background:transparent; 
   touch-action:none; 
 }
+
+/* 导航开关按钮 */
+#navToggleBtn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 50px;
+  height: 40px;
+  background: #007bff;
+  color: #fff;
+  text-align: center;
+  line-height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index:300;
+}
 </style>
 </head>
 <body>
 
+<!-- ====== 竖条 ====== -->
 <div class="bar-container">
   <div class="bar-wrapper" id="wrapperPosition">
     <span class="bar-value" id="positionValue"></span>
@@ -151,6 +168,7 @@ html, body {
   </div>
 </div>
 
+<!-- ====== 右侧导航 ====== -->
 <div class="right-nav" id="rightNav">
   <div class="nav-item">首页</div>
   <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
@@ -158,6 +176,7 @@ html, body {
 </div>
 <div class="overlay" id="overlay"></div>
 <div class="gesture-right" id="gestureRight"></div>
+<div id="navToggleBtn">导航</div>
 
 <script>
 const fractions = [1,1/2,1/3,1/4,1/5,1/6,1/7,1/8,1/9,1/10,0];
@@ -259,20 +278,24 @@ window.addEventListener('load',()=>{
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');
+const navToggleBtn = document.getElementById('navToggleBtn');
 
 function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
 function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 
 overlay.addEventListener('click', closeNav);
 
-let startX = 0, isSwiping=false;
-gestureRight.addEventListener('touchstart', e=>{ startX = e.touches[0].clientX; isSwiping=true; });
-gestureRight.addEventListener('touchmove', e=>{
+// 左向右滑关闭导航
+let startX = 0, isSwiping = false;
+gestureRight.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isSwiping = true; });
+gestureRight.addEventListener('touchmove', e => {
   if(!isSwiping) return;
   let deltaX = e.touches[0].clientX - startX;
-  if(deltaX < -30) closeNav();
+  if(deltaX > 30) closeNav();
 });
-gestureRight.addEventListener('touchend', e=>{ isSwiping=false; });
+gestureRight.addEventListener('touchend', e => { isSwiping = false; });
+
+navToggleBtn.addEventListener('click', openNav);
 </script>
 </body>
 </html>

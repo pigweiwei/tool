@@ -72,6 +72,19 @@ html, body {
   transform: translateX(-50%);
 }
 
+/* 新增计算结果 */
+.calc-result {
+  position: absolute;
+  left: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffdd00;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 20;
+}
+
 .label {
   margin-top: 8px;
   font-size: 14px;
@@ -138,6 +151,8 @@ html, body {
   <div class="bar-wrapper" id="wrapperPosition">
     <span class="bar-value" id="positionValue"></span>
     <div class="bar" id="positionBar"></div>
+    <!-- 新增计算结果 -->
+    <div class="calc-result" id="calcResult"></div>
     <div class="label">仓位</div>
   </div>
   <div class="bar-wrapper" id="wrapperProfit">
@@ -166,6 +181,13 @@ const positionBar = document.getElementById('positionBar');
 const profitBar = document.getElementById('profitBar');
 const positionValue = document.getElementById('positionValue');
 const profitValue = document.getElementById('profitValue');
+const calcResult = document.getElementById('calcResult');
+
+function updateCalcResult(){
+  let result = (profitValueLogical / (positionValueLogical*100)).toFixed(2);
+  calcResult.style.top = (positionBar.offsetTop - 100) + 'px';
+  calcResult.textContent = result;
+}
 
 function animateBarHeight(bar, valueDisplay, value, isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
@@ -176,8 +198,8 @@ function animateBarHeight(bar, valueDisplay, value, isPercent=false){
   if(isPercent){
     if(value < 0) value = 0;
     if(value > 50) value = 50;
-    value = Math.round(value*2)/2; // 每0.5变化一次
-    displayVal = value + "%";
+    value = Math.round(value*2)/2;
+    displayVal = value; // 不显示 %
     bar.style.height = containerHeight * value / 50 * scale + 'px';
   } else {
     let closest = fractions.reduce((prev, curr) => Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev);
@@ -192,6 +214,8 @@ function animateBarHeight(bar, valueDisplay, value, isPercent=false){
   valueTop = Math.max(valueTop, 0);
   valueDisplay.style.top = valueTop + 'px';
   valueDisplay.textContent = displayVal;
+
+  updateCalcResult();
 }
 
 /* 仓位柱子可拖动选择分数 */
@@ -264,7 +288,6 @@ function closeNav() {
 
 // 点击遮罩层关闭导航
 overlay.addEventListener('click', closeNav);
-
 // 在导航内部点击空白处关闭导航（非文字或链接）
 rightNav.addEventListener('click', (e)=>{
   if(e.target === rightNav) closeNav();
@@ -280,7 +303,7 @@ rightNav.addEventListener('touchstart', e=>{
 });
 rightNav.addEventListener('touchmove', e=>{
   if(!draggingNavInside) return;
-  const deltaX = e.touches[0].clientX - startXNav; // 左向右滑动
+  const deltaX = e.touches[0].clientX - startXNav;
   if(deltaX > 50) closeNav();
 });
 rightNav.addEventListener('touchend', ()=>{ draggingNavInside = false; });
@@ -329,6 +352,7 @@ makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, 
 window.addEventListener('load', ()=>{
   animateBarHeight(positionBar, positionValue, positionValueLogical, false);
   animateBarHeight(profitBar, profitValue, profitValueLogical, true);
+  updateCalcResult();
 });
 </script>
 

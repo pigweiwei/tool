@@ -156,7 +156,7 @@ html, body {
 <div class="right-nav" id="rightNav">
   <div class="nav-item">首页</div>
   <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
-  <div class="nav-item"><a href="cangwei.html">盈亏比&胜率</a></div>
+  <div class="nav-item"><a href="ykbsl.html">盈亏比&胜率</a></div>
 </div>
 <div class="overlay" id="overlay"></div>
 <div class="gesture-right" id="gestureRight"></div>
@@ -266,8 +266,18 @@ const gestureRight = document.getElementById('gestureRight');
 function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
 function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 
-// 点击空白区域关闭
+// 点击遮罩层关闭
 overlay.addEventListener('click', closeNav);
+
+// 点击导航空白处关闭
+rightNav.addEventListener('click', e => {
+  if(e.target === rightNav) closeNav();
+});
+
+// 阻止点击文字和链接关闭
+rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el => {
+  el.addEventListener('click', e => { e.stopPropagation(); });
+});
 
 // 屏幕右边缘向左滑打开导航
 let startX = 0, isSwiping = false;
@@ -288,11 +298,7 @@ rightNav.addEventListener('touchmove', e => {
   if(deltaX > 30) closeNav();
 });
 rightNav.addEventListener('touchend', e => { navSwiping = false; });
-
-// 阻止点击导航文字关闭
-rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el => {
-  el.addEventListener('click', e => { e.stopPropagation(); });
-});
 </script>
+
 </body>
 </html>

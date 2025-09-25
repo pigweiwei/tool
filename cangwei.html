@@ -161,7 +161,6 @@ const positionValue = document.getElementById('positionValue');
 const profitValue = document.getElementById('profitValue');
 const calcResult = document.getElementById('calcResult');
 
-// 更新终值 = 盈亏 × 仓位
 function updateCalcResult(){
   let result = (profitValueLogical * positionValueLogical).toFixed(1) + '%';
   const top = positionBar.getBoundingClientRect().top;
@@ -171,22 +170,25 @@ function updateCalcResult(){
 
 function animateBarHeight(bar,valueDisplay,value,isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
-  const scale = 0.7;
+  const scale = 0.7; // 高度缩短30%
   let displayVal = value;
+  let finalHeight;
 
   if(isPercent){
     value = Math.min(Math.max(value,0),50);
     value = Math.round(value*2)/2;
     displayVal = value + '%';
-    bar.style.height = containerHeight * value / 50 * scale + 'px';
+    finalHeight = containerHeight * value / 50 * scale;
   } else {
     let closest = fractions.reduce((prev,curr)=>Math.abs(curr-value)<Math.abs(prev-value)?curr:prev);
     value = closest;
     displayVal = value===0?"0":(value===1?"1":"1/"+Math.round(1/value));
-    bar.style.height = containerHeight * value * scale + 'px';
+    finalHeight = containerHeight * value * scale;
   }
 
-  valueDisplay.style.top = (containerHeight - bar.offsetHeight - 20) + 'px';
+  bar.style.height = finalHeight + 'px';
+  bar.style.marginTop = (containerHeight - finalHeight) + 'px'; // 保持底部对齐
+  valueDisplay.style.top = (containerHeight - finalHeight - 20) + 'px';
   valueDisplay.textContent = displayVal;
   updateCalcResult();
 }
@@ -238,17 +240,16 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
   document.addEventListener('touchend',endDrag);
 }
 
-// 初始化拖动
+// 初始化
 makeDraggable(document.getElementById('wrapperPosition'),positionBar,positionValue,false);
 makeDraggable(document.getElementById('wrapperProfit'),profitBar,profitValue,true);
 
-// 初始化显示
 window.addEventListener('load',()=>{
   animateBarHeight(positionBar,positionValue,positionValueLogical,false);
   animateBarHeight(profitBar,profitValue,profitValueLogical,true);
 });
 
-// ===== 右侧导航逻辑 =====
+// ====== 右侧导航逻辑 ======
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');
@@ -258,7 +259,6 @@ function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.re
 
 overlay.addEventListener('click', closeNav);
 
-// 左向右滑动关闭导航
 let startX = 0, isSwiping=false;
 gestureRight.addEventListener('touchstart', e=>{ startX = e.touches[0].clientX; isSwiping=true; });
 gestureRight.addEventListener('touchmove', e=>{

@@ -84,7 +84,6 @@ html, body {
   pointer-events: none;
   z-index: 100;
 
-  /* 背景：毛玻璃 + 浅色 */
   padding: 12px 40px;
   min-width: 120px;   /* 缩短到50% */
   text-align: center;
@@ -93,9 +92,11 @@ html, body {
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
 
-  /* 渐变边框发光 */
   border: 1px solid rgba(255,255,255,0.15);
   box-shadow: 0 0 20px rgba(0,0,0,0.4), inset 0 0 12px rgba(255,255,255,0.05);
+
+  /* 平滑过渡动画 */
+  transition: background 0.3s ease, border 0.3s ease;
 }
 
 /* ====== 右侧导航 ====== */

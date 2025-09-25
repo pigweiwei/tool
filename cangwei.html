@@ -184,7 +184,7 @@ const profitValue = document.getElementById('profitValue');
 const calcResult = document.getElementById('calcResult');
 
 function updateCalcResult(){
-  let result = (profitValueLogical / (positionValueLogical*100)).toFixed(2);
+  let result = ((profitValueLogical / positionValueLogical)*100).toFixed(1) + '%';
   calcResult.style.top = (positionBar.offsetTop - 100) + 'px';
   calcResult.textContent = result;
 }
@@ -199,7 +199,7 @@ function animateBarHeight(bar, valueDisplay, value, isPercent=false){
     if(value < 0) value = 0;
     if(value > 50) value = 50;
     value = Math.round(value*2)/2;
-    displayVal = value; // 不显示 %
+    displayVal = value + '%'; // 盈亏顶部数值显示百分比
     bar.style.height = containerHeight * value / 50 * scale + 'px';
   } else {
     let closest = fractions.reduce((prev, curr) => Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev);
@@ -218,7 +218,7 @@ function animateBarHeight(bar, valueDisplay, value, isPercent=false){
   updateCalcResult();
 }
 
-/* 仓位柱子可拖动选择分数 */
+/* 柱子可拖动逻辑 */
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
   let startY = 0;
@@ -319,40 +319,13 @@ rightNav.addEventListener('mousemove', e=>{
 });
 rightNav.addEventListener('mouseup', ()=>{ draggingNavInside = false; });
 
-// 右侧边缘手势打开导航
-let startX = 0;
-let draggingNav = false;
-
-gestureRight.addEventListener('touchstart', (e)=>{
-  draggingNav = true;
-  startX = e.touches[0].clientX;
-});
-gestureRight.addEventListener('touchmove', (e)=>{
-  if(!draggingNav) return;
-  const deltaX = startX - e.touches[0].clientX;
-  if(deltaX > 50) openNav();
-});
-gestureRight.addEventListener('touchend', ()=>{ draggingNav=false; });
-
-gestureRight.addEventListener('mousedown', (e)=>{
-  draggingNav = true;
-  startX = e.clientX;
-});
-gestureRight.addEventListener('mousemove', (e)=>{
-  if(!draggingNav) return;
-  const deltaX = startX - e.clientX;
-  if(deltaX > 50) openNav();
-});
-gestureRight.addEventListener('mouseup', ()=>{ draggingNav=false; });
-
-/* 初始化 */
+/* ====== 初始化 ====== */
 makeDraggable(document.getElementById('wrapperPosition'), positionBar, positionValue, false);
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, true);
 
 window.addEventListener('load', ()=>{
   animateBarHeight(positionBar, positionValue, positionValueLogical, false);
   animateBarHeight(profitBar, profitValue, profitValueLogical, true);
-  updateCalcResult();
 });
 </script>
 

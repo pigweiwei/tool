@@ -1,3 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>盈亏比&胜率</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background: #1a1a1a;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+/* ====== 竖条样式 ====== */
+.bar-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  width: 90vw;
+  height: 100vh;
+  gap: 20px;
+  padding-top: 15vh;
+  box-sizing: border-box;
+}
+
+.bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  position: relative;
+  touch-action: none;
+  padding-bottom: 50px;
+}
+
+.bar {
+  width: 40vw;
+  max-height: calc(100% - 50px);
+  position: relative;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex-direction: column;
+  box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.2);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: height 0.05s linear;
+}
+
+#profitLoss { background: rgba(0,123,255,0.35); border:1px solid rgba(0,123,255,0.6); }
+#breakeven { background: rgba(40,167,69,0.35); border:1px solid rgba(40,167,69,0.6); }
+
+.bar-value {
+  position: absolute;
+  left: 50%;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  transform: translateX(-50%);
+}
+
+.label {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #eee;
+}
+
+/* ====== 右侧导航模块样式 ====== */
+.right-nav {
+  position: fixed;
+  top:0;
+  right:-35%; 
+  width:35%;
+  max-width:300px;
+  height:100%;
+  background:#2c2c2c;
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  transition:right 0.3s ease;
+  z-index:200;
+  box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
+  border-radius: 8px 0 0 8px;
+}
+.right-nav.expanded { right:0; }
+.right-nav .nav-item {
+  color: #eee;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  border-bottom: 1px solid #444;
+}
+.right-nav .nav-item:hover { background: #1e1e1e; }
+
+.right-nav .nav-item a {
+  color:#eee;
+  text-decoration:none;
+  display:block;
+}
+
+/* 遮罩层 */
+.overlay { 
+  position: fixed; top:0; left:0; 
+  width:100%; height:100%; 
+  background: rgba(0,0,0,0.3); 
+  display:none; 
+  z-index:150; 
+}
+.overlay.show { display:block; }
+
+/* 手势捕获层 */
+.gesture-right { 
+  position: fixed; top:0; right:0; 
+  width:30px; height:100%; 
+  z-index:250; 
+  background:transparent; 
+  touch-action:none; 
+}
+</style>
+</head>
+<body>
+
+<!-- ====== 竖条 ====== -->
+<div class="bar-container">
+  <div class="bar-wrapper" id="wrapperProfit">
+    <span class="bar-value" id="profitLossValue"></span>
+    <div class="bar" id="profitLoss"></div>
+    <div class="label">盈亏比</div>
+  </div>
+  <div class="bar-wrapper" id="wrapperBreakeven">
+    <span class="bar-value" id="breakevenValue"></span>
+    <div class="bar" id="breakeven"></div>
+    <div class="label">胜率</div>
+  </div>
+</div>
+
+<!-- ====== 右侧导航 ====== -->
+<div class="right-nav" id="rightNav">
+  <div class="nav-item">首页</div>
+  <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
+  <div class="nav-item"><a href="cangwei.html">仓位计算器</a></div>
+</div>
+<div class="overlay" id="overlay"></div>
+<div class="gesture-right" id="gestureRight"></div>
+
 <script>
 // ====== 竖条逻辑 ======
 const profitBar = document.getElementById('profitLoss');
@@ -24,7 +183,7 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   let heightVal = targetVal;
 
   if (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio)) {
-    displayVal = '🅉';  // ✅ 改这里
+    displayVal = '🅉';  // ✅ 盈亏比无限大显示字符
     heightVal = isPercent ? 100 : maxProfitRatio;
   } else if (targetVal < 0 || !isFinite(targetVal)) {
     displayVal = isPercent ? '0%' : '0.00';
@@ -38,13 +197,11 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
 
   let valueTop = containerHeight - targetHeight - 20;
 
-  // 初始化 minValueTop，用盈亏比 0.5 时的位置
   if (!isPercent && minValueTop === null) {
     let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
     minValueTop = containerHeight - tmpHeight - 20;
   }
 
-  // 限制最小位置
   if (minValueTop !== null) {
     valueTop = Math.min(valueTop, minValueTop);
   }
@@ -85,9 +242,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
       } else {
         let currentValue = parseFloat(currentText);
         if (!isPercent) {
-          if (currentValue >= maxProfitRatio) {
-            currentValue = maxProfitRatio;
-          }
+          if (currentValue >= maxProfitRatio) currentValue = maxProfitRatio;
           let snappedValue = Math.round(currentValue / 0.5) * 0.5;
           animateBarHeight(bar, valueDisplay, snappedValue, isPercent);
           if (callback) callback(snappedValue);
@@ -162,16 +317,13 @@ function closeNav(){
   overlay.classList.remove('show'); 
 }
 
-// 点击空白收回
 overlay.addEventListener('click', closeNav);
 
-// 导航栏内部空白点击收回
 rightNav.addEventListener('click', e=>{
   if(e.target.classList.contains('nav-item') || e.target.tagName === 'A') return;
   closeNav();
 });
 
-// 右屏幕边缘向左滑展开
 let startX=0;
 gestureRight.addEventListener('touchstart', e=>{
   if(e.touches.length!==1) return;
@@ -188,7 +340,6 @@ gestureRight.addEventListener('touchend', e=>{
   startX=0;
 });
 
-// 导航栏本身向右滑收回
 let navStartX=0;
 rightNav.addEventListener('touchstart', e=>{
   if(e.touches.length!==1) return;
@@ -200,8 +351,11 @@ rightNav.addEventListener('touchmove', e=>{
 });
 rightNav.addEventListener('touchend', e=>{
   if(navStartX === 0) return;
-  const deltaX = e.changedTouches[0].clientX - navStartX; // 左→右为正
+  const deltaX = e.changedTouches[0].clientX - navStartX; 
   if(deltaX > 30) closeNav();
   navStartX = 0;
 });
 </script>
+
+</body>
+</html>

@@ -18,7 +18,6 @@ html, body {
   overflow: hidden;
 }
 
-/* ====== 竖条样式 ====== */
 .bar-container {
   display: flex;
   justify-content: space-around;
@@ -79,7 +78,6 @@ html, body {
   color: #eee;
 }
 
-/* ====== 右侧导航模块样式 ====== */
 .right-nav {
   position: fixed;
   top:0;
@@ -112,7 +110,6 @@ html, body {
   display:block;
 }
 
-/* 遮罩层 */
 .overlay { 
   position: fixed; top:0; left:0; 
   width:100%; height:100%; 
@@ -122,7 +119,6 @@ html, body {
 }
 .overlay.show { display:block; }
 
-/* 手势捕获层 */
 .gesture-right { 
   position: fixed; top:0; right:0; 
   width:30px; height:100%; 
@@ -134,7 +130,6 @@ html, body {
 </head>
 <body>
 
-<!-- ====== 竖条 ====== -->
 <div class="bar-container">
   <div class="bar-wrapper" id="wrapperProfit">
     <span class="bar-value" id="profitLossValue"></span>
@@ -148,7 +143,6 @@ html, body {
   </div>
 </div>
 
-<!-- ====== 右侧导航 ====== -->
 <div class="right-nav" id="rightNav">
   <div class="nav-item">首页</div>
   <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
@@ -173,7 +167,6 @@ function calculateBreakeven(r) {
   return 100 / (1 + r);
 }
 
-// ====== 修改：增加 allowInfinity 参数 ======
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowInfinity=false){
   const containerHeight = bar.parentElement.clientHeight - 50; 
   let minHeight = 5;
@@ -190,59 +183,58 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowIn
 
   let targetHeight = isPercent ? containerHeight * heightVal / 100 : containerHeight * heightVal / maxProfitRatio;
   if (targetHeight < minHeight) targetHeight = minHeight;
-
   bar.style.height = targetHeight + 'px';
 
   let valueTop = containerHeight - targetHeight - 20;
 
-  // 单独调整 🅉 往上偏移
   if(displayVal === '🅉') valueTop -= 20;
-  else if (!isPercent && minValueTop !== null) valueTop = Math.min(valueTop, minValueTop);
-  else if (!isPercent && minValueTop === null) {
-    let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
-    minValueTop = containerHeight - tmpHeight - 20;
+
+  if(isPercent){
+    const paddingTop = 5;
+    valueTop = Math.max(valueTop, paddingTop);
+  } else {
+    const paddingTop = 5;
+    valueTop = Math.min(valueTop, containerHeight - paddingTop); // 最大位置限制
+    if(minValueTop !== null) valueTop = Math.max(valueTop, minValueTop); // 最小限位
+    else {
+      let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
+      minValueTop = containerHeight - tmpHeight - 20;
+    }
   }
 
-  valueTop = Math.max(valueTop, 0);
   valueDisplay.style.top = valueTop + 'px';
-
-  valueDisplay.textContent = (typeof displayVal === 'string') ? displayVal : 
-    (isPercent ? Math.round(displayVal) + '%' : displayVal.toFixed(2));
+  valueDisplay.textContent = (typeof displayVal === 'string') ? displayVal : (isPercent ? Math.round(displayVal)+'%' : displayVal.toFixed(2));
 }
 
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
-  let dragging=false;
-  let startValue = 0;
-  let startX = 0;
-  let startY = 0;
-  let dragDirection = null; 
+  let dragging=false, startValue=0, startX=0, startY=0, dragDirection=null;
   const containerHeight = wrapper.clientHeight - 50;
 
   function startDrag(e){
-    dragging = true;
+    dragging=true;
     startX = e.touches ? e.touches[0].clientX : e.clientX;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
-    dragDirection = null;
+    dragDirection=null;
     let currentText = valueDisplay.textContent;
     startValue = currentText === '🅉' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
-    if (isNaN(startValue)) startValue = 0;
+    if(isNaN(startValue)) startValue=0;
     e.preventDefault();
   }
 
   function endDrag(){
     if(!dragging) return;
-    dragging = false;
+    dragging=false;
     let currentText = valueDisplay.textContent;
-    if (dragDirection === "vertical") {
-      if (currentText === '🅉') {
-        if (callback) callback(Infinity);
+    if(dragDirection==='vertical'){
+      if(currentText==='🅉'){
+        if(callback) callback(Infinity);
       } else {
         let currentValue = parseFloat(currentText);
-        if (!isPercent) {
-          if (currentValue >= maxProfitRatio) currentValue = maxProfitRatio;
-          let snappedValue = Math.round(currentValue / 0.5) * 0.5;
-          animateBarHeight(bar, valueDisplay, snappedValue, isPercent, false); // 拖动不允许∞
-          if (callback) callback(snappedValue);
+        if(!isPercent){
+          if(currentValue >= maxProfitRatio) currentValue = maxProfitRatio;
+          let snappedValue = Math.round(currentValue/0.5)*0.5;
+          animateBarHeight(bar,valueDisplay,snappedValue,isPercent,false);
+          if(callback) callback(snappedValue);
         }
       }
     }
@@ -252,23 +244,22 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     if(!dragging) return;
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    if (dragDirection === null) {
-      let dx = clientX - startX;
-      let dy = clientY - startY;
-      dragDirection = Math.abs(dy) > Math.abs(dx) ? "vertical" : "horizontal";
+    if(dragDirection===null){
+      let dx = clientX-startX, dy = clientY-startY;
+      dragDirection = Math.abs(dy) > Math.abs(dx) ? "vertical":"horizontal";
     }
-    if (dragDirection === "vertical") {
-      let delta = startY - clientY; 
+    if(dragDirection==="vertical"){
+      let delta = startY - clientY;
       let value;
-      if (isPercent) {
-        value = startValue + delta / containerHeight * 100;
-        value = Math.min(Math.max(value, 0), 100);
+      if(isPercent){
+        value = startValue + delta/containerHeight*100;
+        value = Math.min(Math.max(value,0),100);
       } else {
-        value = startValue + delta / containerHeight * maxProfitRatio;
-        value = Math.max(value, 0);
+        value = startValue + delta/containerHeight*maxProfitRatio;
+        value = Math.max(value,0);
       }
-      animateBarHeight(bar, valueDisplay, value, isPercent, false); // 拖动不允许∞
-      if (callback) callback(value);
+      animateBarHeight(bar,valueDisplay,value,isPercent,false);
+      if(callback) callback(value);
     }
   }
 
@@ -276,7 +267,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   wrapper.addEventListener('mousedown', startDrag);
   document.addEventListener('touchend', endDrag);
   document.addEventListener('mouseup', endDrag);
-  wrapper.addEventListener('touchmove', moveDrag, { passive: false });
+  wrapper.addEventListener('touchmove', moveDrag,{passive:false});
   wrapper.addEventListener('mousemove', moveDrag);
 }
 
@@ -284,71 +275,40 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
   breakevenLogical = calculateBreakeven(r);
-  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true); // 胜率联动允许∞
-  animateBarHeight(profitBar, profitValue, r, false, false); // 自己拖动不允许∞
+  animateBarHeight(breakevenBar,breakevenValue,breakevenLogical,true,true); // 胜率联动允许🅉
+  animateBarHeight(profitBar,profitValue,r,false,false); // 自己拖动不允许🅉
 });
 
 // 胜率拖动
 makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
-  profitLogical = b > 0 ? (100 / b) - 1 : Infinity;
-  animateBarHeight(profitBar, profitValue, profitLogical, false, true); // 联动允许∞
+  profitLogical = b>0 ? (100/b)-1 : Infinity;
+  animateBarHeight(profitBar,profitValue,profitLogical,false,true); // 联动允许🅉
 });
 
 // 初始显示
 window.addEventListener('load', ()=>{
-  animateBarHeight(profitBar, profitValue, profitLogical, false, false);
-  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true);
+  animateBarHeight(profitBar,profitValue,profitLogical,false,false);
+  animateBarHeight(breakevenBar,breakevenValue,breakevenLogical,true,true);
 });
 
-// ====== 右侧导航手势整合 ======
+// ====== 右侧导航 ======
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');
 
-function openNav(){ 
-  rightNav.classList.add('expanded'); 
-  overlay.classList.add('show'); 
-}
-function closeNav(){ 
-  rightNav.classList.remove('expanded'); 
-  overlay.classList.remove('show'); 
-}
+function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
+function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 overlay.addEventListener('click', closeNav);
-rightNav.addEventListener('click', e=>{
-  if(e.target.classList.contains('nav-item') || e.target.tagName === 'A') return;
-  closeNav();
-});
+rightNav.addEventListener('click', e=>{ if(e.target.classList.contains('nav-item')||e.target.tagName==='A') return; closeNav(); });
 let startX=0;
-gestureRight.addEventListener('touchstart', e=>{
-  if(e.touches.length!==1) return;
-  e.preventDefault();
-  startX=e.touches[0].clientX;
-});
-gestureRight.addEventListener('touchmove', e=>{
-  if(e.touches.length!==1) return;
-  e.preventDefault();
-});
-gestureRight.addEventListener('touchend', e=>{
-  const deltaX = startX - e.changedTouches[0].clientX;
-  if(deltaX > 30) openNav();
-  startX=0;
-});
+gestureRight.addEventListener('touchstart', e=>{ if(e.touches.length!==1) return; e.preventDefault(); startX=e.touches[0].clientX; });
+gestureRight.addEventListener('touchmove', e=>{ if(e.touches.length!==1) return; e.preventDefault(); });
+gestureRight.addEventListener('touchend', e=>{ const deltaX=startX-e.changedTouches[0].clientX; if(deltaX>30) openNav(); startX=0; });
 let navStartX=0;
-rightNav.addEventListener('touchstart', e=>{
-  if(e.touches.length!==1) return;
-  navStartX = e.touches[0].clientX;
-});
-rightNav.addEventListener('touchmove', e=>{
-  if(e.touches.length!==1) return;
-  e.preventDefault();
-});
-rightNav.addEventListener('touchend', e=>{
-  if(navStartX === 0) return;
-  const deltaX = e.changedTouches[0].clientX - navStartX; 
-  if(deltaX > 30) closeNav();
-  navStartX = 0;
-});
+rightNav.addEventListener('touchstart', e=>{ if(e.touches.length!==1) return; navStartX=e.touches[0].clientX; });
+rightNav.addEventListener('touchmove', e=>{ if(e.touches.length!==1) return; e.preventDefault(); });
+rightNav.addEventListener('touchend', e=>{ if(navStartX===0) return; const deltaX=e.changedTouches[0].clientX-navStartX; if(deltaX>30) closeNav(); navStartX=0; });
 </script>
 
 </body>

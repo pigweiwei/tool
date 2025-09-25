@@ -27,11 +27,12 @@ html, body {
 /* ====== 竖条样式 ====== */
 .bar-container {
   display: flex;
-  justify-content: center;  /* 水平居中 */
+  justify-content: space-around;  /* 两柱子间距恢复原来 */
   align-items: flex-end;
-  width: 100%;
-  height: calc(100% - 80px); /* 留出顶部终值和底部间距 */
+  width: 90vw; /* 恢复原来宽度 */
+  height: 100%; 
   gap: 20px;
+  padding-top: 15vh; /* 顶部留白 */
   box-sizing: border-box;
 }
 
@@ -43,7 +44,7 @@ html, body {
   height: 100%;
   position: relative;
   touch-action: none;
-  padding-bottom: 50px;
+  padding-bottom: 50px; /* 恢复底部位置 */
 }
 
 .bar {

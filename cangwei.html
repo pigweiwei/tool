@@ -68,6 +68,13 @@ html, body {
   transform: translateX(-50%);
 }
 
+.label {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #eee;
+}
+
 /* ====== 顶部终值 ====== */
 .calc-result {
   position: fixed;
@@ -77,34 +84,33 @@ html, body {
   font-size: 20px;
   font-weight: bold;
   color: #fff;
-  pointer-events: none;
-  z-index: 100;
+  z-index: 1000;
   padding: 8px 20px;
   border-radius: 12px;
+  pointer-events: none;
 
   /* 半透明黑底 */
   background-color: rgba(0,0,0,0.2);
-
-  /* 炫彩渐变动画 */
-  background-image: linear-gradient(270deg, #ffdd00, #00ffff, #ff00ff);
-  background-size: 600% 600%;
-  animation: gradientAnim 5s ease infinite;
-
-  /* 模糊效果 */
   backdrop-filter: blur(6px);
 }
 
-@keyframes gradientAnim {
-  0% { background-position:0% 50%; }
-  50% { background-position:100% 50%; }
-  100% { background-position:0% 50%; }
+.calc-result::before {
+  content:'';
+  position:absolute;
+  top:0; left:0;
+  width:100%; height:100%;
+  border-radius:12px;
+  z-index:-1;
+
+  background: linear-gradient(270deg,#ffdd00,#00ffff,#ff00ff);
+  background-size:600% 600%;
+  animation: gradientAnim 5s ease infinite;
 }
 
-.label {
-  margin-top: 8px;
-  font-size: 14px;
-  font-weight: bold;
-  color: #eee;
+@keyframes gradientAnim{
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
 }
 
 /* ====== 右侧导航 ====== */
@@ -202,7 +208,7 @@ function updateCalcResult(){
 
 function animateBarHeight(bar,valueDisplay,value,isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
-  const scale = 0.7;
+  const scale = 0.7; // 高度缩短30%
   let displayVal, finalHeight;
 
   if(isPercent){
@@ -242,7 +248,6 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
     if(isPercent){
       value = startValue + delta/containerHeight*50;
       value = Math.min(Math.max(value,0),50);
-      value = Math.round(value*2)/2;
       profitValueLogical = value;
       animateBarHeight(bar,valueDisplay,value,true);
     } else {
@@ -256,9 +261,8 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
   function endDrag(){
     dragging=false;
     if(!isPercent){
-      let closest = fractions.reduce((prev,curr)=>Math.abs(curr-positionValueLogical)<Math.abs(prev-positionValueLogical)?curr:prev);
-      positionValueLogical = closest;
-      animateBarHeight(bar,valueDisplay,closest,false);
+      positionValueLogical = fractions.reduce((prev,curr)=>Math.abs(curr-positionValueLogical)<Math.abs(prev-positionValueLogical)?curr:prev);
+      animateBarHeight(bar,valueDisplay,positionValueLogical,false);
     }
   }
 
@@ -270,13 +274,13 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
   document.addEventListener('mouseup',endDrag);
 }
 
-/* 初始化柱子 */
 makeDraggable(document.getElementById('wrapperPosition'),positionBar,positionValue,false);
 makeDraggable(document.getElementById('wrapperProfit'),profitBar,profitValue,true);
 
 window.addEventListener('load',()=>{
   animateBarHeight(positionBar,positionValue,positionValueLogical,false);
   animateBarHeight(profitBar,profitValue,profitValueLogical,true);
+  updateCalcResult();
 });
 
 /* ====== 导航逻辑 ====== */
@@ -289,7 +293,7 @@ function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.re
 
 overlay.addEventListener('click',closeNav);
 
-// 从屏幕右边向左滑打开导航
+// 从屏幕右侧向左滑出导航
 let startX=0, draggingNav=false;
 gestureRight.addEventListener('touchstart',e=>{ startX=e.touches[0].clientX; draggingNav=true; });
 gestureRight.addEventListener('touchmove',e=>{
@@ -299,7 +303,12 @@ gestureRight.addEventListener('touchmove',e=>{
 });
 gestureRight.addEventListener('touchend',()=>{ draggingNav=false; });
 
-// 在导航条上从左向右滑关闭
+// 在导航条空白处点击关闭
+rightNav.addEventListener('click',e=>{
+  if(e.target===rightNav) closeNav();
+});
+
+// 导航条左滑关闭
 let navStartX=0, navDragging=false;
 rightNav.addEventListener('touchstart',e=>{ navStartX=e.touches[0].clientX; navDragging=true; });
 rightNav.addEventListener('touchmove',e=>{

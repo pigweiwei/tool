@@ -159,8 +159,8 @@ html, body {
 <script>
 /* ====== 仓位分数刻度 ====== */
 const fractions = [1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 0];
-let positionValueLogical = 1;
-let profitValueLogical = 0.5; // 盈亏默认值 0.5
+let positionValueLogical = 1/4; // 默认仓位
+let profitValueLogical = 10;    // 默认盈亏10%
 
 const positionBar = document.getElementById('positionBar');
 const profitBar = document.getElementById('profitBar');
@@ -175,14 +175,13 @@ function animateBarHeight(bar, valueDisplay, value, isPercent=false){
 
   if(isPercent){
     if(value < 0) value = 0;
-    if(value > 50) value = 50;  // 最大50
-    heightVal = value;
-    displayVal = Math.round(value*2)/2; // 每0.5变化一次
-    bar.style.height = containerHeight * heightVal / 50 * scale + 'px';
+    if(value > 50) value = 50;
+    value = Math.round(value*2)/2; // 每0.5变化一次
+    displayVal = value + "%";
+    bar.style.height = containerHeight * value / 50 * scale + 'px';
   } else {
     let closest = fractions.reduce((prev, curr) => Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev);
     value = closest;
-    heightVal = value;
     displayVal = value===0 ? "0" : (value===1 ? "1" : "1/" + Math.round(1/value));
     bar.style.height = containerHeight * value * scale + 'px';
   }
@@ -225,8 +224,8 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     let delta = startY - clientY;
     let value;
     if(isPercent){
-      value = startValue + delta / containerHeight * 50; // 最大50
-      value = Math.round(value*2)/2; // 每0.5变化一次
+      value = startValue + delta / containerHeight * 50;
+      value = Math.round(value*2)/2;
       if(value < 0) value = 0;
       if(value > 50) value = 50;
       profitValueLogical = value;

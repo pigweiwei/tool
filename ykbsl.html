@@ -183,7 +183,7 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   let heightVal = targetVal;
 
   if (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio)) {
-    displayVal = 'Ⓟ';
+    displayVal = '🅉';
     heightVal = isPercent ? 100 : maxProfitRatio;
   } else if (targetVal < 0 || !isFinite(targetVal)) {
     displayVal = isPercent ? '0%' : '0.00';
@@ -229,7 +229,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     startY = e.touches ? e.touches[0].clientY : e.clientY;
     dragDirection = null;
     let currentText = valueDisplay.textContent;
-    startValue = currentText === 'Ⓟ' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
+    startValue = currentText === '🅉' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
     if (isNaN(startValue)) startValue = 0;
     e.preventDefault();
   }
@@ -239,7 +239,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     dragging = false;
     if (dragDirection === "vertical") {
       let currentText = valueDisplay.textContent;
-      if (currentText === 'Ⓟ') {
+      if (currentText === '🅉') {
         if (callback) callback(Infinity);
       } else {
         let currentValue = parseFloat(currentText);
@@ -599,7 +599,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     startY = e.touches ? e.touches[0].clientY : e.clientY;
     dragDirection = null;
     let currentText = valueDisplay.textContent;
-    startValue = currentText === 'Ⓟ' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
+    startValue = currentText === '🅉' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
     if (isNaN(startValue)) startValue = 0;
     e.preventDefault();
   }
@@ -609,7 +609,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     dragging = false;
     if (dragDirection === "vertical") {
       let currentText = valueDisplay.textContent;
-      if (currentText === 'Ⓟ') {
+      if (currentText === '🅉') {
         if (callback) callback(Infinity);
       } else {
         let currentValue = parseFloat(currentText);

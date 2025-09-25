@@ -12,11 +12,9 @@ html, body {
   width: 100%;
   background: #1a1a1a;
   font-family: Arial, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
   overflow: hidden;
 }
+/* ====== 竖条 ====== */
 .bar-container {
   display: flex;
   justify-content: space-around;
@@ -81,6 +79,50 @@ html, body {
   font-weight: bold;
   color: #eee;
 }
+/* ====== 右侧导航 ====== */
+.right-nav {
+  position: fixed;
+  top:0;
+  right:-35%; 
+  width:35%;
+  max-width:300px;
+  height:100%;
+  background:#2c2c2c;
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  transition:right 0.3s ease;
+  z-index:200;
+  box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
+  border-radius: 8px 0 0 8px;
+}
+.right-nav.expanded { right:0; }
+.right-nav .nav-item {
+  color: #eee;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  border-bottom: 1px solid #444;
+}
+.right-nav .nav-item:hover { background: #1e1e1e; }
+.right-nav .nav-item a { color:#eee; text-decoration:none; display:block; }
+/* 遮罩层 */
+.overlay { 
+  position: fixed; top:0; left:0; 
+  width:100%; height:100%; 
+  background: rgba(0,0,0,0.3); 
+  display:none; 
+  z-index:150; 
+}
+.overlay.show { display:block; }
+/* 手势捕获层 */
+.gesture-right { 
+  position: fixed; top:0; right:0; 
+  width:30px; height:100%; 
+  z-index:250; 
+  background:transparent; 
+  touch-action:none; 
+}
 </style>
 </head>
 <body>
@@ -99,17 +141,27 @@ html, body {
   </div>
 </div>
 
+<!-- ====== 右侧导航 ====== -->
+<div class="right-nav" id="rightNav">
+  <div class="nav-item">首页</div>
+  <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
+  <div class="nav-item"><a href="cangwei.html">盈亏比&胜率</a></div>
+</div>
+<div class="overlay" id="overlay"></div>
+<div class="gesture-right" id="gestureRight"></div>
+
 <script>
 const fractions = [1,1/2,1/3,1/4,1/5,1/6,1/7,1/8,1/9,1/10,0];
-let positionValueLogical = 1/4;   // 默认仓位 1/4
-let profitValueLogical = 10;      // 默认盈亏 10%
+let positionValueLogical = 1/4; // 默认仓位
+let profitValueLogical = 10;    // 默认盈亏
+
 const positionBar = document.getElementById('positionBar');
 const profitBar = document.getElementById('profitBar');
 const positionValue = document.getElementById('positionValue');
 const profitValue = document.getElementById('profitValue');
 const calcResult = document.getElementById('calcResult');
 
-// 计算终值 = 盈亏 × 仓位
+// 更新终值 = 盈亏 × 仓位
 function updateCalcResult(){
   let result = (profitValueLogical * positionValueLogical).toFixed(1) + '%';
   const top = positionBar.getBoundingClientRect().top;
@@ -117,9 +169,9 @@ function updateCalcResult(){
   calcResult.textContent = result;
 }
 
-function animateBarHeight(bar, valueDisplay, value, isPercent=false){
+function animateBarHeight(bar,valueDisplay,value,isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
-  const scale = 0.7; // 高度缩短 30%
+  const scale = 0.7;
   let displayVal = value;
 
   if(isPercent){
@@ -190,11 +242,31 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
 makeDraggable(document.getElementById('wrapperPosition'),positionBar,positionValue,false);
 makeDraggable(document.getElementById('wrapperProfit'),profitBar,profitValue,true);
 
-// 页面加载初始化显示
+// 初始化显示
 window.addEventListener('load',()=>{
   animateBarHeight(positionBar,positionValue,positionValueLogical,false);
   animateBarHeight(profitBar,profitValue,profitValueLogical,true);
 });
+
+// ===== 右侧导航逻辑 =====
+const rightNav = document.getElementById('rightNav');
+const overlay = document.getElementById('overlay');
+const gestureRight = document.getElementById('gestureRight');
+
+function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
+function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
+
+overlay.addEventListener('click', closeNav);
+
+// 左向右滑动关闭导航
+let startX = 0, isSwiping=false;
+gestureRight.addEventListener('touchstart', e=>{ startX = e.touches[0].clientX; isSwiping=true; });
+gestureRight.addEventListener('touchmove', e=>{
+  if(!isSwiping) return;
+  let deltaX = e.touches[0].clientX - startX;
+  if(deltaX < -30) closeNav();
+});
+gestureRight.addEventListener('touchend', e=>{ isSwiping=false; });
 </script>
 </body>
 </html>

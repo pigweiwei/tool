@@ -101,16 +101,17 @@ html, body {
 
 <script>
 const fractions = [1,1/2,1/3,1/4,1/5,1/6,1/7,1/8,1/9,1/10,0];
-let positionValueLogical = 1/4;
-let profitValueLogical = 10; // 0-50
+let positionValueLogical = 1/4;   // 默认仓位 1/4
+let profitValueLogical = 10;      // 默认盈亏 10%
 const positionBar = document.getElementById('positionBar');
 const profitBar = document.getElementById('profitBar');
 const positionValue = document.getElementById('positionValue');
 const profitValue = document.getElementById('profitValue');
 const calcResult = document.getElementById('calcResult');
 
+// 计算终值 = 盈亏 × 仓位
 function updateCalcResult(){
-  let result = ((profitValueLogical / positionValueLogical)*100).toFixed(1) + '%';
+  let result = (profitValueLogical * positionValueLogical).toFixed(1) + '%';
   const top = positionBar.getBoundingClientRect().top;
   calcResult.style.top = (top - 100) + 'px';
   calcResult.textContent = result;
@@ -118,7 +119,7 @@ function updateCalcResult(){
 
 function animateBarHeight(bar, valueDisplay, value, isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
-  const scale = 0.7;
+  const scale = 0.7; // 高度缩短 30%
   let displayVal = value;
 
   if(isPercent){
@@ -185,9 +186,11 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
   document.addEventListener('touchend',endDrag);
 }
 
+// 初始化拖动
 makeDraggable(document.getElementById('wrapperPosition'),positionBar,positionValue,false);
 makeDraggable(document.getElementById('wrapperProfit'),profitBar,profitValue,true);
 
+// 页面加载初始化显示
 window.addEventListener('load',()=>{
   animateBarHeight(positionBar,positionValue,positionValueLogical,false);
   animateBarHeight(profitBar,profitValue,profitValueLogical,true);

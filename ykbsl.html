@@ -163,47 +163,46 @@ let breakevenLogical = 100/(1+profitLogical);
 let minValueTop = null;
 
 function calculateBreakeven(r) {
-  if (r === Infinity) return 0;
-  return 100 / (1 + r);
+  if (r===Infinity) return 0;
+  return 100/(1+r);
 }
 
-function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowInfinity=false){
-  const containerHeight = bar.parentElement.clientHeight - 50; 
-  let minHeight = 5;
+function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowInfinity=false, forceInside=false){
+  const containerHeight = bar.parentElement.clientHeight - 50;
   let displayVal = targetVal;
   let heightVal = targetVal;
 
-  if (allowInfinity && (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio))) {
+  if(allowInfinity && (targetVal===Infinity || targetVal>(isPercent?100:maxProfitRatio))){
     displayVal = '🅉';
-    heightVal = isPercent ? 100 : maxProfitRatio;
-  } else if (targetVal < 0 || !isFinite(targetVal)) {
-    displayVal = isPercent ? '0%' : '0.00';
+    heightVal = isPercent?100:maxProfitRatio;
+  } else if(targetVal<0 || !isFinite(targetVal)){
+    displayVal = isPercent?'0%':'0.00';
     heightVal = 0;
   }
 
-  let targetHeight = isPercent ? containerHeight * heightVal / 100 : containerHeight * heightVal / maxProfitRatio;
-  if (targetHeight < minHeight) targetHeight = minHeight;
+  let targetHeight = isPercent? containerHeight*heightVal/100 : containerHeight*heightVal/maxProfitRatio;
+  targetHeight = Math.max(targetHeight, 5);
   bar.style.height = targetHeight + 'px';
 
   let valueTop = containerHeight - targetHeight - 20;
 
-  if(displayVal === '🅉') valueTop -= 20;
+  if(displayVal==='🅉') valueTop -= 20;
 
-  if(isPercent){
+  if(forceInside){
     const paddingTop = 5;
     valueTop = Math.max(valueTop, paddingTop);
-  } else {
+  } else if(!isPercent){
     const paddingTop = 5;
-    valueTop = Math.min(valueTop, containerHeight - paddingTop); // 最大位置限制
-    if(minValueTop !== null) valueTop = Math.max(valueTop, minValueTop); // 最小限位
+    valueTop = Math.min(valueTop, containerHeight - paddingTop);
+    if(minValueTop!==null) valueTop = Math.max(valueTop, minValueTop);
     else {
-      let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
+      let tmpHeight = containerHeight*0.5/maxProfitRatio;
       minValueTop = containerHeight - tmpHeight - 20;
     }
   }
 
   valueDisplay.style.top = valueTop + 'px';
-  valueDisplay.textContent = (typeof displayVal === 'string') ? displayVal : (isPercent ? Math.round(displayVal)+'%' : displayVal.toFixed(2));
+  valueDisplay.textContent = (typeof displayVal==='string') ? displayVal : (isPercent? Math.round(displayVal)+'%' : displayVal.toFixed(2));
 }
 
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
@@ -212,11 +211,11 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
 
   function startDrag(e){
     dragging=true;
-    startX = e.touches ? e.touches[0].clientX : e.clientX;
-    startY = e.touches ? e.touches[0].clientY : e.clientY;
+    startX = e.touches? e.touches[0].clientX : e.clientX;
+    startY = e.touches? e.touches[0].clientY : e.clientY;
     dragDirection=null;
     let currentText = valueDisplay.textContent;
-    startValue = currentText === '🅉' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
+    startValue = currentText==='🅉'? (isPercent?100:maxProfitRatio) : parseFloat(currentText);
     if(isNaN(startValue)) startValue=0;
     e.preventDefault();
   }
@@ -231,9 +230,9 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
       } else {
         let currentValue = parseFloat(currentText);
         if(!isPercent){
-          if(currentValue >= maxProfitRatio) currentValue = maxProfitRatio;
+          if(currentValue>=maxProfitRatio) currentValue=maxProfitRatio;
           let snappedValue = Math.round(currentValue/0.5)*0.5;
-          animateBarHeight(bar,valueDisplay,snappedValue,isPercent,false);
+          animateBarHeight(bar,valueDisplay,snappedValue,isPercent,false,false);
           if(callback) callback(snappedValue);
         }
       }
@@ -242,14 +241,14 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
 
   function moveDrag(e){
     if(!dragging) return;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const clientX = e.touches? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches? e.touches[0].clientY : e.clientY;
     if(dragDirection===null){
-      let dx = clientX-startX, dy = clientY-startY;
-      dragDirection = Math.abs(dy) > Math.abs(dx) ? "vertical":"horizontal";
+      let dx=clientX-startX, dy=clientY-startY;
+      dragDirection = Math.abs(dy)>Math.abs(dx)? "vertical":"horizontal";
     }
     if(dragDirection==="vertical"){
-      let delta = startY - clientY;
+      let delta=startY-clientY;
       let value;
       if(isPercent){
         value = startValue + delta/containerHeight*100;
@@ -258,7 +257,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
         value = startValue + delta/containerHeight*maxProfitRatio;
         value = Math.max(value,0);
       }
-      animateBarHeight(bar,valueDisplay,value,isPercent,false);
+      animateBarHeight(bar,valueDisplay,value,isPercent,false,false);
       if(callback) callback(value);
     }
   }
@@ -275,28 +274,27 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
   breakevenLogical = calculateBreakeven(r);
-  animateBarHeight(breakevenBar,breakevenValue,breakevenLogical,true,true); // 胜率联动允许🅉
-  animateBarHeight(profitBar,profitValue,r,false,false); // 自己拖动不允许🅉
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true, true);
+  animateBarHeight(profitBar, profitValue, r, false, false, false);
 });
 
 // 胜率拖动
 makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
   profitLogical = b>0 ? (100/b)-1 : Infinity;
-  animateBarHeight(profitBar,profitValue,profitLogical,false,true); // 联动允许🅉
+  animateBarHeight(profitBar, profitValue, profitLogical, false, true, true);
 });
 
 // 初始显示
 window.addEventListener('load', ()=>{
-  animateBarHeight(profitBar,profitValue,profitLogical,false,false);
-  animateBarHeight(breakevenBar,breakevenValue,breakevenLogical,true,true);
+  animateBarHeight(profitBar, profitValue, profitLogical, false, false, false);
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true, true);
 });
 
 // ====== 右侧导航 ======
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');
-
 function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
 function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 overlay.addEventListener('click', closeNav);

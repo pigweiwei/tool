@@ -79,7 +79,7 @@ html, body {
   color: #eee;
 }
 
-/* ====== 右侧导航模块样式（原封记住的） ====== */
+/* ====== 右侧导航模块样式 ====== */
 .right-nav {
   position: fixed;
   top:0;
@@ -143,7 +143,7 @@ html, body {
   <div class="bar-wrapper" id="wrapperProfit">
     <span class="bar-value" id="profitValue"></span>
     <div class="bar" id="profitBar"></div>
-    <div class="label">盈亏（%）</div>
+    <div class="label">盈亏</div>
   </div>
 </div>
 
@@ -160,7 +160,7 @@ html, body {
 /* ====== 仓位分数刻度 ====== */
 const fractions = [1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 0];
 let positionValueLogical = 1;
-let profitValueLogical = 0.5; // 盈亏默认值 0.5%
+let profitValueLogical = 0.5; // 盈亏默认值 0.5
 
 const positionBar = document.getElementById('positionBar');
 const profitBar = document.getElementById('profitBar');
@@ -169,32 +169,26 @@ const profitValue = document.getElementById('profitValue');
 
 function animateBarHeight(bar, valueDisplay, value, isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
-  const scale = 0.7; // 缩短比例 30%
+  const scale = 0.7; // 高度缩短30%
   let minHeight = 5;
   let displayVal = value;
-  let heightVal = value;
 
-  if (isPercent) {
-    if (value < 0) value = 0;
-    if (value > 100) value = 100;
+  if(isPercent){
+    if(value < 0) value = 0;
+    if(value > 50) value = 50;  // 最大50
     heightVal = value;
-    displayVal = value.toFixed(1) + '%';
-    bar.style.height = (containerHeight * heightVal / 100 * scale) + 'px';
+    displayVal = Math.round(value*2)/2; // 每0.5变化一次
+    bar.style.height = containerHeight * heightVal / 50 * scale + 'px';
   } else {
-    let index = fractions.indexOf(value);
-    if (index === -1) {
-      let closest = fractions.reduce((prev, curr) => 
-        Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
-      );
-      value = closest;
-    }
+    let closest = fractions.reduce((prev, curr) => Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev);
+    value = closest;
     heightVal = value;
-    displayVal = (value === 0) ? "0" : (value === 1 ? "1" : "1/" + Math.round(1/value));
-    bar.style.height = (containerHeight * value * scale) + 'px';
+    displayVal = value===0 ? "0" : (value===1 ? "1" : "1/" + Math.round(1/value));
+    bar.style.height = containerHeight * value * scale + 'px';
   }
 
   let targetHeight = bar.offsetHeight;
-  if (targetHeight < minHeight) targetHeight = minHeight;
+  if(targetHeight < minHeight) targetHeight = minHeight;
   let valueTop = containerHeight - targetHeight - 20;
   valueTop = Math.max(valueTop, 0);
   valueDisplay.style.top = valueTop + 'px';
@@ -211,17 +205,15 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   function startDrag(e){
     dragging=true;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
-    startValue = isPercent ? parseFloat(valueDisplay.textContent) : positionValueLogical;
+    startValue = isPercent ? profitValueLogical : positionValueLogical;
     e.preventDefault();
   }
 
   function endDrag(){
     if(!dragging) return;
     dragging=false;
-    if (!isPercent) {
-      let closest = fractions.reduce((prev, curr) => 
-        Math.abs(curr - positionValueLogical) < Math.abs(prev - positionValueLogical) ? curr : prev
-      );
+    if(!isPercent){
+      let closest = fractions.reduce((prev, curr) => Math.abs(curr - positionValueLogical) < Math.abs(prev - positionValueLogical) ? curr : prev);
       positionValueLogical = closest;
       animateBarHeight(positionBar, positionValue, positionValueLogical, false);
     }
@@ -232,15 +224,17 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     let delta = startY - clientY;
     let value;
-    if (isPercent) {
-      value = profitValueLogical + delta / containerHeight * 100;
-      value = Math.min(Math.max(value, 0), 100);
+    if(isPercent){
+      value = startValue + delta / containerHeight * 50; // 最大50
+      value = Math.round(value*2)/2; // 每0.5变化一次
+      if(value < 0) value = 0;
+      if(value > 50) value = 50;
       profitValueLogical = value;
       animateBarHeight(bar, valueDisplay, value, true);
     } else {
       value = startValue + delta / containerHeight;
-      if (value < 0) value = 0;
-      if (value > 1) value = 1;
+      if(value < 0) value = 0;
+      if(value > 1) value = 1;
       positionValueLogical = value;
       animateBarHeight(bar, valueDisplay, value, false);
     }
@@ -255,7 +249,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   wrapper.addEventListener('mousemove', moveDrag);
 }
 
-/* ====== 右侧导航手势逻辑（原封记住的） ====== */
+/* ====== 右侧导航手势逻辑 ====== */
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');

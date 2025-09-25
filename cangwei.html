@@ -52,13 +52,13 @@ html, body {
   transition: height 0.05s linear;
 }
 
-#positionBar { 
-  background: rgba(0,123,255,0.35); 
-  border:1px solid rgba(0,123,255,0.6); 
+#positionBar {
+  background: rgba(0,123,255,0.35);
+  border:1px solid rgba(0,123,255,0.6);
 }
-#profitBar { 
-  background: rgba(40,167,69,0.35); 
-  border:1px solid rgba(40,167,69,0.6); 
+#profitBar {
+  background: rgba(40,167,69,0.35);
+  border:1px solid rgba(40,167,69,0.6);
 }
 
 .bar-value {
@@ -74,25 +74,61 @@ html, body {
   transform: translateX(-50%);
 }
 
+/* ====== 高质感的终值（calc-result）样式 - 已加长、增强毛玻璃、渐变发光边框 ====== */
 .calc-result {
   position: fixed;
-  top: 60px;            /* 往下移动一些 */
+  top: 60px;                      /* 往下挪一些 */
   left: 50%;
   transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: none;
+
+  /* 长度（比原来明显增加一倍） & 自适应最大宽度避免溢出 */
+  min-width: 360px;               /* 可按需调节：这是“加倍”后的基础宽度 */
+  max-width: calc(100% - 40px);
+  width: min(60vw, 520px);        /* 屏幕小则使用vw，屏幕大时不超520px */
+
+  padding: 12px 32px;
+  text-align: center;
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 700;
   color: #ffdd00;
   text-shadow: 0 1px 2px rgba(0,0,0,0.7);
-  pointer-events: none;
-  z-index: 100;
+  border-radius: 14px;
+  overflow: visible;
 
-  /* 毛玻璃效果 */
-  background: rgba(255, 255, 255, 0.08);  
-  backdrop-filter: blur(10px);
-  padding: 8px 16px;
-  border-radius: 12px;
+  /* 多层半透明背景，提升质感（比页面背景更浅） */
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+
+  /* 细腻边框 + 渐变描边（border-image）*/
+  border: 1px solid rgba(255,255,255,0.06);
+  border-image-source: linear-gradient(90deg, rgba(79,172,254,0.95), rgba(67,233,123,0.95));
+  border-image-slice: 1;
+
+  /* 多层光影，营造自然发光氛围 */
+  box-shadow:
+    0 6px 20px rgba(0,0,0,0.55),          /* 主阴影 */
+    0 0 26px rgba(79,172,254,0.06),       /* 蓝色余辉 */
+    0 0 44px rgba(67,233,123,0.05);       /* 绿色余辉 */
+  transition: box-shadow 300ms ease, transform 200ms ease;
 }
 
+/* 在元素外层生成渐变光晕（柔化边缘，看起来自然） */
+.calc-result::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: inherit;
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(79,172,254,0.08), rgba(255,221,0,0.04), rgba(67,233,123,0.08));
+  filter: blur(14px);
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+/* label 和导航维持原样 */
 .label {
   margin-top: 8px;
   font-size: 14px;
@@ -104,7 +140,7 @@ html, body {
 .right-nav {
   position: fixed;
   top:0;
-  right:-35%; 
+  right:-35%;
   width:35%;
   max-width:300px;
   height:100%;
@@ -145,6 +181,12 @@ html, body {
   z-index:250;
   background:transparent;
   touch-action:none;
+}
+
+/* 小屏幕时保证布局不过窄 */
+@media (max-width: 520px) {
+  .bar { width: 46vw; }
+  .calc-result { min-width: 260px; width: calc(100% - 40px); left: 50%; transform: translateX(-50%); padding: 10px 18px; }
 }
 </style>
 </head>

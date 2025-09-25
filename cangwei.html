@@ -85,7 +85,7 @@ html, body {
   z-index: 100;
 
   padding: 12px 40px;
-  min-width: 120px;   /* 缩短到50% */
+  min-width: 120px;
   text-align: center;
   border-radius: 12px;
   background: rgba(60, 60, 60, 0.3);
@@ -216,9 +216,7 @@ function animateBarHeight(bar,valueDisplay,value,isPercent=false){
       : containerHeight - minHeight - 20;
     valueDisplay.style.top = displayTop + 'px';
   } else {
-    // 仓位柱子
-    let closest = fractions.reduce((prev,curr)=>Math.abs(curr-value)<Math.abs(prev-value)?curr:prev);
-    value = closest;
+    // 仓位柱子（严格分档）
     displayVal = value===0?"0":(value===1?"1":"1/"+Math.round(1/value));
     finalHeight = containerHeight * value * scale;
 
@@ -235,13 +233,18 @@ function animateBarHeight(bar,valueDisplay,value,isPercent=false){
 }
 
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
-  let dragging=false,startY=0,startValue=0;
+  let dragging=false,startY=0,startIndex=0;
   const containerHeight = wrapper.clientHeight - 50;
 
   function startDrag(e){
     dragging=true;
     startY = e.touches?e.touches[0].clientY:e.clientY;
-    startValue = isPercent?profitValueLogical:positionValueLogical;
+    if(!isPercent){
+      startIndex = fractions.findIndex(f=>f===positionValueLogical);
+      if(startIndex === -1) startIndex = fractions.length-1;
+    } else {
+      startValue = profitValueLogical;
+    }
     e.preventDefault();
   }
 
@@ -249,29 +252,22 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
     if(!dragging) return;
     const clientY = e.touches?e.touches[0].clientY:e.clientY;
     let delta = startY - clientY;
-    let value;
+
     if(isPercent){
-      value = startValue + delta/containerHeight*50;
+      let value = profitValueLogical + delta/containerHeight*50;
       value = Math.min(Math.max(value,0),50);
       value = Math.round(value*2)/2;
       profitValueLogical = value;
       animateBarHeight(bar,valueDisplay,value,true);
     } else {
-      value = startValue + delta/containerHeight;
-      value = Math.min(Math.max(value,0),1);
-      positionValueLogical = value;
-      animateBarHeight(bar,valueDisplay,value,false);
+      let stepChange = Math.round(delta / (containerHeight/10));
+      let newIndex = Math.min(Math.max(startIndex + stepChange,0), fractions.length-1);
+      positionValueLogical = fractions[newIndex];
+      animateBarHeight(bar,valueDisplay,positionValueLogical,false);
     }
   }
 
-  function endDrag(){
-    dragging=false;
-    if(!isPercent){
-      let closest = fractions.reduce((prev,curr)=>Math.abs(curr-positionValueLogical)<Math.abs(prev-positionValueLogical)?curr:prev);
-      positionValueLogical = closest;
-      animateBarHeight(bar,valueDisplay,closest,false);
-    }
-  }
+  function endDrag(){ dragging=false; }
 
   wrapper.addEventListener('touchstart',startDrag);
   wrapper.addEventListener('mousedown',startDrag);

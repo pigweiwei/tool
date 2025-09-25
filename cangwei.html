@@ -21,18 +21,17 @@ html, body {
   font-size: 24px;
   font-weight: bold;
   text-align: center;
-  margin: 15px 0;
+  margin: 40px 0 0 0;  /* 下移顶部40px */
 }
 
 /* ====== 竖条样式 ====== */
 .bar-container {
   display: flex;
-  justify-content: space-around;
+  justify-content: center;  /* 水平居中 */
   align-items: flex-end;
   width: 90vw;
-  height: calc(100% - 60px);
+  height: calc(100% - 100px); /* 留出顶部终值和底部间距 */
   gap: 20px;
-  padding-top: 15vh;
   box-sizing: border-box;
 }
 

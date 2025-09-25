@@ -169,6 +169,7 @@ const profitValue = document.getElementById('profitValue');
 
 function animateBarHeight(bar, valueDisplay, value, isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
+  const scale = 0.7; // 缩短比例 30%
   let minHeight = 5;
   let displayVal = value;
   let heightVal = value;
@@ -178,9 +179,8 @@ function animateBarHeight(bar, valueDisplay, value, isPercent=false){
     if (value > 100) value = 100;
     heightVal = value;
     displayVal = value.toFixed(1) + '%';
-    bar.style.height = (containerHeight * heightVal / 100) + 'px';
+    bar.style.height = (containerHeight * heightVal / 100 * scale) + 'px';
   } else {
-    // 仓位柱子按 fractions 刻度
     let index = fractions.indexOf(value);
     if (index === -1) {
       let closest = fractions.reduce((prev, curr) => 
@@ -190,7 +190,7 @@ function animateBarHeight(bar, valueDisplay, value, isPercent=false){
     }
     heightVal = value;
     displayVal = (value === 0) ? "0" : (value === 1 ? "1" : "1/" + Math.round(1/value));
-    bar.style.height = (containerHeight * value) + 'px';
+    bar.style.height = (containerHeight * value * scale) + 'px';
   }
 
   let targetHeight = bar.offsetHeight;
@@ -296,7 +296,7 @@ gestureRight.addEventListener('mousemove', (e)=>{
 });
 gestureRight.addEventListener('mouseup', ()=>{ draggingNav=false; });
 
-/* 初始化拖动 */
+/* 初始化 */
 makeDraggable(document.getElementById('wrapperPosition'), positionBar, positionValue, false);
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, true);
 

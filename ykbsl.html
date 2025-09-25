@@ -158,7 +158,6 @@ html, body {
 <div class="gesture-right" id="gestureRight"></div>
 
 <script>
-// ====== 竖条逻辑 ======
 const profitBar = document.getElementById('profitLoss');
 const breakevenBar = document.getElementById('breakeven');
 const profitValue = document.getElementById('profitLossValue');
@@ -167,7 +166,6 @@ const breakevenValue = document.getElementById('breakevenValue');
 const maxProfitRatio = 10;
 let profitLogical = 3;  
 let breakevenLogical = 100/(1+profitLogical);
-
 let minValueTop = null;
 
 function calculateBreakeven(r) {
@@ -175,13 +173,14 @@ function calculateBreakeven(r) {
   return 100 / (1 + r);
 }
 
-function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
+// ====== 修改：增加 allowInfinity 参数 ======
+function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowInfinity=false){
   const containerHeight = bar.parentElement.clientHeight - 50; 
   let minHeight = 5;
   let displayVal = targetVal;
   let heightVal = targetVal;
 
-  if (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio)) {
+  if (allowInfinity && (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio))) {
     displayVal = '🅉';
     heightVal = isPercent ? 100 : maxProfitRatio;
   } else if (targetVal < 0 || !isFinite(targetVal)) {
@@ -196,14 +195,12 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
 
   let valueTop = containerHeight - targetHeight - 20;
 
-  // 单独调整 🅉 往上偏移并忽略 minValueTop
-  if(displayVal === '🅉') {
-    valueTop -= 20; // 调节偏移值
-  } else if (!isPercent && minValueTop === null) {
+  // 单独调整 🅉 往上偏移
+  if(displayVal === '🅉') valueTop -= 20;
+  else if (!isPercent && minValueTop !== null) valueTop = Math.min(valueTop, minValueTop);
+  else if (!isPercent && minValueTop === null) {
     let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
     minValueTop = containerHeight - tmpHeight - 20;
-  } else if (!isPercent && minValueTop !== null) {
-    valueTop = Math.min(valueTop, minValueTop);
   }
 
   valueTop = Math.max(valueTop, 0);
@@ -244,7 +241,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
         if (!isPercent) {
           if (currentValue >= maxProfitRatio) currentValue = maxProfitRatio;
           let snappedValue = Math.round(currentValue / 0.5) * 0.5;
-          animateBarHeight(bar, valueDisplay, snappedValue, isPercent);
+          animateBarHeight(bar, valueDisplay, snappedValue, isPercent, false); // 拖动不允许∞
           if (callback) callback(snappedValue);
         }
       }
@@ -270,7 +267,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
         value = startValue + delta / containerHeight * maxProfitRatio;
         value = Math.max(value, 0);
       }
-      animateBarHeight(bar, valueDisplay, value, isPercent);
+      animateBarHeight(bar, valueDisplay, value, isPercent, false); // 拖动不允许∞
       if (callback) callback(value);
     }
   }
@@ -283,24 +280,25 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   wrapper.addEventListener('mousemove', moveDrag);
 }
 
-// 盈亏比
+// 盈亏比拖动
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
   breakevenLogical = calculateBreakeven(r);
-  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true); // 胜率联动允许∞
+  animateBarHeight(profitBar, profitValue, r, false, false); // 自己拖动不允许∞
 });
 
-// 胜率
+// 胜率拖动
 makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
   profitLogical = b > 0 ? (100 / b) - 1 : Infinity;
-  animateBarHeight(profitBar, profitValue, profitLogical, false);
+  animateBarHeight(profitBar, profitValue, profitLogical, false, true); // 联动允许∞
 });
 
 // 初始显示
 window.addEventListener('load', ()=>{
-  animateBarHeight(profitBar, profitValue, profitLogical, false);
-  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
+  animateBarHeight(profitBar, profitValue, profitLogical, false, false);
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true);
 });
 
 // ====== 右侧导航手势整合 ======
@@ -316,14 +314,11 @@ function closeNav(){
   rightNav.classList.remove('expanded'); 
   overlay.classList.remove('show'); 
 }
-
 overlay.addEventListener('click', closeNav);
-
 rightNav.addEventListener('click', e=>{
   if(e.target.classList.contains('nav-item') || e.target.tagName === 'A') return;
   closeNav();
 });
-
 let startX=0;
 gestureRight.addEventListener('touchstart', e=>{
   if(e.touches.length!==1) return;
@@ -339,7 +334,6 @@ gestureRight.addEventListener('touchend', e=>{
   if(deltaX > 30) openNav();
   startX=0;
 });
-
 let navStartX=0;
 rightNav.addEventListener('touchstart', e=>{
   if(e.touches.length!==1) return;

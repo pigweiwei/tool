@@ -133,22 +133,6 @@ html, body {
   background:transparent; 
   touch-action:none; 
 }
-
-/* 导航开关按钮 */
-#navToggleBtn {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 50px;
-  height: 40px;
-  background: #007bff;
-  color: #fff;
-  text-align: center;
-  line-height: 40px;
-  border-radius: 6px;
-  cursor: pointer;
-  z-index:300;
-}
 </style>
 </head>
 <body>
@@ -176,9 +160,9 @@ html, body {
 </div>
 <div class="overlay" id="overlay"></div>
 <div class="gesture-right" id="gestureRight"></div>
-<div id="navToggleBtn">导航</div>
 
 <script>
+/* ====== 柱子逻辑 ====== */
 const fractions = [1,1/2,1/3,1/4,1/5,1/6,1/7,1/8,1/9,1/10,0];
 let positionValueLogical = 1/4;
 let profitValueLogical = 10;
@@ -274,28 +258,41 @@ window.addEventListener('load',()=>{
   animateBarHeight(profitBar,profitValue,profitValueLogical,true);
 });
 
-// ====== 右侧导航逻辑 ======
+/* ====== 右侧导航手势逻辑 ====== */
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');
-const navToggleBtn = document.getElementById('navToggleBtn');
 
 function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
 function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 
+// 点击空白区域关闭
 overlay.addEventListener('click', closeNav);
 
-// 左向右滑关闭导航
+// 屏幕右边缘向左滑打开导航
 let startX = 0, isSwiping = false;
 gestureRight.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isSwiping = true; });
 gestureRight.addEventListener('touchmove', e => {
   if(!isSwiping) return;
-  let deltaX = e.touches[0].clientX - startX;
-  if(deltaX > 30) closeNav();
+  let deltaX = startX - e.touches[0].clientX;
+  if(deltaX > 30) openNav();
 });
 gestureRight.addEventListener('touchend', e => { isSwiping = false; });
 
-navToggleBtn.addEventListener('click', openNav);
+// 导航条左向右滑关闭
+let navStartX = 0, navSwiping = false;
+rightNav.addEventListener('touchstart', e => { navStartX = e.touches[0].clientX; navSwiping = true; });
+rightNav.addEventListener('touchmove', e => {
+  if(!navSwiping) return;
+  let deltaX = e.touches[0].clientX - navStartX;
+  if(deltaX > 30) closeNav();
+});
+rightNav.addEventListener('touchend', e => { navSwiping = false; });
+
+// 阻止点击导航文字关闭
+rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el => {
+  el.addEventListener('click', e => { e.stopPropagation(); });
+});
 </script>
 </body>
 </html>

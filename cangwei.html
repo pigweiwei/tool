@@ -68,7 +68,7 @@ html, body {
   transform: translateX(-50%);
 }
 
-/* ====== 顶部终值，方案二 ====== */
+/* ====== 顶部终值 ====== */
 .calc-result {
   position: fixed;
   top: 100px;
@@ -82,15 +82,15 @@ html, body {
   padding: 8px 20px;
   border-radius: 12px;
 
-  /* 半透明黑底，可调透明度 */
+  /* 半透明黑底 */
   background-color: rgba(0,0,0,0.2);
 
-  /* 渐变动画叠加 */
+  /* 炫彩渐变动画 */
   background-image: linear-gradient(270deg, #ffdd00, #00ffff, #ff00ff);
   background-size: 600% 600%;
   animation: gradientAnim 5s ease infinite;
 
-  /* 保持模糊效果 */
+  /* 模糊效果 */
   backdrop-filter: blur(6px);
 }
 
@@ -266,10 +266,11 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
   wrapper.addEventListener('mousedown',startDrag);
   wrapper.addEventListener('touchmove',moveDrag,{passive:false});
   wrapper.addEventListener('mousemove',moveDrag);
-  document.addEventListener('mouseup',endDrag);
   document.addEventListener('touchend',endDrag);
+  document.addEventListener('mouseup',endDrag);
 }
 
+/* 初始化柱子 */
 makeDraggable(document.getElementById('wrapperPosition'),positionBar,positionValue,false);
 makeDraggable(document.getElementById('wrapperProfit'),profitBar,profitValue,true);
 
@@ -278,7 +279,7 @@ window.addEventListener('load',()=>{
   animateBarHeight(profitBar,profitValue,profitValueLogical,true);
 });
 
-/* ====== 右侧导航手势逻辑 ====== */
+/* ====== 导航逻辑 ====== */
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');
@@ -286,11 +287,7 @@ const gestureRight = document.getElementById('gestureRight');
 function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
 function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 
-overlay.addEventListener('click', closeNav);
-
-rightNav.addEventListener('click', e => {
-  if(e.target === rightNav) closeNav();
-});
+overlay.addEventListener('click',closeNav);
 
 // 从屏幕右边向左滑打开导航
 let startX=0, draggingNav=false;

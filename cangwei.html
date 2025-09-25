@@ -95,7 +95,6 @@ html, body {
   border: 1px solid rgba(255,255,255,0.15);
   box-shadow: 0 0 20px rgba(0,0,0,0.4), inset 0 0 12px rgba(255,255,255,0.05);
 
-  /* 平滑过渡动画 */
   transition: background 0.3s ease, border 0.3s ease;
 }
 
@@ -190,7 +189,6 @@ function updateCalcResult(){
   let result = (profitValueLogical * positionValueLogical).toFixed(1) + '%';
   calcResult.textContent = result;
 
-  // 仓位 >= 1/2 时背景红色，否则灰色
   if(positionValueLogical >= 0.5){
     calcResult.style.background = 'rgba(200,0,0,0.3)';
     calcResult.style.border = '1px solid rgba(255,0,0,0.3)';
@@ -206,23 +204,29 @@ function animateBarHeight(bar,valueDisplay,value,isPercent=false){
   let displayVal, finalHeight;
 
   if(isPercent){
+    // 盈亏柱子
     value = Math.min(Math.max(value,0),50);
     value = Math.round(value*2)/2;
     displayVal = value + '%';
     finalHeight = containerHeight * value / 50 * scale;
 
-    // 盈亏数值停在4%的高度，不再往下
-    const minHeight = containerHeight * 4 / 50 * scale;
+    const minHeight = containerHeight * 4 / 50 * scale; // 4%高度
     const displayTop = finalHeight >= minHeight
       ? containerHeight - finalHeight - 20
       : containerHeight - minHeight - 20;
     valueDisplay.style.top = displayTop + 'px';
   } else {
+    // 仓位柱子
     let closest = fractions.reduce((prev,curr)=>Math.abs(curr-value)<Math.abs(prev-value)?curr:prev);
     value = closest;
     displayVal = value===0?"0":(value===1?"1":"1/"+Math.round(1/value));
     finalHeight = containerHeight * value * scale;
-    valueDisplay.style.top = (containerHeight - finalHeight - 20) + 'px';
+
+    const minHeight = containerHeight * 0.1 * scale; // 10%高度
+    const displayTop = finalHeight >= minHeight
+      ? containerHeight - finalHeight - 20
+      : containerHeight - minHeight - 20;
+    valueDisplay.style.top = displayTop + 'px';
   }
 
   bar.style.height = finalHeight + 'px';

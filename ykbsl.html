@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>仓位&盈亏</title>
+<title>盈亏比&胜率</title>
 <style>
 html, body {
   margin: 0;
@@ -18,6 +18,7 @@ html, body {
   overflow: hidden;
 }
 
+/* ====== 竖条样式 ====== */
 .bar-container {
   display: flex;
   justify-content: space-around;
@@ -55,8 +56,8 @@ html, body {
   transition: height 0.05s linear;
 }
 
-#position { background: rgba(0,123,255,0.35); border:1px solid rgba(0,123,255,0.6); }
-#profit { background: rgba(40,167,69,0.35); border:1px solid rgba(40,167,69,0.6); }
+#profitLoss { background: rgba(0,123,255,0.35); border:1px solid rgba(0,123,255,0.6); }
+#breakeven { background: rgba(40,167,69,0.35); border:1px solid rgba(40,167,69,0.6); }
 
 .bar-value {
   position: absolute;
@@ -77,107 +78,270 @@ html, body {
   font-weight: bold;
   color: #eee;
 }
+
+/* ====== 右侧导航模块样式 ====== */
+.right-nav {
+  position: fixed;
+  top:0;
+  right:-35%; 
+  width:35%;
+  max-width:300px;
+  height:100%;
+  background:#2c2c2c;
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  transition:right 0.3s ease;
+  z-index:200;
+  box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
+  border-radius: 8px 0 0 8px;
+}
+.right-nav.expanded { right:0; }
+.right-nav .nav-item {
+  color: #eee;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  border-bottom: 1px solid #444;
+}
+.right-nav .nav-item:hover { background: #1e1e1e; }
+
+.right-nav .nav-item a {
+  color:#eee;
+  text-decoration:none;
+  display:block;
+}
+
+/* 遮罩层 */
+.overlay { 
+  position: fixed; top:0; left:0; 
+  width:100%; height:100%; 
+  background: rgba(0,0,0,0.3); 
+  display:none; 
+  z-index:150; 
+}
+.overlay.show { display:block; }
+
+/* 手势捕获层 */
+.gesture-right { 
+  position: fixed; top:0; right:0; 
+  width:30px; height:100%; 
+  z-index:250; 
+  background:transparent; 
+  touch-action:none; 
+}
 </style>
 </head>
 <body>
+
+<!-- ====== 竖条 ====== -->
 <div class="bar-container">
-  <div class="bar-wrapper" id="wrapperPosition">
-    <span class="bar-value" id="positionValue"></span>
-    <div class="bar" id="position"></div>
-    <div class="label">仓位</div>
-  </div>
   <div class="bar-wrapper" id="wrapperProfit">
-    <span class="bar-value" id="profitValue"></span>
-    <div class="bar" id="profit"></div>
-    <div class="label">盈亏</div>
+    <span class="bar-value" id="profitLossValue"></span>
+    <div class="bar" id="profitLoss"></div>
+    <div class="label">盈亏比</div>
+  </div>
+  <div class="bar-wrapper" id="wrapperBreakeven">
+    <span class="bar-value" id="breakevenValue"></span>
+    <div class="bar" id="breakeven"></div>
+    <div class="label">胜率</div>
   </div>
 </div>
 
+<!-- ====== 右侧导航 ====== -->
+<div class="right-nav" id="rightNav">
+  <div class="nav-item">首页</div>
+  <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
+  <div class="nav-item"><a href="cangwei.html">仓位计算器</a></div>
+</div>
+<div class="overlay" id="overlay"></div>
+<div class="gesture-right" id="gestureRight"></div>
+
 <script>
-// 获取元素
-const posBar = document.getElementById('position');
-const profitBar = document.getElementById('profit');
-const posValue = document.getElementById('positionValue');
-const profitValue = document.getElementById('profitValue');
+// ====== 竖条逻辑 ======
+const profitBar = document.getElementById('profitLoss');
+const breakevenBar = document.getElementById('breakeven');
+const profitValue = document.getElementById('profitLossValue');
+const breakevenValue = document.getElementById('breakevenValue');
 
-// 初始逻辑值
-let logicalPosition = 1; // 仓位最大1
-let logicalProfit = 50;  // 盈亏最大50
+const maxProfitRatio = 10;
+let profitLogical = 3;  
+let breakevenLogical = 100/(1+profitLogical);
 
-// 仓位分数列表
-const fractions = [1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 0];
-
-function animateBarHeight(bar, valueDisplay, value, isPercent=false){
-  const containerHeight = bar.parentElement.clientHeight - 50;
-  let targetHeight = isPercent ? containerHeight * value / 50 : containerHeight * value / 1;
-  bar.style.height = targetHeight + 'px';
-  valueDisplay.style.top = (containerHeight - targetHeight - 20) + 'px';
-
-  if(isPercent){
-    // 如果是盈亏超过最大值，显示 Ⓟ
-    if(value > 50){
-      valueDisplay.textContent = "Ⓟ";
-    } else {
-      valueDisplay.textContent = Math.round(value) + "%";
-    }
-  } else {
-    // 仓位显示分数
-    let bestFrac = fractions[0];
-    let minDiff = Math.abs(value - fractions[0]);
-    for(let f of fractions){
-      let diff = Math.abs(value - f);
-      if(diff < minDiff){
-        minDiff = diff;
-        bestFrac = f;
-      }
-    }
-    if(bestFrac===1) valueDisplay.textContent="1";
-    else if(bestFrac===0) valueDisplay.textContent="0";
-    else valueDisplay.textContent="1/"+Math.round(1/bestFrac);
-  }
+function calculateBreakeven(r) {
+  if (r === Infinity) return 0;
+  return 100 / (1 + r);
 }
 
-// 拖动逻辑
+function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
+  const containerHeight = bar.parentElement.clientHeight - 50; 
+  let minHeight = 5;
+  let displayVal = targetVal;
+  let heightVal = targetVal;
+  if (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio)) {
+    displayVal = '♾️';
+    heightVal = isPercent ? 100 : maxProfitRatio;
+  } else if (targetVal < 0 || !isFinite(targetVal)) {
+    displayVal = isPercent ? '0%' : '0.00';
+    heightVal = 0;
+  }
+  let targetHeight = isPercent ? containerHeight * heightVal / 100 : containerHeight * heightVal / maxProfitRatio;
+  if (targetHeight < minHeight) targetHeight = minHeight;
+  bar.style.height = targetHeight + 'px';
+  let valueTop = containerHeight - targetHeight - 20;
+  if ((isPercent && targetVal < 3) || (!isPercent && targetVal < 0.3)) valueTop = containerHeight - 40;
+  valueTop = Math.max(valueTop, 0);
+  valueDisplay.style.top = valueTop + 'px';
+  valueDisplay.textContent = (typeof displayVal === 'string') ? displayVal : isPercent ? Math.round(displayVal) + '%' : displayVal.toFixed(2);
+}
+
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
-  let dragging=false, startY=0, startValue=0;
+  let dragging=false;
+  let startValue = 0;
+  let startX = 0;
+  let startY = 0;
+  let dragDirection = null; 
   const containerHeight = wrapper.clientHeight - 50;
 
-  wrapper.addEventListener('mousedown', startDrag);
-  wrapper.addEventListener('touchstart', startDrag);
-
   function startDrag(e){
-    dragging=true;
+    dragging = true;
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
-    startValue = isPercent ? logicalProfit : logicalPosition;
+    dragDirection = null;
+    let currentText = valueDisplay.textContent;
+    startValue = currentText === '♾️' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
+    if (isNaN(startValue)) startValue = 0;
     e.preventDefault();
+  }
+
+  function endDrag(){
+    if(!dragging) return;
+    dragging = false;
+    if (dragDirection === "vertical") {
+      let currentText = valueDisplay.textContent;
+      if (currentText === '♾️') {
+        if (callback) callback(Infinity);
+      } else {
+        let currentValue = parseFloat(currentText);
+        if (!isPercent) {
+          let snappedValue = Math.round(currentValue / 0.5) * 0.5;
+          animateBarHeight(bar, valueDisplay, snappedValue, isPercent);
+          if (callback) callback(snappedValue);
+        }
+      }
+    }
   }
 
   function moveDrag(e){
     if(!dragging) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    let delta = startY - clientY;
-    let value = startValue + (delta/containerHeight)*(isPercent?50:1);
-    if(isPercent) value=Math.max(0,Math.min(50,value));
-    else value=Math.max(0,Math.min(1,value));
-    if(callback) callback(value);
-    animateBarHeight(bar,valueDisplay,value,isPercent);
+    if (dragDirection === null) {
+      let dx = clientX - startX;
+      let dy = clientY - startY;
+      dragDirection = Math.abs(dy) > Math.abs(dx) ? "vertical" : "horizontal";
+    }
+    if (dragDirection === "vertical") {
+      let delta = startY - clientY; 
+      let value;
+      if (isPercent) {
+        value = startValue + delta / containerHeight * 100;
+        value = Math.min(Math.max(value, 0), 100);
+      } else {
+        value = startValue + delta / containerHeight * maxProfitRatio;
+        value = Math.max(value, 0);
+      }
+      animateBarHeight(bar, valueDisplay, value, isPercent);
+      if (callback) callback(value);
+    }
   }
 
-  function endDrag(){ dragging=false; }
-
-  wrapper.addEventListener('mousemove', moveDrag);
-  wrapper.addEventListener('touchmove', moveDrag, {passive:false});
-  document.addEventListener('mouseup', endDrag);
+  wrapper.addEventListener('touchstart', startDrag);
+  wrapper.addEventListener('mousedown', startDrag);
   document.addEventListener('touchend', endDrag);
+  document.addEventListener('mouseup', endDrag);
+  wrapper.addEventListener('touchmove', moveDrag, { passive: false });
+  wrapper.addEventListener('mousemove', moveDrag);
 }
 
-// 初始化拖动
-makeDraggable(document.getElementById('wrapperPosition'), posBar, posValue, false, v=>logicalPosition=v);
-makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, true, v=>logicalProfit=v);
+// 盈亏比
+makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
+  profitLogical = r;
+  breakevenLogical = calculateBreakeven(r);
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
+});
+
+// 胜率
+makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
+  breakevenLogical = b;
+  profitLogical = b > 0 ? (100 / b) - 1 : Infinity;
+  animateBarHeight(profitBar, profitValue, profitLogical, false);
+});
 
 // 初始显示
-animateBarHeight(posBar,posValue,logicalPosition,false);
-animateBarHeight(profitBar,profitValue,logicalProfit,true);
+window.addEventListener('load', ()=>{
+  animateBarHeight(profitBar, profitValue, profitLogical, false);
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true);
+});
+
+// ====== 右侧导航手势整合 ======
+const rightNav = document.getElementById('rightNav');
+const overlay = document.getElementById('overlay');
+const gestureRight = document.getElementById('gestureRight');
+
+function openNav(){ 
+  rightNav.classList.add('expanded'); 
+  overlay.classList.add('show'); 
+}
+function closeNav(){ 
+  rightNav.classList.remove('expanded'); 
+  overlay.classList.remove('show'); 
+}
+
+// 点击空白收回
+overlay.addEventListener('click', closeNav);
+
+// 导航栏内部空白点击收回
+rightNav.addEventListener('click', e=>{
+  if(e.target.classList.contains('nav-item') || e.target.tagName === 'A') return;
+  closeNav();
+});
+
+// 右屏幕边缘向左滑展开
+let startX=0;
+gestureRight.addEventListener('touchstart', e=>{
+  if(e.touches.length!==1) return;
+  e.preventDefault();
+  startX=e.touches[0].clientX;
+});
+gestureRight.addEventListener('touchmove', e=>{
+  if(e.touches.length!==1) return;
+  e.preventDefault();
+});
+gestureRight.addEventListener('touchend', e=>{
+  const deltaX = startX - e.changedTouches[0].clientX;
+  if(deltaX > 30) openNav();
+  startX=0;
+});
+
+// 导航栏本身向右滑收回
+let navStartX=0;
+rightNav.addEventListener('touchstart', e=>{
+  if(e.touches.length!==1) return;
+  navStartX = e.touches[0].clientX;
+});
+rightNav.addEventListener('touchmove', e=>{
+  if(e.touches.length!==1) return;
+  e.preventDefault();
+});
+rightNav.addEventListener('touchend', e=>{
+  if(navStartX === 0) return;
+  const deltaX = e.changedTouches[0].clientX - navStartX; // 左→右为正
+  if(deltaX > 30) closeNav();
+  navStartX = 0;
+});
 </script>
+
 </body>
 </html>
+

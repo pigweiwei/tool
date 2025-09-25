@@ -196,19 +196,16 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
 
   let valueTop = containerHeight - targetHeight - 20;
 
-  // 单独调整 🅉 往上偏移
+  // 单独调整 🅉 往上偏移并忽略 minValueTop
   if(displayVal === '🅉') {
-    valueTop -= 10; // 调节偏移值，越大越往上
-  }
-
-  if (!isPercent && minValueTop === null) {
+    valueTop -= 20; // 调节偏移值
+  } else if (!isPercent && minValueTop === null) {
     let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
     minValueTop = containerHeight - tmpHeight - 20;
-  }
-
-  if (minValueTop !== null) {
+  } else if (!isPercent && minValueTop !== null) {
     valueTop = Math.min(valueTop, minValueTop);
   }
+
   valueTop = Math.max(valueTop, 0);
   valueDisplay.style.top = valueTop + 'px';
 

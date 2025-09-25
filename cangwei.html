@@ -1,391 +1,316 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>仓位计算器</title>
 <style>
-  :root{
-    /* 可调参数 */
-    --glass-bg: rgba(40,40,40,0.45); /* 半透明底色，改最后一个值调整透明度 */
-    --glass-blur: 8px;              /* 毛玻璃模糊强度 */
-    --calc-top: 100px;              /* 终值距离顶部 */
-    --calc-pad-x: 60px;             /* 终值水平 padding（控制宽度/长度） */
-    --height-scale: 0.7;            /* 柱子整体高度缩短比例（0.7 = 缩短30%） */
-  }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background: #1a1a1a;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
 
-  html,body{
-    height:100%;
-    width:100%;
-    margin:0;
-    padding:0;
-    background:#1a1a1a;
-    font-family:Arial, sans-serif;
-    color:#fff;
-    overflow:hidden;
-  }
+/* ====== 竖条 ====== */
+.bar-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  height: 100vh;
+  gap: 20px;
+  padding-top: 15vh;
+  box-sizing: border-box;
+}
 
-  /* ====== 中央两根柱子容器 ====== */
-  .bar-container {
-    display:flex;
-    justify-content:center;
-    align-items:flex-end;
-    width:100%;
-    height:100vh;
-    gap:20px;
-    padding-top:15vh;
-    box-sizing:border-box;
-  }
+.bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  position: relative;
+  touch-action: none;
+  padding-bottom: 50px;
+}
 
-  .bar-wrapper{
-    display:flex;
-    flex-direction:column;
-    justify-content:flex-end;
-    align-items:center;
-    height:100%;
-    position:relative;
-    touch-action:none;
-    padding-bottom:50px;
-  }
+.bar {
+  width: 40vw;
+  max-height: calc(100% - 50px);
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex-direction: column;
+  box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.2);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: height 0.05s linear;
+}
 
-  .bar{
-    width:40vw; /* 按你前面的要求 */
-    max-height: calc(100% - 50px);
-    position:relative;
-    border-radius:20px 20px 0 0;
-    display:flex;
-    justify-content:center;
-    align-items:flex-end;
-    flex-direction:column;
-    box-shadow: inset 0 -5px 10px rgba(0,0,0,0.12), 0 4px 10px rgba(0,0,0,0.25);
-    backdrop-filter: blur(6px);
-    overflow:hidden;
-    transition: height 0.05s linear;
-  }
+#positionBar { 
+  background: rgba(0,123,255,0.35); 
+  border:1px solid rgba(0,123,255,0.6); 
+}
+#profitBar { 
+  background: rgba(40,167,69,0.35); 
+  border:1px solid rgba(40,167,69,0.6); 
+}
 
-  /* 颜色浅淡，内容在上方用半透明层叠 */
-  #positionBar { background: linear-gradient(to top, rgba(0,123,255,0.7), rgba(0,123,255,0.35)); border:1px solid rgba(0,123,255,0.6); }
-  #profitBar   { background: linear-gradient(to top, rgba(40,167,69,0.7), rgba(40,167,69,0.35)); border:1px solid rgba(40,167,69,0.6); }
+.bar-value {
+  position: absolute;
+  left: 50%;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  transform: translateX(-50%);
+}
 
-  .bar-value{
-    position:absolute;
-    left:50%;
-    font-size:16px;
-    font-weight:700;
-    color:#fff;
-    text-shadow:0 1px 2px rgba(0,0,0,0.6);
-    white-space:nowrap;
-    pointer-events:none;
-    z-index:10;
-    transform:translateX(-50%);
-  }
+.calc-result {
+  position: fixed;
+  top: 60px;            /* 往下移动一些 */
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffdd00;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  pointer-events: none;
+  z-index: 100;
 
-  .label{
-    margin-top:8px;
-    font-size:14px;
-    font-weight:700;
-    color:#eee;
-  }
+  /* 毛玻璃效果 */
+  background: rgba(255, 255, 255, 0.08);  
+  backdrop-filter: blur(10px);
+  padding: 8px 16px;
+  border-radius: 12px;
+}
 
-  /* ====== 顶部终值（毛玻璃 + 渐变叠加） ====== */
-  .calc-result{
-    position:fixed;
-    top: var(--calc-top);
-    left:50%;
-    transform: translateX(-50%);
-    z-index:10000;
-    border-radius:12px;
-    padding:8px var(--calc-pad-x);
-    pointer-events:none;
-    overflow:visible;
-    display:inline-block;
-    color:#fff;
-    font-weight:700;
-    font-size:20px;
-    background-color: var(--glass-bg);         /* 半透明底色（可调） */
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
-    position: fixed;
-  }
+.label {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #eee;
+}
 
-  /* 渐变覆盖层（在半透明底色上方但在文本下方） */
-  .calc-result .bg {
-    content: "";
-    position:absolute;
-    inset:0;
-    border-radius:12px;
-    z-index:0;
-    pointer-events:none;
-    background: linear-gradient(90deg,
-      rgba(0,123,255,0.18) 0%,
-      rgba(0,123,255,0.10) 25%,
-      rgba(40,167,69,0.12) 75%,
-      rgba(40,167,69,0.18) 100%);
-    background-size: 200% 200%;
-    animation: bgMove 6s linear infinite;
-  }
+/* ====== 右侧导航 ====== */
+.right-nav {
+  position: fixed;
+  top:0;
+  right:-35%; 
+  width:35%;
+  max-width:300px;
+  height:100%;
+  background:#2c2c2c;
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  transition:right 0.3s ease;
+  z-index:200;
+  box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
+  border-radius: 8px 0 0 8px;
+}
+.right-nav.expanded { right:0; }
+.right-nav .nav-item {
+  color: #eee;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  border-bottom: 1px solid #444;
+}
+.right-nav .nav-item:hover { background: #1e1e1e; }
+.right-nav .nav-item a { color:#eee; text-decoration:none; display:block; }
 
-  @keyframes bgMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+/* 遮罩层 */
+.overlay {
+  position: fixed; top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.3);
+  display:none;
+  z-index:150;
+}
+.overlay.show { display:block; }
 
-  .calc-result .value {
-    position:relative;
-    z-index:1; /* 确保文本在渐变层之上 */
-    pointer-events:none;
-  }
-
-  /* ====== 右侧导航 ====== */
-  .right-nav {
-    position:fixed;
-    top:0;
-    right:-35%;
-    width:35%;
-    max-width:300px;
-    height:100%;
-    background:#2c2c2c;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    transition:right 0.28s ease;
-    z-index:200;
-    box-shadow:-2px 2px 8px rgba(0,0,0,0.5);
-    border-radius:8px 0 0 8px;
-  }
-  .right-nav.expanded { right:0; }
-  .right-nav .nav-item{ color:#eee; padding:15px; text-align:center; cursor:pointer; border-bottom:1px solid #444; }
-  .right-nav .nav-item:hover{ background:#1e1e1e; }
-  .right-nav .nav-item a{ color:#eee; text-decoration:none; display:block; }
-
-  /* 遮罩层 */
-  .overlay{ position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); display:none; z-index:150; }
-  .overlay.show{ display:block; }
-
-  /* 右侧手势捕获区（从屏幕右缘向左滑打开） */
-  .gesture-right{
-    position:fixed; top:0; right:0; width:30px; height:100%;
-    z-index:250; background:transparent; touch-action:none;
-  }
-
-  /* 小设备适配：限制柱子宽度避免太大 */
-  @media (max-width:700px){
-    .bar{ width: 44vw; }
-    :root{ --calc-pad-x: 36px; }
-  }
+/* 手势捕获层 */
+.gesture-right {
+  position: fixed; top:0; right:0;
+  width:30px; height:100%;
+  z-index:250;
+  background:transparent;
+  touch-action:none;
+}
 </style>
 </head>
 <body>
 
-  <!-- 中央两根柱子 -->
-  <div class="bar-container">
-    <div class="bar-wrapper" id="wrapperPosition">
-      <span class="bar-value" id="positionValue"></span>
-      <div class="bar" id="positionBar"></div>
-      <div class="label">仓位</div>
-    </div>
-
-    <div class="bar-wrapper" id="wrapperProfit">
-      <span class="bar-value" id="profitValue"></span>
-      <div class="bar" id="profitBar"></div>
-      <div class="label">盈亏</div>
-    </div>
+<!-- ====== 竖条 ====== -->
+<div class="bar-container">
+  <div class="bar-wrapper" id="wrapperPosition">
+    <span class="bar-value" id="positionValue"></span>
+    <div class="bar" id="positionBar"></div>
+    <div class="label">仓位</div>
   </div>
-
-  <!-- 顶部终值 -->
-  <div class="calc-result" id="calcResult" aria-hidden="true">
-    <div class="bg" aria-hidden="true"></div>
-    <span class="value">0.0%</span>
+  <div class="bar-wrapper" id="wrapperProfit">
+    <span class="bar-value" id="profitValue"></span>
+    <div class="bar" id="profitBar"></div>
+    <div class="label">盈亏</div>
   </div>
+</div>
 
-  <!-- 右侧导航 & 手势 & 遮罩 -->
-  <div class="right-nav" id="rightNav">
-    <div class="nav-item">首页</div>
-    <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
-    <div class="nav-item"><a href="ykbsl.html">盈亏比&胜率</a></div>
-  </div>
-  <div class="overlay" id="overlay"></div>
-  <div class="gesture-right" id="gestureRight"></div>
+<div class="calc-result" id="calcResult"></div>
+
+<!-- ====== 右侧导航 ====== -->
+<div class="right-nav" id="rightNav">
+  <div class="nav-item">首页</div>
+  <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
+  <div class="nav-item"><a href="ykbsl.html">盈亏比&胜率</a></div>
+</div>
+<div class="overlay" id="overlay"></div>
+<div class="gesture-right" id="gestureRight"></div>
 
 <script>
-/* ---------- 数据 & DOM ---------- */
-const fractions = [1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 0];
-let positionValueLogical = 1/4; // 默认 1/4
-let profitValueLogical = 10;    // 默认 10% (表示为百分比数字)
+/* ====== 柱子逻辑 ====== */
+const fractions = [1,1/2,1/3,1/4,1/5,1/6,1/7,1/8,1/9,1/10,0];
+let positionValueLogical = 1/4;
+let profitValueLogical = 10;
 
 const positionBar = document.getElementById('positionBar');
-const profitBar   = document.getElementById('profitBar');
+const profitBar = document.getElementById('profitBar');
 const positionValue = document.getElementById('positionValue');
-const profitValue   = document.getElementById('profitValue');
-const calcResultEl  = document.getElementById('calcResult');
-const calcValueEl   = calcResultEl.querySelector('.value');
+const profitValue = document.getElementById('profitValue');
+const calcResult = document.getElementById('calcResult');
 
-/* ---------- 帮助函数 ---------- */
-function formatPositionDisplay(v){
-  if(v === 1) return "1";
-  if(v === 0) return "0";
-  // v 为分数，如 0.25 -> 1/4
-  const denom = Math.round(1/v);
-  return "1/" + denom;
-}
-
-function clamp(v, a, b){ return Math.min(Math.max(v,a),b); }
-
-/* ---------- 更新并渲染终值 ---------- */
 function updateCalcResult(){
-  // final = profit (%) * position (decimal)
-  const final = (profitValueLogical * positionValueLogical);
-  // 保留一位小数
-  const text = final.toFixed(1) + "%";
-  calcValueEl.textContent = text;
+  let result = (profitValueLogical * positionValueLogical).toFixed(1) + '%';
+  calcResult.textContent = result;
 }
 
-/* ---------- 动态高度绘制（缩短30% => scale = 0.7） ---------- */
-function animateBarHeight(bar, valueDisplay, value, isPercent=false){
+function animateBarHeight(bar,valueDisplay,value,isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
-  const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--height-scale')) || 0.7;
-  let finalHeight, displayText;
+  const scale = 0.7;
+  let displayVal, finalHeight;
 
   if(isPercent){
-    // value 是百分比数字，范围 0..50，步长 0.5
-    value = clamp(Math.round(value*2)/2, 0, 50);
-    displayText = value + "%";
-    finalHeight = containerHeight * (value / 50) * scale;
+    value = Math.min(Math.max(value,0),50);
+    value = Math.round(value*2)/2;
+    displayVal = value + '%';
+    finalHeight = containerHeight * value / 50 * scale;
   } else {
-    // 仓位使用 fractions 吸附显示
-    // value might be fractional during dragging; on release we snap
-    // When rendering during drag, we show the nearest fraction label
-    let closest = fractions.reduce((p,c) => Math.abs(c - value) < Math.abs(p - value) ? c : p, fractions[0]);
-    displayText = (closest === 0) ? "0" : (closest === 1 ? "1" : "1/" + Math.round(1/closest));
+    let closest = fractions.reduce((prev,curr)=>Math.abs(curr-value)<Math.abs(prev-value)?curr:prev);
+    value = closest;
+    displayVal = value===0?"0":(value===1?"1":"1/"+Math.round(1/value));
     finalHeight = containerHeight * value * scale;
   }
 
-  // 不要让高度小于 4px，避免消失
-  if(finalHeight < 4) finalHeight = 4;
-
-  bar.style.height = finalHeight + "px";
-  // 设置 valueDisplay 的 top（贴在柱子上方一点）
-  const valueTop = Math.max(containerHeight - finalHeight - 20, 0);
-  valueDisplay.style.top = valueTop + "px";
-  valueDisplay.textContent = displayText;
-
+  bar.style.height = finalHeight + 'px';
+  valueDisplay.style.top = (containerHeight - finalHeight - 20) + 'px';
+  valueDisplay.textContent = displayVal;
   updateCalcResult();
 }
 
-/* ---------- 可拖拽逻辑（支持 touch + mouse） ---------- */
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
-  let dragging = false, startY = 0, startValue = 0;
+  let dragging=false,startY=0,startValue=0;
   const containerHeight = wrapper.clientHeight - 50;
 
   function startDrag(e){
-    dragging = true;
-    startY = e.touches ? e.touches[0].clientY : e.clientY;
-    startValue = isPercent ? profitValueLogical : positionValueLogical;
+    dragging=true;
+    startY = e.touches?e.touches[0].clientY:e.clientY;
+    startValue = isPercent?profitValueLogical:positionValueLogical;
     e.preventDefault();
   }
 
   function moveDrag(e){
     if(!dragging) return;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const delta = startY - clientY;
+    const clientY = e.touches?e.touches[0].clientY:e.clientY;
+    let delta = startY - clientY;
+    let value;
     if(isPercent){
-      // delta -> percent (0..50)
-      let value = startValue + (delta / containerHeight) * 50;
-      value = clamp(value, 0, 50);
-      // 强制步长 0.5
-      value = Math.round(value * 2) / 2;
+      value = startValue + delta/containerHeight*50;
+      value = Math.min(Math.max(value,0),50);
+      value = Math.round(value*2)/2;
       profitValueLogical = value;
-      animateBarHeight(bar, valueDisplay, value, true);
+      animateBarHeight(bar,valueDisplay,value,true);
     } else {
-      let value = startValue + (delta / containerHeight);
-      value = clamp(value, 0, 1);
+      value = startValue + delta/containerHeight;
+      value = Math.min(Math.max(value,0),1);
       positionValueLogical = value;
-      animateBarHeight(bar, valueDisplay, value, false);
+      animateBarHeight(bar,valueDisplay,value,false);
     }
   }
 
   function endDrag(){
-    if(!dragging) return;
-    dragging = false;
+    dragging=false;
     if(!isPercent){
-      // 吸附到最近 fraction
-      let closest = fractions.reduce((p,c) => Math.abs(c - positionValueLogical) < Math.abs(p - positionValueLogical) ? c : p, fractions[0]);
+      let closest = fractions.reduce((prev,curr)=>Math.abs(curr-positionValueLogical)<Math.abs(prev-positionValueLogical)?curr:prev);
       positionValueLogical = closest;
-      animateBarHeight(bar, valueDisplay, positionValueLogical, false);
-    } else {
-      // 保证步长与范围
-      profitValueLogical = clamp(Math.round(profitValueLogical * 2) / 2, 0, 50);
-      animateBarHeight(bar, valueDisplay, profitValueLogical, true);
+      animateBarHeight(bar,valueDisplay,closest,false);
     }
   }
 
-  wrapper.addEventListener('touchstart', startDrag, {passive:false});
-  wrapper.addEventListener('mousedown', startDrag);
-  wrapper.addEventListener('touchmove', moveDrag, {passive:false});
-  wrapper.addEventListener('mousemove', moveDrag);
-  document.addEventListener('touchend', endDrag);
-  document.addEventListener('mouseup', endDrag);
+  wrapper.addEventListener('touchstart',startDrag);
+  wrapper.addEventListener('mousedown',startDrag);
+  wrapper.addEventListener('touchmove',moveDrag,{passive:false});
+  wrapper.addEventListener('mousemove',moveDrag);
+  document.addEventListener('mouseup',endDrag);
+  document.addEventListener('touchend',endDrag);
 }
 
-/* ---------- 初始化绑定 ---------- */
-makeDraggable(document.getElementById('wrapperPosition'), positionBar, positionValue, false);
-makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, true);
+makeDraggable(document.getElementById('wrapperPosition'),positionBar,positionValue,false);
+makeDraggable(document.getElementById('wrapperProfit'),profitBar,profitValue,true);
 
-/* 当窗口大小变化时，重绘高度与位置文本 */
-window.addEventListener('resize', () => {
-  animateBarHeight(positionBar, positionValue, positionValueLogical, false);
-  animateBarHeight(profitBar, profitValue, profitValueLogical, true);
+window.addEventListener('load',()=>{
+  animateBarHeight(positionBar,positionValue,positionValueLogical,false);
+  animateBarHeight(profitBar,profitValue,profitValueLogical,true);
 });
 
-/* 初始渲染 */
-window.addEventListener('load', () => {
-  animateBarHeight(positionBar, positionValue, positionValueLogical, false);
-  animateBarHeight(profitBar, profitValue, profitValueLogical, true);
-  updateCalcResult();
-});
-
-/* ---------- 右侧导航 手势逻辑 ---------- */
+/* ====== 右侧导航手势逻辑 ====== */
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');
 
-// open / close
 function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
 function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 
 // 点击遮罩层关闭
 overlay.addEventListener('click', closeNav);
 
-// 从屏幕右缘 -> 向左滑打开导航（gestureRight 区域）
+// 点击导航空白处关闭
+rightNav.addEventListener('click', e => {
+  if(e.target === rightNav) closeNav();
+});
+
+// 阻止点击文字和链接关闭
+rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el => {
+  el.addEventListener('click', e => { e.stopPropagation(); });
+});
+
+// 屏幕右边缘向左滑打开导航
 let startX = 0, isSwiping = false;
 gestureRight.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isSwiping = true; });
 gestureRight.addEventListener('touchmove', e => {
   if(!isSwiping) return;
-  const delta = startX - e.touches[0].clientX;
-  if(delta > 50){ openNav(); isSwiping = false; }
+  let deltaX = startX - e.touches[0].clientX;
+  if(deltaX > 30) openNav();
 });
 gestureRight.addEventListener('touchend', e => { isSwiping = false; });
 
-// 在导航上从左向右滑关闭
+// 导航条左向右滑关闭
 let navStartX = 0, navSwiping = false;
 rightNav.addEventListener('touchstart', e => { navStartX = e.touches[0].clientX; navSwiping = true; });
 rightNav.addEventListener('touchmove', e => {
   if(!navSwiping) return;
-  const delta = e.touches[0].clientX - navStartX;
-  if(delta > 30){ closeNav(); navSwiping = false; }
+  let deltaX = e.touches[0].clientX - navStartX;
+  if(deltaX > 30) closeNav();
 });
 rightNav.addEventListener('touchend', e => { navSwiping = false; });
-
-// 点击导航栏空白处关闭（不关闭文字/链接）
-rightNav.addEventListener('click', e => {
-  if(e.target === rightNav) closeNav();
-});
-// 阻止导航项或链接冒泡（文字/链接点击不会关闭导航）
-rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el => {
-  el.addEventListener('click', e => { e.stopPropagation(); });
-});
 </script>
+
 </body>
 </html>

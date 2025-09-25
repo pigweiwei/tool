@@ -183,7 +183,7 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   let heightVal = targetVal;
 
   if (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio)) {
-    displayVal = 'Ⓟ';
+    displayVal = '🅉';
     heightVal = isPercent ? 100 : maxProfitRatio;
   } else if (targetVal < 0 || !isFinite(targetVal)) {
     displayVal = isPercent ? '0%' : '0.00';
@@ -364,3 +364,4 @@ rightNav.addEventListener('touchend', e=>{
 
 </body>
 </html>
+

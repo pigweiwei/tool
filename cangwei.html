@@ -68,7 +68,7 @@ html, body {
   transform: translateX(-50%);
 }
 
-/* 顶部终值，酷炫背景，增加黑色阴影 */
+/* 顶部终值，半透明背景，炫彩动态 */
 .calc-result {
   position: fixed;
   top: 100px;
@@ -77,16 +77,13 @@ html, body {
   font-size: 20px;
   font-weight: bold;
   color: #fff;
-  text-shadow: 
-     0 0 5px rgba(0,0,0,0.7),
-     0 0 10px rgba(0,0,0,0.5),
-     0 0 15px rgba(0,0,0,0.3);
   pointer-events: none;
   z-index: 100;
-
   padding: 8px 20px;
   border-radius: 12px;
-  background: linear-gradient(270deg, #ffdd00, #00ffff, #ff00ff);
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(6px);
+  background-image: linear-gradient(270deg, #ffdd00, #00ffff, #ff00ff);
   background-size: 600% 600%;
   animation: gradientAnim 5s ease infinite;
 }

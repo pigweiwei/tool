@@ -178,20 +178,26 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false){
   let minHeight = 5;
   let displayVal = targetVal;
   let heightVal = targetVal;
-  if (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio)) {
-    displayVal = '♾️';
-    heightVal = isPercent ? 100 : maxProfitRatio;
-  } else if (targetVal < 0 || !isFinite(targetVal)) {
+
+  // ====== 修改部分：超过最大值显示 Ⓟ 并按普通数值位置逻辑 ======
+  if(targetVal === Infinity || (!isPercent && targetVal > maxProfitRatio)){
+    displayVal = 'Ⓟ';
+    heightVal = maxProfitRatio; // 高度按最大值
+  } else if(targetVal < 0 || !isFinite(targetVal)){
     displayVal = isPercent ? '0%' : '0.00';
     heightVal = 0;
   }
+
   let targetHeight = isPercent ? containerHeight * heightVal / 100 : containerHeight * heightVal / maxProfitRatio;
-  if (targetHeight < minHeight) targetHeight = minHeight;
+  if(targetHeight < minHeight) targetHeight = minHeight;
   bar.style.height = targetHeight + 'px';
+
+  // 数值位置逻辑
   let valueTop = containerHeight - targetHeight - 20;
   if ((isPercent && targetVal < 3) || (!isPercent && targetVal < 0.3)) valueTop = containerHeight - 40;
   valueTop = Math.max(valueTop, 0);
   valueDisplay.style.top = valueTop + 'px';
+
   valueDisplay.textContent = (typeof displayVal === 'string') ? displayVal : isPercent ? Math.round(displayVal) + '%' : displayVal.toFixed(2);
 }
 
@@ -209,7 +215,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     startY = e.touches ? e.touches[0].clientY : e.clientY;
     dragDirection = null;
     let currentText = valueDisplay.textContent;
-    startValue = currentText === '♾️' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
+    startValue = currentText === 'Ⓟ' ? (isPercent ? 100 : maxProfitRatio) : parseFloat(currentText);
     if (isNaN(startValue)) startValue = 0;
     e.preventDefault();
   }
@@ -219,7 +225,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
     dragging = false;
     if (dragDirection === "vertical") {
       let currentText = valueDisplay.textContent;
-      if (currentText === '♾️') {
+      if (currentText === 'Ⓟ') {
         if (callback) callback(Infinity);
       } else {
         let currentValue = parseFloat(currentText);
@@ -336,7 +342,7 @@ rightNav.addEventListener('touchmove', e=>{
 });
 rightNav.addEventListener('touchend', e=>{
   if(navStartX === 0) return;
-  const deltaX = e.changedTouches[0].clientX - navStartX; // 左→右为正
+  const deltaX = e.changedTouches[0].clientX - navStartX;
   if(deltaX > 30) closeNav();
   navStartX = 0;
 });
@@ -344,4 +350,3 @@ rightNav.addEventListener('touchend', e=>{
 
 </body>
 </html>
-

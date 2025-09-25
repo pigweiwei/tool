@@ -14,17 +14,19 @@ html, body {
   font-family: Arial, sans-serif;
   overflow: hidden;
 }
+
 /* ====== 竖条 ====== */
 .bar-container {
   display: flex;
-  justify-content: space-around;
+  justify-content: center; /* 水平居中 */
   align-items: flex-end;
-  width: 90vw;
+  width: 100%;
   height: 100vh;
   gap: 20px;
   padding-top: 15vh;
   box-sizing: border-box;
 }
+
 .bar-wrapper {
   display: flex;
   flex-direction: column;
@@ -35,8 +37,9 @@ html, body {
   touch-action: none;
   padding-bottom: 50px;
 }
+
 .bar {
-  width: 40vw;
+  width: 40vw; /* 宽度固定 */
   max-height: calc(100% - 50px);
   border-radius: 20px 20px 0 0;
   display: flex;
@@ -48,8 +51,10 @@ html, body {
   overflow: hidden;
   transition: height 0.05s linear;
 }
+
 #positionBar { background: rgba(0,123,255,0.35); border:1px solid rgba(0,123,255,0.6); }
 #profitBar { background: rgba(40,167,69,0.35); border:1px solid rgba(40,167,69,0.6); }
+
 .bar-value {
   position: absolute;
   left: 50%;
@@ -62,6 +67,7 @@ html, body {
   z-index: 10;
   transform: translateX(-50%);
 }
+
 .calc-result {
   position: absolute;
   left: 50%;
@@ -73,12 +79,14 @@ html, body {
   pointer-events: none;
   z-index: 20;
 }
+
 .label {
   margin-top: 8px;
   font-size: 14px;
   font-weight: bold;
   color: #eee;
 }
+
 /* ====== 右侧导航 ====== */
 .right-nav {
   position: fixed;
@@ -106,6 +114,7 @@ html, body {
 }
 .right-nav .nav-item:hover { background: #1e1e1e; }
 .right-nav .nav-item a { color:#eee; text-decoration:none; display:block; }
+
 /* 遮罩层 */
 .overlay { 
   position: fixed; top:0; left:0; 
@@ -115,6 +124,7 @@ html, body {
   z-index:150; 
 }
 .overlay.show { display:block; }
+
 /* 手势捕获层 */
 .gesture-right { 
   position: fixed; top:0; right:0; 
@@ -141,7 +151,6 @@ html, body {
   </div>
 </div>
 
-<!-- ====== 右侧导航 ====== -->
 <div class="right-nav" id="rightNav">
   <div class="nav-item">首页</div>
   <div class="nav-item"><a href="fuli.html">复利计算器</a></div>
@@ -152,8 +161,8 @@ html, body {
 
 <script>
 const fractions = [1,1/2,1/3,1/4,1/5,1/6,1/7,1/8,1/9,1/10,0];
-let positionValueLogical = 1/4; // 默认仓位
-let profitValueLogical = 10;    // 默认盈亏
+let positionValueLogical = 1/4;
+let profitValueLogical = 10;
 
 const positionBar = document.getElementById('positionBar');
 const profitBar = document.getElementById('profitBar');
@@ -170,9 +179,8 @@ function updateCalcResult(){
 
 function animateBarHeight(bar,valueDisplay,value,isPercent=false){
   const containerHeight = bar.parentElement.clientHeight - 50;
-  const scale = 0.7; // 高度缩短30%
-  let displayVal = value;
-  let finalHeight;
+  const scale = 0.7;
+  let displayVal, finalHeight;
 
   if(isPercent){
     value = Math.min(Math.max(value,0),50);
@@ -187,7 +195,6 @@ function animateBarHeight(bar,valueDisplay,value,isPercent=false){
   }
 
   bar.style.height = finalHeight + 'px';
-  bar.style.marginTop = (containerHeight - finalHeight) + 'px'; // 保持底部对齐
   valueDisplay.style.top = (containerHeight - finalHeight - 20) + 'px';
   valueDisplay.textContent = displayVal;
   updateCalcResult();
@@ -240,7 +247,6 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
   document.addEventListener('touchend',endDrag);
 }
 
-// 初始化
 makeDraggable(document.getElementById('wrapperPosition'),positionBar,positionValue,false);
 makeDraggable(document.getElementById('wrapperProfit'),profitBar,profitValue,true);
 

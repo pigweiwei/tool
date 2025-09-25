@@ -210,15 +210,22 @@ function animateBarHeight(bar,valueDisplay,value,isPercent=false){
     value = Math.round(value*2)/2;
     displayVal = value + '%';
     finalHeight = containerHeight * value / 50 * scale;
+
+    // 盈亏数值停在4%的高度，不再往下
+    const minHeight = containerHeight * 4 / 50 * scale;
+    const displayTop = finalHeight >= minHeight
+      ? containerHeight - finalHeight - 20
+      : containerHeight - minHeight - 20;
+    valueDisplay.style.top = displayTop + 'px';
   } else {
     let closest = fractions.reduce((prev,curr)=>Math.abs(curr-value)<Math.abs(prev-value)?curr:prev);
     value = closest;
     displayVal = value===0?"0":(value===1?"1":"1/"+Math.round(1/value));
     finalHeight = containerHeight * value * scale;
+    valueDisplay.style.top = (containerHeight - finalHeight - 20) + 'px';
   }
 
   bar.style.height = finalHeight + 'px';
-  valueDisplay.style.top = (containerHeight - finalHeight - 20) + 'px';
   valueDisplay.textContent = displayVal;
   updateCalcResult();
 }

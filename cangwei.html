@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>仓位计算器</title>
+<title>盈亏比&胜率</title>
 <style>
 html, body {
   margin: 0;
@@ -174,19 +174,9 @@ html, body {
 <div class="gesture-right" id="gestureRight"></div>
 
 <script>
-/*
-  完整逻辑说明：
-  - 仓位使用 11 个档位（按照从小到大排列）：0, 1/10, 1/9, ... , 1/3, 1/2, 1
-    内部用升序数组处理，方便“向上滑 → 值变大”逻辑。
-  - 每次手势跨过 containerHeight/10 的距离，就会前进一步（+1 档或 -1 档）。
-  - 鼠标滚轮：仓位每次滚轮一档（向上滚增一档），盈亏每次 ±1%。
-  - 拖动盈亏时以 1% 为步进（取整）。
-  - 保留原有毛玻璃、终值变色逻辑等。
-*/
-
-const fractionsAsc = [0, 1/10, 1/9, 1/8, 1/7, 1/6, 1/5, 1/4, 1/3, 1/2, 1]; // 从小到大
-let positionValueLogical = 1/4; // 初始仓位（必须是 fractionsAsc 的一个值）
-let profitValueLogical = 10;     // 初始盈亏（整数%）
+const fractionsAsc = [0, 1/10, 1/9, 1/8, 1/7, 1/6, 1/5, 1/4, 1/3, 1/2, 1]; 
+let positionValueLogical = 1/4; 
+let profitValueLogical = 10;     
 
 const positionBar = document.getElementById('positionBar');
 const profitBar = document.getElementById('profitBar');
@@ -199,7 +189,6 @@ const wrapperProfit = document.getElementById('wrapperProfit');
 function displayPositionText(v){
   if (v === 0) return "0";
   if (v === 1) return "1";
-  // 尝试用“1/n”的形式显示，如果能整除
   const inv = Math.round(1 / v);
   if (Math.abs(inv * v - 1) < 1e-9) return "1/" + inv;
   return v.toFixed(3);
@@ -208,7 +197,6 @@ function displayPositionText(v){
 function updateCalcResult(){
   let result = (profitValueLogical * positionValueLogical).toFixed(1) + '%';
   calcResult.textContent = result;
-
   if(positionValueLogical >= 0.5){
     calcResult.style.background = 'rgba(200,0,0,0.3)';
     calcResult.style.border = '1px solid rgba(255,0,0,0.3)';
@@ -224,24 +212,19 @@ function animateBarHeight(bar, valueDisplay, value, isPercent=false){
   let displayVal, finalHeight;
 
   if(isPercent){
-    // 盈亏柱子（value: 0..50）
     value = Math.min(Math.max(value,0),50);
-    value = Math.round(value); // 每次以 1% 为步进
+    value = Math.round(value); 
     displayVal = value + '%';
     finalHeight = containerHeight * value / 50 * scale;
-
-    // 当数值低于 4% 时，显示位置保持在 4% 的最低显示位置，避免与柱底重叠
-    const minHeight = containerHeight * 4 / 50 * scale; // 4%高度
+    const minHeight = containerHeight * 4 / 50 * scale; 
     const displayTop = finalHeight >= minHeight
       ? containerHeight - finalHeight - 20
       : containerHeight - minHeight - 20;
     valueDisplay.style.top = displayTop + 'px';
   } else {
-    // 仓位柱子（value: 0..1，严格分档）
     displayVal = displayPositionText(value);
     finalHeight = containerHeight * value * scale;
-
-    const minHeight = containerHeight * 0.1 * scale; // 10%高度（保证最低可见）
+    const minHeight = containerHeight * 4 / 50 * scale; 
     const displayTop = finalHeight >= minHeight
       ? containerHeight - finalHeight - 20
       : containerHeight - minHeight - 20;
@@ -253,7 +236,6 @@ function animateBarHeight(bar, valueDisplay, value, isPercent=false){
   updateCalcResult();
 }
 
-/* ====== 拖动/手势/滚轮 逻辑 ====== */
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
   let dragging=false, startY=0, startIndex=0, startValue=0;
 
@@ -263,7 +245,6 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
     if(isPercent){
       startValue = profitValueLogical;
     } else {
-      // 记录当前仓位的索引（在 fractionsAsc 中）
       const idx = fractionsAsc.findIndex(f => Math.abs(f - positionValueLogical) < 1e-9);
       startIndex = idx === -1 ? 0 : idx;
     }
@@ -273,19 +254,17 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
   function moveDrag(e){
     if(!dragging) return;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const delta = startY - clientY; // 向上滑 delta>0，向下滑 delta<0
+    const delta = startY - clientY;
     const containerHeight = wrapper.clientHeight - 50;
 
     if(isPercent){
-      // 盈亏：以像素 -> 百分比，最后以 1% 整数步进
       let raw = startValue + (delta / containerHeight) * 50;
       raw = Math.min(Math.max(raw,0),50);
-      profitValueLogical = Math.round(raw); // 1% 步进
+      profitValueLogical = Math.round(raw); 
       animateBarHeight(bar, valueDisplay, profitValueLogical, true);
     } else {
-      // 仓位：每 containerHeight/10 对应一步（11 档 -> 10 个间隔）
-      const stepPixel = containerHeight / (fractionsAsc.length - 1); // containerHeight / 10
-      let stepChange = Math.round(delta / stepPixel); // 向上为正 -> index 增加 -> 值变大（因为数组升序）
+      const stepPixel = containerHeight / (fractionsAsc.length - 1);
+      let stepChange = Math.round(delta / stepPixel);
       let newIndex = startIndex + stepChange;
       if(newIndex < 0) newIndex = 0;
       if(newIndex > fractionsAsc.length - 1) newIndex = fractionsAsc.length - 1;
@@ -294,12 +273,8 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
     }
   }
 
-  function endDrag(){
-    dragging = false;
-    // 结束时也确保取整（仓位已经严格在档位上，盈亏已取整）
-  }
+  function endDrag(){ dragging = false; }
 
-  // 鼠标/触摸事件
   wrapper.addEventListener('touchstart', startDrag);
   wrapper.addEventListener('mousedown', startDrag);
   wrapper.addEventListener('touchmove', moveDrag, {passive:false});
@@ -307,38 +282,31 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
   document.addEventListener('mouseup', endDrag);
   document.addEventListener('touchend', endDrag);
 
-  // 滚轮支持
   wrapper.addEventListener('wheel', function(e){
     e.preventDefault();
     if(isPercent){
-      // 盈亏滚轮每次 +/-1%
       if (e.deltaY < 0) profitValueLogical = Math.min(50, profitValueLogical + 1);
       else profitValueLogical = Math.max(0, profitValueLogical - 1);
       animateBarHeight(bar, valueDisplay, profitValueLogical, true);
     } else {
-      // 仓位滚轮：每次 +/-1 档
-      // 先找到当前索引（可能在 fractionsAsc 找不到精确值，容错取最近）
       let closestIdx = 0;
       let minDiff = Infinity;
       for(let i=0;i<fractionsAsc.length;i++){
         const d = Math.abs(fractionsAsc[i] - positionValueLogical);
         if(d < minDiff){ minDiff = d; closestIdx = i; }
       }
-      if (e.deltaY < 0) closestIdx = Math.min(fractionsAsc.length - 1, closestIdx + 1); // 向上滚增一档
-      else closestIdx = Math.max(0, closestIdx - 1); // 向下滚减一档
+      if (e.deltaY < 0) closestIdx = Math.min(fractionsAsc.length - 1, closestIdx + 1);
+      else closestIdx = Math.max(0, closestIdx - 1);
       positionValueLogical = fractionsAsc[closestIdx];
       animateBarHeight(bar, valueDisplay, positionValueLogical, false);
     }
   }, {passive:false});
 }
 
-// 初始化
 makeDraggable(wrapperPosition, positionBar, positionValue, false);
 makeDraggable(wrapperProfit, profitBar, profitValue, true);
 
 window.addEventListener('load', ()=>{
-  // 确保初次显示正确
-  // 如果初始 positionValueLogical 不在 fractionsAsc 中，取最接近的一个（容错）
   let closestIdx = 0, minDiff = Infinity;
   for(let i=0;i<fractionsAsc.length;i++){
     const d = Math.abs(fractionsAsc[i] - positionValueLogical);
@@ -350,7 +318,7 @@ window.addEventListener('load', ()=>{
   animateBarHeight(profitBar, profitValue, profitValueLogical, true);
 });
 
-/* ====== 右侧导航手势逻辑（保留） ====== */
+/* ====== 右侧导航手势逻辑 ====== */
 const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');

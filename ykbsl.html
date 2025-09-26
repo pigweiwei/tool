@@ -173,45 +173,54 @@ function calculateBreakeven(r) {
   return 100 / (1 + r);
 }
 
-// ====== 修改后的 animateBarHeight ======
+// ====== 主函数：允许高度为 0（柱子到底），并统一最低显示线 ======
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowInfinity=false){
+  // containerHeight 用来计算像素高度（不含底部留白）
   const containerHeight = bar.parentElement.clientHeight - 50; 
-  let minHeight = 5;
   let displayVal = targetVal;
   let heightVal = targetVal;
 
+  // 处理允许无限大的情况（显示为 🅉）
   if (allowInfinity && (targetVal === Infinity || targetVal > (isPercent ? 100 : maxProfitRatio))) {
     displayVal = '🅉';
     heightVal = isPercent ? 100 : maxProfitRatio;
   } else if (targetVal < 0 || !isFinite(targetVal)) {
+    // 非法/负数值当作 0 处理
     displayVal = isPercent ? '0%' : '0.00';
     heightVal = 0;
   }
 
-  let targetHeight = isPercent ? containerHeight * heightVal / 100 : containerHeight * heightVal / maxProfitRatio;
-  if (targetHeight < minHeight) targetHeight = minHeight;
-
+  // 计算目标像素高度（允许为 0）
+  let targetHeight = isPercent ? (containerHeight * heightVal / 100) : (containerHeight * heightVal / maxProfitRatio);
   bar.style.height = targetHeight + 'px';
 
+  // 数值显示的位置（默认贴在柱子上方 20px）
   let valueTop = containerHeight - targetHeight - 20;
 
-  if(displayVal === '🅉') {
+  // 🅉 的显示要再上移一点，避免遮挡
+  if (displayVal === '🅉') {
     valueTop -= 20;
   } else {
+    // 初始化统一的最低限位（只计算一次）
     if (minValueTop === null) {
+      // 这里用盈亏比 0.5 的位置作为基准线（与以前一致）
       let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
       minValueTop = containerHeight - tmpHeight - 20;
     }
+    // 不允许数值显示低于此线（盈亏比和胜率共用）
     valueTop = Math.min(valueTop, minValueTop);
   }
 
+  // 保证不超出容器顶部
   valueTop = Math.max(valueTop, 0);
   valueDisplay.style.top = valueTop + 'px';
 
+  // 显示文本格式化
   valueDisplay.textContent = (typeof displayVal === 'string') ? displayVal : 
     (isPercent ? Math.round(displayVal) + '%' : displayVal.toFixed(2));
 }
 
+// 拖拽制作函数（保持原有逻辑：竖向拖动改变值）
 function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=null){
   let dragging=false;
   let startValue = 0;
@@ -242,9 +251,13 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
         let currentValue = parseFloat(currentText);
         if (!isPercent) {
           if (currentValue >= maxProfitRatio) currentValue = maxProfitRatio;
+          // 盈亏比拖动完成时按 0.5 的步长吸附
           let snappedValue = Math.round(currentValue / 0.5) * 0.5;
-          animateBarHeight(bar, valueDisplay, snappedValue, isPercent, false);
+          animateBarHeight(bar, valueDisplay, snappedValue, isPercent, false); // 拖动结束不允许 ∞
           if (callback) callback(snappedValue);
+        } else {
+          // 胜率拖动完成时直接回传当前值（百分比）
+          if (callback) callback(currentValue);
         }
       }
     }
@@ -269,6 +282,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
         value = startValue + delta / containerHeight * maxProfitRatio;
         value = Math.max(value, 0);
       }
+      // 拖动过程中不允许出现 ∞（只有联动时可出现）
       animateBarHeight(bar, valueDisplay, value, isPercent, false);
       if (callback) callback(value);
     }
@@ -282,19 +296,19 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
   wrapper.addEventListener('mousemove', moveDrag);
 }
 
-// 盈亏比拖动
+// 盈亏比拖动（拖动时不允许 ∞；联动更新胜率允许显示 🅉）
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
   breakevenLogical = calculateBreakeven(r);
-  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true);
-  animateBarHeight(profitBar, profitValue, r, false, false);
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true); // 胜率联动允许 ∞
+  animateBarHeight(profitBar, profitValue, r, false, false); // 自己拖动不允许 ∞
 });
 
-// 胜率拖动
+// 胜率拖动（拖动时不允许 ∞；联动更新盈亏比允许显示 🅉）
 makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
   profitLogical = b > 0 ? (100 / b) - 1 : Infinity;
-  animateBarHeight(profitBar, profitValue, profitLogical, false, true);
+  animateBarHeight(profitBar, profitValue, profitLogical, false, true); // 联动允许 ∞
 });
 
 // 初始显示

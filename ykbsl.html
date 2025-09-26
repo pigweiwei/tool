@@ -173,7 +173,7 @@ function calculateBreakeven(r) {
   return 100 / (1 + r);
 }
 
-// ====== 修改：增加 allowInfinity 参数 ======
+// ====== 修改后的 animateBarHeight ======
 function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowInfinity=false){
   const containerHeight = bar.parentElement.clientHeight - 50; 
   let minHeight = 5;
@@ -195,12 +195,14 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowIn
 
   let valueTop = containerHeight - targetHeight - 20;
 
-  // 单独调整 🅉 往上偏移
-  if(displayVal === '🅉') valueTop -= 20;
-  else if (!isPercent && minValueTop !== null) valueTop = Math.min(valueTop, minValueTop);
-  else if (!isPercent && minValueTop === null) {
-    let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
-    minValueTop = containerHeight - tmpHeight - 20;
+  if(displayVal === '🅉') {
+    valueTop -= 20;
+  } else {
+    if (minValueTop === null) {
+      let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
+      minValueTop = containerHeight - tmpHeight - 20;
+    }
+    valueTop = Math.min(valueTop, minValueTop);
   }
 
   valueTop = Math.max(valueTop, 0);
@@ -241,7 +243,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
         if (!isPercent) {
           if (currentValue >= maxProfitRatio) currentValue = maxProfitRatio;
           let snappedValue = Math.round(currentValue / 0.5) * 0.5;
-          animateBarHeight(bar, valueDisplay, snappedValue, isPercent, false); // 拖动不允许∞
+          animateBarHeight(bar, valueDisplay, snappedValue, isPercent, false);
           if (callback) callback(snappedValue);
         }
       }
@@ -267,7 +269,7 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
         value = startValue + delta / containerHeight * maxProfitRatio;
         value = Math.max(value, 0);
       }
-      animateBarHeight(bar, valueDisplay, value, isPercent, false); // 拖动不允许∞
+      animateBarHeight(bar, valueDisplay, value, isPercent, false);
       if (callback) callback(value);
     }
   }
@@ -284,15 +286,15 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false, callback=nul
 makeDraggable(document.getElementById('wrapperProfit'), profitBar, profitValue, false, r=>{
   profitLogical = r;
   breakevenLogical = calculateBreakeven(r);
-  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true); // 胜率联动允许∞
-  animateBarHeight(profitBar, profitValue, r, false, false); // 自己拖动不允许∞
+  animateBarHeight(breakevenBar, breakevenValue, breakevenLogical, true, true);
+  animateBarHeight(profitBar, profitValue, r, false, false);
 });
 
 // 胜率拖动
 makeDraggable(document.getElementById('wrapperBreakeven'), breakevenBar, breakevenValue, true, b=>{
   breakevenLogical = b;
   profitLogical = b > 0 ? (100 / b) - 1 : Infinity;
-  animateBarHeight(profitBar, profitValue, profitLogical, false, true); // 联动允许∞
+  animateBarHeight(profitBar, profitValue, profitLogical, false, true);
 });
 
 // 初始显示

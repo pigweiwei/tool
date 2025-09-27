@@ -6,39 +6,31 @@
 <style>
 body.dark {
   --bg-gradient: linear-gradient(135deg, #1a1a1a, #2b2b2b);
-  --bar-profit-bg: rgba(0,123,255,0.35);
-  --bar-profit-border: rgba(0,123,255,0.6);
-  --bar-breakeven-bg: rgba(40,167,69,0.35);
-  --bar-breakeven-border: rgba(40,167,69,0.6);
-  --bar-right1-bg: rgba(153,102,255,0.35);
-  --bar-right1-border: rgba(153,102,255,0.6);
-  --bar-right2-bg: rgba(255,193,7,0.35);
-  --bar-right2-border: rgba(255,193,7,0.6);
-  --bar-right3-bg: rgba(220,53,69,0.35);
-  --bar-right3-border: rgba(220,53,69,0.6);
-  --bar-right4-bg: rgba(0,123,255,0.35);
-  --bar-right4-border: rgba(0,123,255,0.6);
-  --bar-right5-bg: rgba(40,167,69,0.35);
-  --bar-right5-border: rgba(40,167,69,0.6);
+  --bar-left1-bg: rgba(255,99,132,0.35);
+  --bar-left1-border: rgba(255,99,132,0.6);
+  --bar-left2-bg: rgba(54,162,235,0.35);
+  --bar-left2-border: rgba(54,162,235,0.6);
+  --bar-left3-bg: rgba(255,206,86,0.35);
+  --bar-left3-border: rgba(255,206,86,0.6);
+  --bar-left4-bg: rgba(75,192,192,0.35);
+  --bar-left4-border: rgba(75,192,192,0.6);
+  --bar-left5-bg: rgba(153,102,255,0.35);
+  --bar-left5-border: rgba(153,102,255,0.6);
   --label-color: #eee;
   --bar-value-color: #fff;
 }
 body.light {
   --bg-gradient: linear-gradient(135deg, #e0e0e0, #f5f5f5);
-  --bar-profit-bg: rgba(0,123,255,0.5);
-  --bar-profit-border: rgba(0,123,255,0.8);
-  --bar-breakeven-bg: rgba(40,167,69,0.5);
-  --bar-breakeven-border: rgba(40,167,69,0.8);
-  --bar-right1-bg: rgba(153,102,255,0.5);
-  --bar-right1-border: rgba(153,102,255,0.8);
-  --bar-right2-bg: rgba(255,193,7,0.5);
-  --bar-right2-border: rgba(255,193,7,0.8);
-  --bar-right3-bg: rgba(220,53,69,0.5);
-  --bar-right3-border: rgba(220,53,69,0.8);
-  --bar-right4-bg: rgba(0,123,255,0.5);
-  --bar-right4-border: rgba(0,123,255,0.8);
-  --bar-right5-bg: rgba(40,167,69,0.5);
-  --bar-right5-border: rgba(40,167,69,0.8);
+  --bar-left1-bg: rgba(255,99,132,0.5);
+  --bar-left1-border: rgba(255,99,132,0.8);
+  --bar-left2-bg: rgba(54,162,235,0.5);
+  --bar-left2-border: rgba(54,162,235,0.8);
+  --bar-left3-bg: rgba(255,206,86,0.5);
+  --bar-left3-border: rgba(255,206,86,0.8);
+  --bar-left4-bg: rgba(75,192,192,0.5);
+  --bar-left4-border: rgba(75,192,192,0.8);
+  --bar-left5-bg: rgba(153,102,255,0.5);
+  --bar-left5-border: rgba(153,102,255,0.8);
   --label-color: #333;
   --bar-value-color: #000;
 }
@@ -57,7 +49,7 @@ body {
   width: 100%;
   height: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   position: relative;
   overflow: hidden;
 }
@@ -80,76 +72,67 @@ body {
   pointer-events: none;
   z-index: 100;
 }
-.bar-container {
+.bar-container-horizontal {
   display: flex;
-  align-items: flex-end;
-  gap: 80px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 40px;
+  width: calc(80% - 48px); /* 80% of viewport width minus padding for labels */
   height: 100%;
   user-select: none;
-  justify-content: center;
+  padding-left: 48px; /* 1.5 * 32px (approx label width) */
 }
-.bar-wrapper {
+.bar-wrapper-horizontal {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: flex-end;
-  height: 100%;
+  justify-content: flex-start;
+  width: 100%;
   cursor: grab;
 }
-.bar {
-  width: 150px;
-  height: 0;
-  border-radius: 20px 20px 0 0;
+.bar-horizontal {
+  height: 156px; /* Increased from 120px by 30% */
+  width: 0;
+  border-radius: 0 20px 20px 0;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  flex-direction: column;
-  box-shadow: inset 0 -5px 15px rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.2);
+  justify-content: flex-end;
+  align-items: center;
+  flex-direction: row;
+  box-shadow: inset -5px 0 15px rgba(0,0,0,0.1), 8px 0 20px rgba(0,0,0,0.2);
   backdrop-filter: blur(15px);
   transition: all 0.3s;
   overflow: visible;
   position: relative;
 }
-.bar-value {
+.bar-value-horizontal {
   position: absolute;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: -50px;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 16px;
   font-weight: bold;
   color: var(--bar-value-color);
   z-index: 2;
   user-select: none;
 }
-.label {
-  margin-top: 10px;
+.label-horizontal {
   font-size: 16px;
   font-weight: bold;
   color: var(--label-color);
   user-select: none;
   transition: color 0.3s;
+  position: absolute;
+  left: -32px;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
 }
-#rightBar1 {
-  background: var(--bar-right1-bg);
-  border: 1px solid var(--bar-right1-border);
-}
-#rightBar2 {
-  background: var(--bar-right2-bg);
-  border: 1px solid var(--bar-right2-border);
-}
-#rightBar3 {
-  background: var(--bar-right3-bg);
-  border: 1px solid var(--bar-right3-border);
-}
-#rightBar4 {
-  background: var(--bar-right4-bg);
-  border: 1px solid var(--bar-right4-border);
-}
-#rightBar5 {
-  background: var(--bar-right5-bg);
-  border: 1px solid var(--bar-right5-border);
-}
+#leftBar1 { background: var(--bar-left1-bg); border: 1px solid var(--bar-left1-border); }
+#leftBar2 { background: var(--bar-left2-bg); border: 1px solid var(--bar-left2-border); }
+#leftBar3 { background: var(--bar-left3-bg); border: 1px solid var(--bar-left3-border); }
+#leftBar4 { background: var(--bar-left4-bg); border: 1px solid var(--bar-left4-border); }
+#leftBar5 { background: var(--bar-left5-bg); border: 1px solid var(--bar-left5-border); }
 #feeTopRight {
   position: absolute;
   right: 20px;
@@ -201,37 +184,22 @@ body {
   height: 16px;
   accent-color: var(--label-color);
 }
-.panel-scroll {
-  flex: 1;
-  width: 100%;
-  overflow-x: auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  scroll-behavior: smooth;
-  user-select: none;
-}
-.panel-scroll .bar-container {
-  min-width: 1200px;
-}
 </style>
 </head>
 <body class="dark">
 <div class="panel">
+  <div class="bar-container-horizontal">
+    <div class="bar-wrapper-horizontal"><div class="bar-horizontal" id="leftBar1"><div class="bar-value-horizontal" id="valLeft1">10000</div></div><div class="label-horizontal">本金</div></div>
+    <div class="bar-wrapper-horizontal"><div class="bar-horizontal" id="leftBar2"><div class="bar-value-horizontal" id="valLeft2">5%</div></div><div class="label-horizontal">每次止损</div></div>
+    <div class="bar-wrapper-horizontal"><div class="bar-horizontal" id="leftBar3"><div class="bar-value-horizontal" id="valLeft3">10</div></div><div class="label-horizontal">交易笔数</div></div>
+    <div class="bar-wrapper-horizontal"><div class="bar-horizontal" id="leftBar4"><div class="bar-value-horizontal" id="valLeft4">2</div></div><div class="label-horizontal">盈亏比</div></div>
+    <div class="bar-wrapper-horizontal"><div class="bar-horizontal" id="leftBar5"><div class="bar-value-horizontal" id="valLeft5">50%</div></div><div class="label-horizontal">胜率</div></div>
+  </div>
   <div class="calc-result" id="calcResult">0</div>
   <div id="feeTopRight">
     <span>盈亏：0%</span>
     <span class="separator"></span>
     <span>Fee: 1</span>
-  </div>
-  <div class="panel-scroll">
-    <div class="bar-container">
-      <div class="bar-wrapper"><div class="bar" id="rightBar1"><div class="bar-value" id="val1">10000</div></div><div class="label">本金</div></div>
-      <div class="bar-wrapper"><div class="bar" id="rightBar2"><div class="bar-value" id="val2">5%</div></div><div class="label">每次止损</div></div>
-      <div class="bar-wrapper"><div class="bar" id="rightBar3"><div class="bar-value" id="val3">10</div></div><div class="label">交易笔数</div></div>
-      <div class="bar-wrapper"><div class="bar" id="rightBar4"><div class="bar-value" id="val4">2</div></div><div class="label">盈亏比</div></div>
-      <div class="bar-wrapper"><div class="bar" id="rightBar5"><div class="bar-value" id="val5">50%</div></div><div class="label">胜率</div></div>
-    </div>
   </div>
   <div id="feeWrap">
     <div>
@@ -254,24 +222,28 @@ function formatTenThousand(num) {
   return result;
 }
 
-// 更新柱子高度
-function updateHeight(bar, valueDisplay, value, maxVal, type) {
+// 更新柱子宽度
+function updateHeight(bar, valueDisplay, value, maxVal, type, isHorizontal = false) {
   const container = bar.parentElement;
-  const maxHeight = container.clientHeight * 0.7;
-  const height = Math.min((value / maxVal) * maxHeight, maxHeight);
-  bar.style.height = height + 'px';
+  const maxDimension = isHorizontal ? container.clientWidth * 0.7 : container.clientHeight * 0.7;
+  const dimension = Math.min((value / maxVal) * maxDimension, maxDimension);
+  if (isHorizontal) {
+    bar.style.width = dimension + 'px';
+  } else {
+    bar.style.height = dimension + 'px';
+  }
   if (type === 'int') valueDisplay.textContent = formatTenThousand(value);
   else if (type === 'percent') valueDisplay.textContent = value + '%';
   else if (type === 'float') valueDisplay.textContent = value.toFixed(1);
 }
 
-// 右侧柱子数据
-const rightBars = [
-  { bar: document.getElementById('rightBar1'), display: document.getElementById('val1'), value: 10000, step: 10000, max: 1000000, type: 'int' },
-  { bar: document.getElementById('rightBar2'), display: document.getElementById('val2'), value: 5, step: 1, max: 50, type: 'percent' },
-  { bar: document.getElementById('rightBar3'), display: document.getElementById('val3'), value: 10, step: 1, max: 100, type: 'int' },
-  { bar: document.getElementById('rightBar4'), display: document.getElementById('val4'), value: 2, step: 0.5, max: 10, type: 'float' },
-  { bar: document.getElementById('rightBar5'), display: document.getElementById('val5'), value: 50, step: 1, max: 100, type: 'percent' }
+// 左侧柱子数据
+const leftBars = [
+  { bar: document.getElementById('leftBar1'), display: document.getElementById('valLeft1'), value: 10000, step: 10000, max: 1000000, type: 'int' },
+  { bar: document.getElementById('leftBar2'), display: document.getElementById('valLeft2'), value: 5, step: 1, max: 50, type: 'percent' },
+  { bar: document.getElementById('leftBar3'), display: document.getElementById('valLeft3'), value: 10, step: 1, max: 100, type: 'int' },
+  { bar: document.getElementById('leftBar4'), display: document.getElementById('valLeft4'), value: 2, step: 0.5, max: 10, type: 'float' },
+  { bar: document.getElementById('leftBar5'), display: document.getElementById('valLeft5'), value: 50, step: 1, max: 100, type: 'percent' }
 ];
 
 // 费用相关
@@ -282,11 +254,11 @@ let feeValue = 1;
 
 // 计算最终盈亏结果
 function updateFinalResult() {
-  let capital = rightBars[0].value;
-  const stopLoss = rightBars[1].value / 100;
-  const trades = rightBars[2].value;
-  const profitLossRatio = rightBars[3].value;
-  const winRate = rightBars[4].value / 100;
+  let capital = leftBars[0].value;
+  const stopLoss = leftBars[1].value / 100;
+  const trades = leftBars[2].value;
+  const profitLossRatio = leftBars[3].value;
+  const winRate = leftBars[4].value / 100;
   const feeMin = document.getElementById('feeMinCheck').checked;
   const feeRate = feeValue / 10000;
 
@@ -305,12 +277,12 @@ function updateFinalResult() {
   feeTopRightSpan.innerHTML = `<span>盈亏: ${profitPercent}%</span><span class="separator"></span><span>手续费: ${Math.round(totalFee)}</span>`;
 }
 
-// 初始化柱子高度
-rightBars.forEach(b => updateHeight(b.bar, b.display, b.value, b.max, b.type));
+// 初始化柱子宽度
+leftBars.forEach(b => updateHeight(b.bar, b.display, b.value, b.max, b.type, true));
 updateFinalResult();
 
 // 为柱子添加拖动和滚轮功能
-function addDragHandler(barObj) {
+function addDragHandler(barObj, isHorizontal = false) {
   const bar = barObj.bar;
   const wrapper = bar.parentElement;
   let isDragging = false;
@@ -329,14 +301,14 @@ function addDragHandler(barObj) {
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
     const container = wrapper.getBoundingClientRect();
-    const maxHeight = container.height * 0.7;
-    let height = container.bottom - e.clientY;
-    height = Math.max(0, Math.min(maxHeight, height));
-    let newValue = (height / maxHeight) * barObj.max;
+    const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
+    let dimension = isHorizontal ? e.clientX - container.left : container.bottom - e.clientY;
+    dimension = Math.max(0, Math.min(maxDimension, dimension));
+    let newValue = (dimension / maxDimension) * barObj.max;
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
     updateFinalResult();
   });
 
@@ -349,14 +321,14 @@ function addDragHandler(barObj) {
   document.addEventListener('touchmove', (e) => {
     if (!isDragging) return;
     const container = wrapper.getBoundingClientRect();
-    const maxHeight = container.height * 0.7;
-    let height = container.bottom - e.touches[0].clientY;
-    height = Math.max(0, Math.min(maxHeight, height));
-    let newValue = (height / maxHeight) * barObj.max;
+    const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
+    let dimension = isHorizontal ? e.touches[0].clientX - container.left : container.bottom - e.touches[0].clientY;
+    dimension = Math.max(0, Math.min(maxDimension, dimension));
+    let newValue = (dimension / maxDimension) * barObj.max;
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
     updateFinalResult();
   });
 
@@ -372,85 +344,13 @@ function addDragHandler(barObj) {
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
     updateFinalResult();
   });
 }
 
 // 为所有柱子添加拖动和滚轮功能
-rightBars.forEach(addDragHandler);
-
-// 面板拖动滚动
-const panelScroll = document.querySelector('.panel-scroll');
-let isScrolling = false;
-let startX, initialScrollLeft;
-
-panelScroll.addEventListener('mousedown', (e) => {
-  if (e.target.closest('.bar-wrapper') || e.target.classList.contains('bar-value')) return;
-  isScrolling = true;
-  startX = e.pageX - panelScroll.offsetLeft;
-  const clientWidth = panelScroll.clientWidth;
-  const scrollWidth = panelScroll.scrollWidth;
-  const maxScroll = scrollWidth - clientWidth;
-  const targetScroll = (startX / clientWidth) * scrollWidth - clientWidth / 2;
-  panelScroll.scrollLeft = Math.max(0, Math.min(maxScroll, targetScroll));
-  initialScrollLeft = panelScroll.scrollLeft;
-  panelScroll.style.cursor = 'grabbing';
-  e.preventDefault();
-});
-
-document.addEventListener('mousemove', (e) => {
-  if (!isScrolling) return;
-  e.preventDefault();
-  const x = e.pageX - panelScroll.offsetLeft;
-  const clientWidth = panelScroll.clientWidth;
-  const scrollWidth = panelScroll.scrollWidth;
-  const maxScroll = scrollWidth - clientWidth;
-  const deltaX = (x - startX) * 2;
-  const newScrollLeft = initialScrollLeft - deltaX;
-  panelScroll.scrollLeft = Math.max(0, Math.min(maxScroll, newScrollLeft));
-});
-
-document.addEventListener('mouseup', () => {
-  isScrolling = false;
-  panelScroll.style.cursor = 'default';
-});
-
-panelScroll.addEventListener('touchstart', (e) => {
-  if (e.target.closest('.bar-wrapper') || e.target.classList.contains('bar-value')) return;
-  isScrolling = true;
-  startX = e.touches[0].pageX - panelScroll.offsetLeft;
-  const clientWidth = panelScroll.clientWidth;
-  const scrollWidth = panelScroll.scrollWidth;
-  const maxScroll = scrollWidth - clientWidth;
-  const targetScroll = (startX / clientWidth) * scrollWidth - clientWidth / 2;
-  panelScroll.scrollLeft = Math.max(0, Math.min(maxScroll, targetScroll));
-  initialScrollLeft = panelScroll.scrollLeft;
-  e.preventDefault();
-});
-
-panelScroll.addEventListener('touchmove', (e) => {
-  if (!isScrolling) return;
-  e.preventDefault();
-  const x = e.touches[0].pageX - panelScroll.offsetLeft;
-  const clientWidth = panelScroll.clientWidth;
-  const scrollWidth = panelScroll.scrollWidth;
-  const maxScroll = scrollWidth - clientWidth;
-  const deltaX = (x - startX) * 2;
-  const newScrollLeft = initialScrollLeft - deltaX;
-  panelScroll.scrollLeft = Math.max(0, Math.min(maxScroll, newScrollLeft));
-});
-
-panelScroll.addEventListener('touchend', () => {
-  isScrolling = false;
-});
-
-panelScroll.addEventListener('wheel', (e) => {
-  if (e.target.closest('.bar-wrapper') || e.target.classList.contains('bar-value')) return;
-  e.preventDefault();
-  const delta = e.deltaX || e.deltaY;
-  panelScroll.scrollLeft += delta * 3;
-});
+leftBars.forEach(b => addDragHandler(b, true));
 
 feeValueSpan.addEventListener('click', () => {
   const input = document.createElement('input');

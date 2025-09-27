@@ -194,8 +194,8 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowIn
   let targetHeight = isPercent ? (containerHeight * heightVal / 100) : (containerHeight * heightVal / maxProfitRatio);
   bar.style.height = targetHeight + 'px';
 
-  // 数值显示的位置（默认贴在柱子上方 20px）
-  let valueTop = containerHeight - targetHeight - 20;
+  // 数值显示的位置（默认贴在柱子上方 40px）
+  let valueTop = containerHeight - targetHeight - 50;
 
   // 🅉 的显示要再上移一点，避免遮挡
   if (displayVal === '🅉') {
@@ -205,7 +205,7 @@ function animateBarHeight(bar, valueDisplay, targetVal, isPercent=false, allowIn
     if (minValueTop === null) {
       // 这里用盈亏比 0.5 的位置作为基准线（与以前一致）
       let tmpHeight = containerHeight * 0.5 / maxProfitRatio;
-      minValueTop = containerHeight - tmpHeight - 20;
+      minValueTop = containerHeight - tmpHeight - 40;
     }
     // 不允许数值显示低于此线（盈亏比和胜率共用）
     valueTop = Math.min(valueTop, minValueTop);

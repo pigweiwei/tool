@@ -7,16 +7,23 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <style>
+/* 主题变量（基于之前记录的深色模式，保留原渐变） */
 :root {
   --input-scroll-width: 86px;
-  --scroll-height: 280px;
   --form-gap: 20px; 
   --bg-color: #1e1e1e;
   --text-color: #eee;
   --input-bg: #2c2c2c;
   --input-border: #555;
+  --bar-profit-bg: rgba(0,123,255,0.35);
+  --bar-profit-border: rgba(0,123,255,0.6);
   --scroll-bg: rgba(255,255,255,0.1);
-  --scroll-fill: linear-gradient(to top, #1e90ff, #00bfff);
+  --scroll-fill: linear-gradient(to top, #1e90ff, #00bfff); /* 恢复原渐变 */
+  --label-color: #eee;
+  --result-bg: rgba(0,123,255,0.9);
+  --result-color: #fff;
+  --form-bg: #2b2b2b;
+  --form-text: #fff;
 }
 
 html, body { 
@@ -26,9 +33,11 @@ html, body {
 }
 body { display:flex; flex-direction:column; overflow-x:hidden; }
 
-.chart-container { height:50%; padding:0; box-sizing:border-box; position:relative; }
+/* Chart（应用之前记录的曲线样式） */
+.chart-container { height:50%; padding:0; box-sizing:border-box; position:relative; background: var(--form-bg); }
 canvas { width:100% !important; height:100% !important; display:block; border-radius:8px; }
 
+/* 顶部值显示（应用倍数显示框样式） */
 #topValues {
   position:absolute;
   top:5px;
@@ -43,19 +52,121 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   z-index:10;
 }
 
-.form { display:flex; justify-content: space-between; align-items:flex-start; padding: 0 var(--form-gap); flex:1; }
-
-.input-group { display:flex; flex-direction:column; align-items:center; width: var(--input-scroll-width); }
-.input-wrapper { display:flex; flex-direction:column; align-items:center; margin-bottom:5px; }
-.input-wrapper input { padding:8px 0; font-size:16px; border-radius:8px; border:1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); text-align:center; width: var(--input-scroll-width); box-sizing: border-box; }
-
-.scroll-bar-vertical { width: var(--input-scroll-width); height: var(--scroll-height); background: var(--scroll-bg); border-radius:8px; position:relative; cursor:grab; overflow:hidden; touch-action:none; }
-.scroll-bar-vertical .fill {
-  position:absolute; bottom:0; width:100%; height:100%; background: var(--scroll-fill);
-  transform-origin: bottom; transform: scaleY(0);
-  will-change: transform;
+#resultBox, #finalValue {
+  background: var(--bar-profit-bg);
+  border: 1px solid var(--bar-profit-border);
+  color: var(--result-color);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: inset 0 -5px 15px rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.2);
+  backdrop-filter: blur(15px);
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
 }
 
+/* Form（应用居中布局，填充剩余空间） */
+.form { 
+  display:flex; 
+  justify-content: center; /* 居中 */
+  align-items:flex-start; 
+  padding: 0 var(--form-gap); 
+  flex:1; 
+  background: var(--form-bg);
+  gap: 60px; /* 增加间隙以匹配之前 */
+  max-width: 960px; /* 限制宽度以居中 */
+  margin: 0 auto; /* 确保整体居中 */
+  min-height: calc(100vh - 50%); /* 填充剩余空间 */
+}
+
+/* 输入组（优化垂直对齐，底部对齐页面） */
+.input-group { 
+  display:flex; 
+  flex-direction:column; 
+  align-items:center; 
+  width: var(--input-scroll-width); 
+  text-align: center; /* 文字居中 */
+  flex: 1; /* 拉伸以填充空间 */
+  justify-content: space-between; /* 确保滚动条底部对齐 */
+  height: 100%; /* 填充整个 form 高度 */
+}
+
+.input-wrapper { 
+  display:flex; 
+  flex-direction:column; 
+  align-items:center; 
+  margin-bottom:0; /* 移除底部间距 */
+  width: var(--input-scroll-width); /* 与滚动条宽度一致 */
+}
+
+.input-label {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--label-color);
+  margin-bottom: 8px;
+  text-align: center; /* 确保标签文字居中 */
+}
+
+/* 输入框（优化文字居中，应用之前记录的样式） */
+.input-wrapper input { 
+  padding:8px 0; 
+  font-size:16px; 
+  border-radius:20px 20px 0 0; /* 与滚动条相同的圆角 */
+  border:1px solid var(--bar-profit-border); 
+  background: color-mix(in srgb, var(--bar-profit-bg) 70%, #000 30%); /* 背景色稍暗 */
+  color: var(--form-text); 
+  text-align:center; /* 文字居中 */
+  width: var(--input-scroll-width); /* 与滚动条宽度一致 */
+  box-sizing: border-box; 
+  box-shadow: inset 0 -5px 15px rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.2);
+  backdrop-filter: blur(15px);
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+  outline: none;
+  -webkit-appearance: none; /* 移除浏览器默认样式 */
+  -moz-appearance: textfield; /* 移除 Firefox 数字输入控件 */
+}
+
+/* 移除数字输入框的上下箭头 */
+.input-wrapper input::-webkit-inner-spin-button,
+.input-wrapper input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 滚动条（应用之前记录的样式，动态高度） */
+.scroll-bar-vertical { 
+  width: var(--input-scroll-width); /* 与输入框宽度一致 */
+  background: transparent; /* 改为透明以匹配 */
+  border-radius:20px 20px 0 0; /* 圆角调整 */
+  position:relative; 
+  cursor:grab; 
+  overflow:hidden; 
+  touch-action:none; 
+  margin-top: 0; /* 确保与输入框紧密对齐 */
+  display: block; /* 强制显示 */
+  visibility: visible; /* 确保可见 */
+}
+
+.scroll-bar-vertical .fill {
+  position:absolute; 
+  bottom:0; 
+  width:100%; 
+  height:100%; 
+  background: var(--bar-profit-bg); /* 修改为倍率的背景样式 */
+  border: 1px solid var(--bar-profit-border);
+  border-radius: 20px 20px 0 0;
+  transform-origin: bottom; 
+  transform: scaleY(0);
+  will-change: transform;
+  pointer-events: none;
+  transition: all 0.3s;
+  box-shadow: inset 0 -5px 15px rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.2);
+  backdrop-filter: blur(15px);
+  display: block; /* 强制显示 */
+  visibility: visible; /* 确保可见 */
+}
+
+/* 右侧导航（保留原样式） */
 .right-nav {
   position: fixed;
   top:0;
@@ -78,9 +189,11 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 .right-nav .nav-item:hover { background: #1e1e1e; }
 .right-nav .nav-item a { color: inherit; text-decoration:none; display:block; width:100%; height:100%; }
 
+/* 遮罩（保留原样式） */
 .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); display:none; z-index:150; touch-action: none; }
 .overlay.show { display:block; }
 
+/* 手势区（保留原样式） */
 .gesture-right { position: fixed; top:0; right:0; width:30px; height:100%; z-index:250; background:transparent; touch-action:none; }
 </style>
 </head>
@@ -122,7 +235,7 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 
 <div class="right-nav" id="rightNav">
   <div class="nav-item"><a href="index.html">首页</a></div>
-  <div class="nav-item"><a href="yingkui.html">盈亏计算器</a></div>
+  <div class="nav-item"><a href="ykbsl.html">盈亏比&胜率</a></div>
   <div class="nav-item"><a href="cangwei.html">仓位计算器</a></div>
 </div>
 
@@ -130,6 +243,36 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 <div class="gesture-right" id="gestureRight"></div>
 
 <script>
+// ==================== 动态调整滚动条高度 ====================
+function updateScrollBarHeight() {
+  const form = document.querySelector('.form');
+  const inputGroups = document.querySelectorAll('.input-group');
+  const formRect = form.getBoundingClientRect();
+  const inputWrapper = document.querySelector('.input-wrapper');
+  const inputLabel = document.querySelector('.input-label');
+  const inputWrapperRect = inputWrapper.getBoundingClientRect();
+  const inputLabelRect = inputLabel.getBoundingClientRect();
+
+  // 计算滚动条高度：form高度 - 标签高度 - 输入框高度 - 间距
+  const scrollHeight = formRect.height - inputLabelRect.height - inputWrapperRect.height - 8; // 8px 为标签底部间距
+  inputGroups.forEach(group => {
+    const scrollBar = group.querySelector('.scroll-bar-vertical');
+    if (scrollBar) {
+      scrollBar.style.height = `${scrollHeight}px`;
+      scrollBar.style.display = 'block'; // 强制显示
+      scrollBar.style.visibility = 'visible'; // 确保可见
+      console.log(`Scroll bar ${scrollBar.id}: height=${scrollHeight}px, display=${scrollBar.style.display}`); // 调试日志
+    }
+  });
+}
+
+// 初始加载和窗口调整时更新滚动条高度
+window.addEventListener('load', () => {
+  updateScrollBarHeight();
+  calculate();
+});
+window.addEventListener('resize', updateScrollBarHeight);
+
 // ==================== 复利计算器逻辑 ====================
 function formatNumber(v){ return v.toFixed(1).replace(/\B(?=(\d{4})+(?!\d))/g, ','); }
 
@@ -143,16 +286,29 @@ function calculate(){
   const balances=[], labels=[];
   for(let i=1;i<=n;i++){ balances.push(+(p*Math.pow(1+r,i)).toFixed(1)); labels.push(i); }
 
+  const labelColor = '#fff'; // 基于深色模式
+  const bgColor = '#2b2b2b'; // 基于深色模式
+  const lineBorderColor = 'rgba(0,123,255,0.6)'; // 基于深色模式
+  const lineBackgroundColor = 'rgba(0,123,255,0.35)'; // 基于深色模式
+
   if(chart){
     chart.data.labels = labels;
     chart.data.datasets[0].data = balances;
+    chart.options.plugins.datalabels.color = labelColor;
+    chart.options.scales.y.ticks.color = labelColor;
+    chart.options.scales.y.grid.color = '#444';
+    chart.options.scales.x.ticks.color = labelColor;
+    chart.options.scales.x.grid.color = '#444';
+    chart.data.datasets[0].borderColor = lineBorderColor;
+    chart.data.datasets[0].backgroundColor = lineBackgroundColor;
+    chart.data.datasets[0].pointBackgroundColor = lineBorderColor;
     chart.update();
   } else {
     const ctx=document.getElementById('balanceChart').getContext('2d');
     chart=new Chart(ctx,{
       type:'line',
-      data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:'#1e90ff', fill:false, tension:0.2, pointBackgroundColor:'#1e90ff'}]},
-      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, datalabels:{color:'#1e90ff', font:{size:14}, anchor:'end', align:'top', formatter:formatNumber}}, layout:{padding:{top:30, right:30}}, scales:{y:{beginAtZero:false, ticks:{callback:formatNumber,color:'#eee'}, grid:{color:'#444'}}, x:{ticks:{color:'#eee'}, grid:{color:'#444'}}}}, plugins:[ChartDataLabels]
+      data:{labels, datasets:[{label:'期末余额', data:balances, borderColor:lineBorderColor, backgroundColor:lineBackgroundColor, fill:false, tension:0.2, pointBackgroundColor:lineBorderColor}]},
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, datalabels:{align:'top', anchor:'end', color:labelColor, font:{size:12}, offset:8, clamp:true, formatter:formatNumber}}, layout:{padding:{top:30, right:30}}, scales:{y:{beginAtZero:true, ticks:{callback:formatNumber,color:labelColor}, grid:{color:'#444'}}, x:{ticks:{color:labelColor}, grid:{color:'#444'}}}}, plugins:[ChartDataLabels]
     });
   }
 
@@ -167,13 +323,23 @@ function calculate(){
   const fill=scroll.querySelector('.fill');
   const min=parseFloat(input.min), max=parseFloat(input.max);
 
+  console.log(`Initializing scroll bar for ${id}: scroll=${scroll.id}`); // 调试日志
+
   function updateFill(){ 
     const val=parseFloat(input.value)||0;
     const percent=Math.min(Math.max((val-min)/(max-min),0),1);
     fill.style.transform = `scaleY(${percent})`;
+    scroll.style.display = 'block'; // 强制显示
+    scroll.style.visibility = 'visible'; // 确保可见
+    fill.style.display = 'block'; // 强制显示填充
+    fill.style.visibility = 'visible'; // 确保填充可见
+    console.log(`Updating ${id} scroll: value=${val}, percent=${percent}, transform=${fill.style.transform}`); // 调试日志
   }
 
-  input.addEventListener('focus', ()=>{ input.value=''; updateFill(); });
+  input.addEventListener('focus', ()=>{ 
+    input.value=''; 
+    updateFill(); 
+  });
 
   let startY=0, startVal=0;
 
@@ -212,11 +378,13 @@ function calculate(){
     document.addEventListener('touchend', endHandler);
   });
 
-  input.addEventListener('input', ()=>{ updateFill(); calculate(); });
-  updateFill();
-});
+  input.addEventListener('input', ()=>{ 
+    updateFill(); 
+    calculate(); 
+  });
 
-window.addEventListener('load', calculate);
+  updateFill(); // 初始调用
+});
 
 // ==================== 右侧导航逻辑 ====================
 const rightNav = document.getElementById('rightNav');
@@ -278,5 +446,3 @@ rightNav.addEventListener('touchend', e=>{
 </script>
 </body>
 </html>
-
-

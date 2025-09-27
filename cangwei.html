@@ -48,6 +48,7 @@ html, body {
   backdrop-filter: blur(10px);
   overflow: hidden;
   transition: height 0.05s linear;
+  position: relative;
 }
 #positionBar { background: rgba(0,123,255,0.35); border:1px solid rgba(0,123,255,0.6); }
 #profitBar { background: rgba(40,167,69,0.35); border:1px solid rgba(40,167,69,0.6); }
@@ -83,7 +84,6 @@ html, body {
   color: #fff;
   pointer-events: none;
   z-index: 100;
-
   padding: 12px 40px;
   min-width: 120px;
   text-align: center;
@@ -91,31 +91,29 @@ html, body {
   background: rgba(60, 60, 60, 0.3);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
-
   border: 1px solid rgba(255,255,255,0.15);
   box-shadow: 0 0 5px rgba(0,0,0,0.4), inset 0 0 5px rgba(255,255,255,0.05);
-
   transition: background 0.3s ease, border 0.3s ease;
 }
 
 /* ====== 右侧导航 ====== */
 .right-nav {
   position: fixed;
-  top:0;
-  right:-35%;
-  width:35%;
-  max-width:300px;
-  height:100%;
-  background:#2c2c2c;
-  display:flex;
+  top: 0;
+  right: -35%;
+  width: 35%;
+  max-width: 300px;
+  height: 100%;
+  background: #2c2c2c;
+  display: flex;
   flex-direction: column;
   justify-content: center;
-  transition:right 0.3s ease;
-  z-index:200;
+  transition: right 0.3s ease;
+  z-index: 200;
   box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
   border-radius: 8px 0 0 8px;
 }
-.right-nav.expanded { right:0; }
+.right-nav.expanded { right: 0; }
 .right-nav .nav-item {
   color: #eee;
   padding: 15px;
@@ -124,25 +122,31 @@ html, body {
   border-bottom: 1px solid #444;
 }
 .right-nav .nav-item:hover { background: #1e1e1e; }
-.right-nav .nav-item a { color:#eee; text-decoration:none; display:block; }
+.right-nav .nav-item a { color: #eee; text-decoration: none; display: block; }
 
 /* 遮罩层 */
 .overlay {
-   position: fixed; top:0; left:0;
-   width:100%; height:100%;
-   background: rgba(0,0,0,0.3);
-   display:none;
-   z-index:150;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.3);
+  display: none;
+  z-index: 150;
 }
-.overlay.show { display:block; }
+.overlay.show { display: block; }
 
 /* 手势捕获层 */
 .gesture-right {
-   position: fixed; top:0; right:0;
-   width:30px; height:100%;
-   z-index:250;
-   background:transparent;
-   touch-action:none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 100%;
+  z-index: 250;
+  background: transparent;
+  touch-action: none;
 }
 </style>
 </head>
@@ -186,7 +190,7 @@ const calcResult = document.getElementById('calcResult');
 const wrapperPosition = document.getElementById('wrapperPosition');
 const wrapperProfit = document.getElementById('wrapperProfit');
 
-function displayPositionText(v){
+function displayPositionText(v) {
   if (v === 0) return "0";
   if (v === 1) return "1";
   const inv = Math.round(1 / v);
@@ -194,10 +198,10 @@ function displayPositionText(v){
   return v.toFixed(3);
 }
 
-function updateCalcResult(){
+function updateCalcResult() {
   let result = (profitValueLogical * positionValueLogical).toFixed(1) + '%';
   calcResult.textContent = result;
-  if(positionValueLogical >= 0.5){
+  if (positionValueLogical >= 0.5) {
     calcResult.style.background = 'rgba(200,0,0,0.3)';
     calcResult.style.border = '1px solid rgba(255,0,0,0.3)';
   } else {
@@ -206,43 +210,35 @@ function updateCalcResult(){
   }
 }
 
-function animateBarHeight(bar, valueDisplay, value, isPercent=false){
+function animateBarHeight(bar, valueDisplay, value, isPercent = false) {
   const containerHeight = bar.parentElement.clientHeight - 50;
   const scale = 0.7;
   let displayVal, finalHeight;
 
-  if(isPercent){
-    value = Math.min(Math.max(value,0),50);
-    value = Math.round(value); 
+  if (isPercent) {
+    value = Math.min(Math.max(value, 0), 50);
+    value = Math.round(value);
     displayVal = value + '%';
     finalHeight = containerHeight * value / 50 * scale;
-    const minHeight = containerHeight * 4 / 50 * scale; 
-    const displayTop = finalHeight >= minHeight
-      ? containerHeight - finalHeight - 20
-      : containerHeight - minHeight - 20;
-    valueDisplay.style.top = displayTop + 'px';
   } else {
     displayVal = displayPositionText(value);
     finalHeight = containerHeight * value * scale;
-    const minHeight = containerHeight * 4 / 50 * scale; 
-    const displayTop = finalHeight >= minHeight
-      ? containerHeight - finalHeight - 40
-      : containerHeight - minHeight - 20;
-    valueDisplay.style.top = displayTop + 'px';
   }
 
   bar.style.height = finalHeight + 'px';
+  // 将数值定位在滚动条顶部上方40px（从20px增加到40px）
+  valueDisplay.style.top = (containerHeight - finalHeight - 50) + 'px';
   valueDisplay.textContent = displayVal;
   updateCalcResult();
 }
 
-function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
-  let dragging=false, startY=0, startIndex=0, startValue=0;
+function makeDraggable(wrapper, bar, valueDisplay, isPercent = false) {
+  let dragging = false, startY = 0, startIndex = 0, startValue = 0;
 
-  function startDrag(e){
+  function startDrag(e) {
     dragging = true;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
-    if(isPercent){
+    if (isPercent) {
       startValue = profitValueLogical;
     } else {
       const idx = fractionsAsc.findIndex(f => Math.abs(f - positionValueLogical) < 1e-9);
@@ -251,69 +247,69 @@ function makeDraggable(wrapper, bar, valueDisplay, isPercent=false){
     e.preventDefault();
   }
 
-  function moveDrag(e){
-    if(!dragging) return;
+  function moveDrag(e) {
+    if (!dragging) return;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     const delta = startY - clientY;
     const containerHeight = wrapper.clientHeight - 50;
 
-    if(isPercent){
+    if (isPercent) {
       let raw = startValue + (delta / containerHeight) * 50;
-      raw = Math.min(Math.max(raw,0),50);
-      profitValueLogical = Math.round(raw); 
+      raw = Math.min(Math.max(raw, 0), 50);
+      profitValueLogical = Math.round(raw);
       animateBarHeight(bar, valueDisplay, profitValueLogical, true);
     } else {
       const stepPixel = containerHeight / (fractionsAsc.length - 1);
       let stepChange = Math.round(delta / stepPixel);
       let newIndex = startIndex + stepChange;
-      if(newIndex < 0) newIndex = 0;
-      if(newIndex > fractionsAsc.length - 1) newIndex = fractionsAsc.length - 1;
+      if (newIndex < 0) newIndex = 0;
+      if (newIndex > fractionsAsc.length - 1) newIndex = fractionsAsc.length - 1;
       positionValueLogical = fractionsAsc[newIndex];
       animateBarHeight(bar, valueDisplay, positionValueLogical, false);
     }
   }
 
-  function endDrag(){ dragging = false; }
+  function endDrag() { dragging = false; }
 
   wrapper.addEventListener('touchstart', startDrag);
   wrapper.addEventListener('mousedown', startDrag);
-  wrapper.addEventListener('touchmove', moveDrag, {passive:false});
+  wrapper.addEventListener('touchmove', moveDrag, { passive: false });
   wrapper.addEventListener('mousemove', moveDrag);
   document.addEventListener('mouseup', endDrag);
   document.addEventListener('touchend', endDrag);
 
-  wrapper.addEventListener('wheel', function(e){
+  wrapper.addEventListener('wheel', function(e) {
     e.preventDefault();
-    if(isPercent){
+    if (isPercent) {
       if (e.deltaY < 0) profitValueLogical = Math.min(50, profitValueLogical + 1);
       else profitValueLogical = Math.max(0, profitValueLogical - 1);
       animateBarHeight(bar, valueDisplay, profitValueLogical, true);
     } else {
       let closestIdx = 0;
       let minDiff = Infinity;
-      for(let i=0;i<fractionsAsc.length;i++){
+      for (let i = 0; i < fractionsAsc.length; i++) {
         const d = Math.abs(fractionsAsc[i] - positionValueLogical);
-        if(d < minDiff){ minDiff = d; closestIdx = i; }
+        if (d < minDiff) { minDiff = d; closestIdx = i; }
       }
       if (e.deltaY < 0) closestIdx = Math.min(fractionsAsc.length - 1, closestIdx + 1);
       else closestIdx = Math.max(0, closestIdx - 1);
       positionValueLogical = fractionsAsc[closestIdx];
       animateBarHeight(bar, valueDisplay, positionValueLogical, false);
     }
-  }, {passive:false});
+  }, { passive: false });
 }
 
 makeDraggable(wrapperPosition, positionBar, positionValue, false);
 makeDraggable(wrapperProfit, profitBar, profitValue, true);
 
-window.addEventListener('load', ()=>{
+window.addEventListener('load', () => {
   let closestIdx = 0, minDiff = Infinity;
-  for(let i=0;i<fractionsAsc.length;i++){
+  for (let i = 0; i < fractionsAsc.length; i++) {
     const d = Math.abs(fractionsAsc[i] - positionValueLogical);
-    if(d < minDiff){ minDiff = d; closestIdx = i; }
+    if (d < minDiff) { minDiff = d; closestIdx = i; }
   }
   positionValueLogical = fractionsAsc[closestIdx];
-  profitValueLogical = Math.round(Math.min(Math.max(profitValueLogical,0),50));
+  profitValueLogical = Math.round(Math.min(Math.max(profitValueLogical, 0), 50));
   animateBarHeight(positionBar, positionValue, positionValueLogical, false);
   animateBarHeight(profitBar, profitValue, profitValueLogical, true);
 });
@@ -323,31 +319,32 @@ const rightNav = document.getElementById('rightNav');
 const overlay = document.getElementById('overlay');
 const gestureRight = document.getElementById('gestureRight');
 
-function openNav(){ rightNav.classList.add('expanded'); overlay.classList.add('show'); }
-function closeNav(){ rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
+function openNav() { rightNav.classList.add('expanded'); overlay.classList.add('show'); }
+function closeNav() { rightNav.classList.remove('expanded'); overlay.classList.remove('show'); }
 
 overlay.addEventListener('click', closeNav);
-rightNav.addEventListener('click', e => { if(e.target === rightNav) closeNav(); });
-rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el => { el.addEventListener('click', e => { e.stopPropagation(); }); });
+rightNav.addEventListener('click', e => { if (e.target === rightNav) closeNav(); });
+rightNav.querySelectorAll('.nav-item, .nav-item a').forEach(el => {
+  el.addEventListener('click', e => { e.stopPropagation(); });
+});
 
 let startX = 0, isSwiping = false;
 gestureRight.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isSwiping = true; });
 gestureRight.addEventListener('touchmove', e => {
-  if(!isSwiping) return;
+  if (!isSwiping) return;
   let deltaX = startX - e.touches[0].clientX;
-  if(deltaX > 30) openNav();
+  if (deltaX > 30) openNav();
 });
 gestureRight.addEventListener('touchend', e => { isSwiping = false; });
 
 let navStartX = 0, navSwiping = false;
 rightNav.addEventListener('touchstart', e => { navStartX = e.touches[0].clientX; navSwiping = true; });
 rightNav.addEventListener('touchmove', e => {
-  if(!navSwiping) return;
+  if (!navSwiping) return;
   let deltaX = e.touches[0].clientX - navStartX;
-  if(deltaX > 30) closeNav();
+  if (deltaX > 30) closeNav();
 });
 rightNav.addEventListener('touchend', e => { navSwiping = false; });
 </script>
-
 </body>
 </html>

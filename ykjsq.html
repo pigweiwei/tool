@@ -55,14 +55,14 @@ body {
 }
 #calcResult {
   position: absolute;
-  top: 140px; /* Moved down by 40px from 100px */
+  top: 140px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 32px; /* Doubled from 16px */
+  font-size: 32px;
   font-weight: bold;
   color: #fff;
-  padding: 25.6px 100px; /* Doubled from 12.8px 50px */
-  min-width: 280px; /* Doubled from 140px */
+  padding: 25.6px 100px;
+  min-width: 280px;
   text-align: center;
   border-radius: 30px;
   background: rgba(60,60,60,0.3);
@@ -77,11 +77,11 @@ body {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 60px; /* Increased by 50% from 40px */
-  width: calc(80% * 1.3 - 48px);
+  gap: 60px;
+  width: calc(80% * 1.3 * 1.1 - 32px); /* Increased by 10% */
   height: 100%;
   user-select: none;
-  padding-left: 48px; /* 1.5 * 32px (approx label width) */
+  padding-left: 32px; /* Adjusted for text width */
 }
 .bar-wrapper-horizontal {
   position: relative;
@@ -93,7 +93,7 @@ body {
   cursor: grab;
 }
 .bar-horizontal {
-  height: 125px;
+  height: 163px; /* Increased from 125px by 30% */
   width: 0;
   border-radius: 0 20px 20px 0;
   display: flex;
@@ -111,20 +111,20 @@ body {
   right: -50px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 32px; /* Doubled from 16px */
+  font-size: 32px;
   font-weight: bold;
   color: var(--bar-value-color);
   z-index: 2;
   user-select: none;
 }
 .label-horizontal {
-  font-size: 32px; /* Doubled from 16px */
+  font-size: 32px;
   font-weight: bold;
   color: var(--label-color);
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: -32px;
+  left: 0; /* Moved to screen edge */
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -138,7 +138,7 @@ body {
   right: 20px;
   top: 20px;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 32px; /* Doubled from 16px */
   color: var(--label-color);
   pointer-events: none;
   display: flex;
@@ -147,7 +147,7 @@ body {
 }
 #feeTopRight .separator {
   width: 2px;
-  height: 16px;
+  height: 32px; /* Doubled from 16px */
   border-right: 2px dashed #888;
 }
 #feeWrap {
@@ -165,23 +165,23 @@ body {
 }
 #feeWrap div > div span {
   font-weight: bold;
-  font-size: 16px;
+  font-size: 32px; /* Doubled from 16px */
   color: var(--label-color);
-  line-height: 16px;
+  line-height: 32px; /* Doubled from 16px */
   user-select: none;
   cursor: default;
 }
 #feeWrap .separator {
   width: 2px;
-  height: 16px;
+  height: 32px; /* Doubled from 16px */
   border-right: 2px dashed #888;
   margin: 0 10px;
 }
 #feeMinCheck {
   transform: scale(0.85);
   transform-origin: center;
-  width: 16px;
-  height: 16px;
+  width: 32px; /* Doubled from 16px */
+  height: 32px; /* Doubled from 16px */
   accent-color: var(--label-color);
 }
 </style>
@@ -205,7 +205,7 @@ body {
     <div>
       <div><span id="feeValue">1</span><span class="feeText">/万</span></div>
       <span class="separator"></span>
-      <div><input type="checkbox" id="feeMinCheck"><label for="feeMinCheck" style="user-select:none; color: var(--label-color);">免五</label></div>
+      <div><input type="checkbox" id="feeMinCheck"><label for="feeMinCheck" style="user-select:none; color: var(--label-color); font-size: 32px;">免五</label></div>
     </div>
   </div>
 </div>
@@ -288,6 +288,7 @@ function addDragHandler(barObj, isHorizontal = false) {
   let isDragging = false;
 
   wrapper.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
     isDragging = true;
     wrapper.style.cursor = 'grabbing';
     e.preventDefault();
@@ -313,6 +314,7 @@ function addDragHandler(barObj, isHorizontal = false) {
   });
 
   wrapper.addEventListener('touchstart', (e) => {
+    if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
     isDragging = true;
     wrapper.style.cursor = 'grabbing';
     e.preventDefault();
@@ -338,13 +340,14 @@ function addDragHandler(barObj, isHorizontal = false) {
   });
 
   wrapper.addEventListener('wheel', (e) => {
+    if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
     e.preventDefault();
     const delta = Math.sign(e.deltaY) * barObj.step;
     let newValue = barObj.value - delta;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
     updateFinalResult();
   });
 }
@@ -356,8 +359,8 @@ feeValueSpan.addEventListener('click', () => {
   const input = document.createElement('input');
   input.type = 'number';
   input.value = feeValue;
-  input.style.width = '50px';
-  input.style.fontSize = '16px';
+  input.style.width = '100px'; /* Doubled from 50px */
+  input.style.fontSize = '32px'; /* Doubled from 16px */
   input.style.color = getComputedStyle(document.body).getPropertyValue('--label-color');
   feeValueSpan.replaceWith(input);
   input.focus();

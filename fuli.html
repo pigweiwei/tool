@@ -10,7 +10,7 @@
 /* 主题变量（基于之前记录的深色模式） */
 :root {
   --input-scroll-width: 86px;
-  --form-gap: 20px; 
+  --form-gap: 60px; 
   --bg-color: #1e1e1e;
   --text-color: #eee;
   --input-bg: #2c2c2c;
@@ -64,18 +64,24 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   transition: background 0.25s, color 0.25s, border-color 0.25s;
 }
 
-/* Form（应用居中布局，填充剩余空间） */
+/* Form（填充剩余空间，居中容器） */
 .form { 
   display:flex; 
   justify-content: center; /* 居中 */
   align-items:flex-start; 
-  padding: 0 var(--form-gap); 
-  flex:1; 
+  width: 100%; /* 占满页面宽度 */
   background: var(--form-bg);
-  gap: 60px; /* 增加间隙以匹配之前 */
-  max-width: 960px; /* 限制宽度以居中 */
-  margin: 0 auto; /* 确保整体居中 */
   min-height: calc(100vh - 50%); /* 填充剩余空间 */
+}
+
+/* 输入组容器（三个输入组作为一个整体居中） */
+.input-group-container {
+  display: flex;
+  gap: var(--form-gap); /* 输入组间距 60px */
+  justify-content: center;
+  align-items: flex-start;
+  width: calc(3 * var(--input-scroll-width) + 2 * var(--form-gap)); /* 86px * 3 + 60px * 2 = 378px */
+  margin: 0 auto; /* 水平居中 */
 }
 
 /* 输入组（优化垂直对齐，底部对齐页面） */
@@ -83,9 +89,8 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
   display:flex; 
   flex-direction:column; 
   align-items:center; 
-  width: var(--input-scroll-width); 
+  width: var(--input-scroll-width); /* 固定宽度 86px */
   text-align: center; /* 文字居中 */
-  flex: 1; /* 拉伸以填充空间 */
   justify-content: space-between; /* 确保滚动条底部对齐 */
   height: 100%; /* 填充整个 form 高度 */
 }
@@ -207,28 +212,30 @@ canvas { width:100% !important; height:100% !important; display:block; border-ra
 </div>
 
 <div class="form">
-  <div class="input-group">
-    <span class="input-label">本金</span>
-    <div class="input-wrapper">
-      <input type="number" id="principal" value="1" min="1" max="99"/>
+  <div class="input-group-container">
+    <div class="input-group">
+      <span class="input-label">本金</span>
+      <div class="input-wrapper">
+        <input type="number" id="principal" value="1" min="1" max="99"/>
+      </div>
+      <div class="scroll-bar-vertical" id="principalScroll"><div class="fill"></div></div>
     </div>
-    <div class="scroll-bar-vertical" id="principalScroll"><div class="fill"></div></div>
-  </div>
 
-  <div class="input-group">
-    <span class="input-label">利率(%)</span>
-    <div class="input-wrapper">
-      <input type="number" id="rate" value="10" min="0.5" max="50" step="0.5"/>
+    <div class="input-group">
+      <span class="input-label">利率(%)</span>
+      <div class="input-wrapper">
+        <input type="number" id="rate" value="10" min="0.5" max="50" step="0.5"/>
+      </div>
+      <div class="scroll-bar-vertical" id="rateScroll"><div class="fill"></div></div>
     </div>
-    <div class="scroll-bar-vertical" id="rateScroll"><div class="fill"></div></div>
-  </div>
 
-  <div class="input-group">
-    <span class="input-label">期数</span>
-    <div class="input-wrapper">
-      <input type="number" id="periods" value="12" min="1" max="120"/>
+    <div class="input-group">
+      <span class="input-label">期数</span>
+      <div class="input-wrapper">
+        <input type="number" id="periods" value="12" min="1" max="120"/>
+      </div>
+      <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
     </div>
-    <div class="scroll-bar-vertical" id="periodsScroll"><div class="fill"></div></div>
   </div>
 </div>
 

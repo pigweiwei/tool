@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>盈亏计算器</title>
 <style>
-body.dark {
+body {
   --bg-gradient: linear-gradient(135deg, #1a1a1a, #2b2b2b);
   --bar-left1-bg: rgba(255,99,132,0.35);
   --bar-left1-border: rgba(255,99,132,0.6);
@@ -18,23 +18,6 @@ body.dark {
   --bar-left5-border: rgba(153,102,255,0.6);
   --label-color: #eee;
   --bar-value-color: #fff;
-}
-body.light {
-  --bg-gradient: linear-gradient(135deg, #e0e0e0, #f5f5f5);
-  --bar-left1-bg: rgba(255,99,132,0.5);
-  --bar-left1-border: rgba(255,99,132,0.8);
-  --bar-left2-bg: rgba(54,162,235,0.5);
-  --bar-left2-border: rgba(54,162,235,0.8);
-  --bar-left3-bg: rgba(255,206,86,0.5);
-  --bar-left3-border: rgba(255,206,86,0.8);
-  --bar-left4-bg: rgba(75,192,192,0.5);
-  --bar-left4-border: rgba(75,192,192,0.8);
-  --bar-left5-bg: rgba(153,102,255,0.5);
-  --bar-left5-border: rgba(153,102,255,0.8);
-  --label-color: #333;
-  --bar-value-color: #000;
-}
-body {
   margin: 0;
   padding: 0;
   font-family: Arial;
@@ -81,7 +64,7 @@ body {
   width: calc(80% * 1.3 * 1.1 - 32px);
   height: 100%;
   user-select: none;
-  padding-left: 32px; /* Accommodates label width */
+  padding-left: 62px; /* Increased by 30px to accommodate label shift */
 }
 .bar-wrapper-horizontal {
   position: relative;
@@ -108,7 +91,7 @@ body {
 }
 .bar-value-horizontal {
   position: absolute;
-  right: 0; /* First digit flush with bar's right edge */
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
   font-size: 32px;
@@ -117,7 +100,7 @@ body {
   z-index: 2;
   user-select: none;
   text-align: left;
-  padding-left: 5px; /* Small padding to align first digit */
+  padding-left: 5px;
 }
 .label-horizontal {
   font-size: 32px;
@@ -126,7 +109,7 @@ body {
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: 0; /* Flush with screen edge */
+  left: -30px; /* Moved left by 30px */
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -154,8 +137,8 @@ body {
 }
 #feeWrap {
   position: absolute;
-  right: 20px;
-  bottom: 40px; /* Moved up by 20px */
+  left: 0; /* Moved to leftmost side */
+  bottom: 40px;
 }
 #feeWrap div {
   display: flex;

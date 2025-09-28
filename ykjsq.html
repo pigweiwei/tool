@@ -90,7 +90,7 @@ body {
   flex-direction: row;
   box-shadow: inset -5px 0 15px rgba(0,0,0,0.1), 8px 0 20px rgba(0,0,0,0.2);
   backdrop-filter: blur(15px);
-  transition: width 0.1s ease-out;
+  transition: width 0.05s ease-out; /* 缩短过渡时间，增强平滑感 */
   overflow: visible;
   position: relative;
 }
@@ -291,20 +291,27 @@ function throttle(fn, wait) {
   };
 }
 
+// 线性插值函数
+function lerp(start, end, alpha) {
+  return start + (end - start) * alpha;
+}
+
 // 更新柱子宽度
-function updateHeight(bar, valueDisplay, value, maxVal, type, isHorizontal = false) {
+function updateHeight(bar, valueDisplay, value, maxVal, type, isHorizontal = false, barId = '') {
   requestAnimationFrame(() => {
     try {
       if (!bar || !valueDisplay) {
-        console.error('Invalid bar or valueDisplay:', { bar, valueDisplay });
+        console.error('Invalid bar or valueDisplay:', { bar, valueDisplay, barId });
         return;
       }
       const container = bar.parentElement;
       if (!container) {
-        console.error('Container not found for bar:', bar);
+        console.error('Container not found for bar:', bar, barId);
         return;
       }
       const maxDimension = isHorizontal ? container.clientWidth * 0.7 : container.clientHeight * 0.7;
+      // 为盈亏比（leftBar4）在滑动时显示对齐值，但使用连续值计算宽度
+      const displayValue = barId === 'leftBar4' ? Math.round(value / 0.5) * 0.5 : value;
       const dimension = Math.min((value / maxVal) * maxDimension, maxDimension);
       if (isHorizontal) {
         bar.style.width = `${dimension}px`;
@@ -313,14 +320,14 @@ function updateHeight(bar, valueDisplay, value, maxVal, type, isHorizontal = fal
         bar.style.height = `${dimension}px`;
       }
       if (type === 'int') {
-        valueDisplay.textContent = formatTenThousand(Math.round(value));
+        valueDisplay.textContent = formatTenThousand(Math.round(displayValue));
       } else if (type === 'percent') {
-        valueDisplay.textContent = `${Math.round(value)}%`;
+        valueDisplay.textContent = `${Math.round(displayValue)}%`;
       } else if (type === 'float') {
-        valueDisplay.textContent = value.toFixed(1);
+        valueDisplay.textContent = displayValue.toFixed(1);
       }
     } catch (e) {
-      console.error('Error in updateHeight:', e);
+      console.error('Error in updateHeight:', e, barId);
     }
   });
 }
@@ -398,7 +405,7 @@ function updateFinalResult() {
 try {
   leftBars.forEach(b => {
     if (b.bar && b.display) {
-      updateHeight(b.bar, b.display, b.value, b.max, b.type, true);
+      updateHeight(b.bar, b.display, b.value, b.max, b.type, true, b.bar.id);
     } else {
       console.error('Skipping initialization for invalid bar:', b);
     }
@@ -438,15 +445,20 @@ function addDragHandler(barObj, isHorizontal = false) {
         const sensitivity = barObj.max / maxDimension * 0.4;
         let newValue = startValue + deltaX * sensitivity;
         newValue = Math.max(0, Math.min(barObj.max, newValue));
-        newValue = Math.round(newValue / barObj.step) * barObj.step; // 滑动时对齐步长
+        // 为盈亏比（leftBar4）添加插值平滑
+        if (bar.id === 'leftBar4') {
+          newValue = lerp(barObj.value, newValue, 0.2); // 轻量插值
+        } else {
+          newValue = Math.round(newValue / barObj.step) * barObj.step; // 其他滚动条对齐步长
+        }
         barObj.value = newValue;
-        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal, bar.id);
         updateFinalResult();
         if (newValue <= 0 || newValue >= barObj.max) {
           if (navigator.vibrate) navigator.vibrate(50);
         }
       } catch (e) {
-        console.error('Error in moveDrag:', e);
+        console.error('Error in moveDrag:', e, bar.id);
       }
     };
 
@@ -455,8 +467,8 @@ function addDragHandler(barObj, isHorizontal = false) {
         isDragging = false;
         wrapper.style.cursor = 'grab';
         bar.classList.remove('dragging');
-        barObj.value = Math.round(barObj.value / barObj.step) * barObj.step;
-        updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
+        barObj.value = Math.round(barObj.value / barObj.step) * barObj.step; // 释放时对齐步长
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal, bar.id);
         updateFinalResult();
         console.log('endDrag:', bar.id, 'value:', barObj.value);
       }
@@ -480,17 +492,17 @@ function addDragHandler(barObj, isHorizontal = false) {
         newValue = Math.max(0, Math.min(barObj.max, newValue));
         newValue = Math.round(newValue / barObj.step) * barObj.step;
         barObj.value = newValue;
-        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal, bar.id);
         updateFinalResult();
         if (newValue <= 0 || newValue >= barObj.max) {
           if (navigator.vibrate) navigator.vibrate(50);
         }
       } catch (e) {
-        console.error('Error in wheel:', e);
+        console.error('Error in wheel:', e, bar.id);
       }
     });
   } catch (e) {
-    console.error('Error in addDragHandler:', e);
+    console.error('Error in addDragHandler:', e, barObj.bar?.id);
   }
 }
 

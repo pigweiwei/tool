@@ -152,12 +152,10 @@ body {
   display: flex;
   align-items: center;
 }
-#feeValueWrap div > div, #feeMinWrap div > div {
-  display: flex;
-  align-items: center;
-}
-#feeValueWrap div > div span, #feeMinWrap div > div span {
-  font-size: 20px; /* Matches #feeMinCheck + label */
+/* 统一 /万 与 免五 的字体大小和颜色（更稳健的选择器） */
+#feeValueWrap span,
+#feeMinWrap label {
+  font-size: 20px; 
   color: var(--label-color);
   line-height: 20px;
   user-select: none;
@@ -169,9 +167,6 @@ body {
   width: 20px;
   height: 20px;
   accent-color: #ccc;
-}
-#feeMinCheck + label {
-  font-size: 20px; /* Matches #feeValueWrap span */
 }
 
 /* Mobile adaptations */
@@ -228,17 +223,15 @@ body {
     right: 15px; /* Moved right by 5px (from 20px) */
     top: 55px;
   }
-  #feeValueWrap div > div span, #feeMinWrap div > div span {
-    font-size: 20px; /* Matches #feeMinCheck + label */
+  #feeValueWrap span,
+  #feeMinWrap label {
+    font-size: 20px;
     line-height: 20px;
   }
   #feeMinCheck {
     width: 20px;
     height: 20px;
     accent-color: #ccc;
-  }
-  #feeMinCheck + label {
-    font-size: 20px; /* Matches #feeValueWrap span */
   }
 }
 </style>
@@ -259,7 +252,7 @@ body {
     <div><span id="feeValue">1</span><span class="feeText">/万</span></div>
   </div>
   <div id="feeMinWrap">
-    <div><input type="checkbox" id="feeMinCheck"><label for="feeMinCheck" style="user-select:none; color: var(--label-color);">免五</label></div>
+    <div><input type="checkbox" id="feeMinCheck"><label for="feeMinCheck">免五</label></div>
   </div>
 </div>
 <script>

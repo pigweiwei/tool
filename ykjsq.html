@@ -2,9 +2,10 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>盈亏计算器</title>
 <style>
-body.dark {
+body {
   --bg-gradient: linear-gradient(135deg, #1a1a1a, #2b2b2b);
   --bar-left1-bg: rgba(255,99,132,0.35);
   --bar-left1-border: rgba(255,99,132,0.6);
@@ -18,27 +19,10 @@ body.dark {
   --bar-left5-border: rgba(153,102,255,0.6);
   --label-color: #eee;
   --bar-value-color: #fff;
-}
-body.light {
-  --bg-gradient: linear-gradient(135deg, #e0e0e0, #f5f5f5);
-  --bar-left1-bg: rgba(255,99,132,0.5);
-  --bar-left1-border: rgba(255,99,132,0.8);
-  --bar-left2-bg: rgba(54,162,235,0.5);
-  --bar-left2-border: rgba(54,162,235,0.8);
-  --bar-left3-bg: rgba(255,206,86,0.5);
-  --bar-left3-border: rgba(255,206,86,0.8);
-  --bar-left4-bg: rgba(75,192,192,0.5);
-  --bar-left4-border: rgba(75,192,192,0.8);
-  --bar-left5-bg: rgba(153,102,255,0.5);
-  --bar-left5-border: rgba(153,102,255,0.8);
-  --label-color: #333;
-  --bar-value-color: #000;
-}
-body {
   margin: 0;
   padding: 0;
   font-family: Arial;
-  height: 130vh; /* Increased by 30% from 100vh */
+  height: 100vh; /* Fit to single screen */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -55,16 +39,16 @@ body {
 }
 #calcResult {
   position: absolute;
-  top: 140px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 32px;
   font-weight: bold;
   color: #fff;
-  padding: 25.6px 100px;
-  min-width: 280px;
+  padding: 10px 40px;
+  min-width: 200px;
   text-align: center;
-  border-radius: 30px;
+  border-radius: 15px;
   background: rgba(60,60,60,0.3);
   backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid rgba(255,255,255,0.15);
@@ -137,8 +121,8 @@ body {
 #leftBar5 { background: var(--bar-left5-bg); border: 1px solid var(--bar-left5-border); }
 #feeTopRight {
   position: absolute;
-  right: 20px;
-  top: 20px;
+  right: 10px;
+  top: 80px;
   font-weight: bold;
   font-size: 32px;
   color: var(--label-color);
@@ -154,8 +138,8 @@ body {
 }
 #feeWrap {
   position: absolute;
-  right: 20px;
-  bottom: 40px; /* Moved up by 20px */
+  right: 10px;
+  bottom: 10px;
 }
 #feeWrap div {
   display: flex;
@@ -186,9 +170,67 @@ body {
   height: 32px;
   accent-color: var(--label-color);
 }
+
+/* Mobile adaptations */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px; /* Base font size for scaling */
+  }
+  #calcResult {
+    top: 10px;
+    font-size: 20px;
+    padding: 8px 20px;
+    min-width: 120px;
+    border-radius: 10px;
+  }
+  .bar-container-horizontal {
+    gap: 20px; /* Reduced spacing to fit bars */
+    padding-left: 20px; /* Reduced to fit labels */
+    width: calc(100% - 20px); /* Full width minus padding */
+  }
+  .bar-horizontal {
+    height: 80px; /* Smaller bars for mobile */
+    border-radius: 0 10px 10px 0;
+  }
+  .bar-value-horizontal {
+    font-size: 20px; /* Smaller text */
+    min-width: 80px; /* Adjusted for smaller values */
+    padding-left: 3px;
+  }
+  .label-horizontal {
+    font-size: 20px; /* Smaller labels */
+  }
+  #feeTopRight {
+    top: 50px;
+    right: 5px;
+    font-size: 20px;
+  }
+  #feeTopRight .separator {
+    height: 20px;
+  }
+  #feeWrap {
+    bottom: 5px;
+    right: 5px;
+  }
+  #feeWrap div > div span {
+    font-size: 20px;
+    line-height: 20px;
+  }
+  #feeWrap .separator {
+    height: 20px;
+    margin: 0 5px;
+  }
+  #feeMinCheck {
+    width: 20px;
+    height: 20px;
+  }
+  #feeMinCheck + label {
+    font-size: 20px;
+  }
+}
 </style>
 </head>
-<body class="dark">
+<body>
 <div class="panel">
   <div class="bar-container-horizontal">
     <div class="bar-wrapper-horizontal"><div class="bar-horizontal" id="leftBar1"><div class="bar-value-horizontal" id="valLeft1">10000</div></div><div class="label-horizontal">本金</div></div>
@@ -207,7 +249,7 @@ body {
     <div>
       <div><span id="feeValue">1</span><span class="feeText">/万</span></div>
       <span class="separator"></span>
-      <div><input type="checkbox" id="feeMinCheck"><label for="feeMinCheck" style="user-select:none; color: var(--label-color); font-size: 32px;">免五</label></div>
+      <div><input type="checkbox" id="feeMinCheck"><label for="feeMinCheck" style="user-select:none; color: var(--label-color);">免五</label></div>
     </div>
   </div>
 </div>
@@ -326,7 +368,7 @@ function addDragHandler(barObj, isHorizontal = false) {
   document.addEventListener('touchmove', (e) => {
     if (!isDragging) return;
     const container = wrapper.getBoundingClientRect();
-    const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
+    const maxDimension = isHorizontal ? container.width * 0.7 : container.clientHeight * 0.7;
     let dimension = isHorizontal ? e.touches[0].clientX - container.left : container.bottom - e.touches[0].clientY;
     dimension = Math.max(0, Math.min(maxDimension, dimension));
     let newValue = (dimension / maxDimension) * barObj.max;
@@ -362,8 +404,8 @@ feeValueSpan.addEventListener('click', () => {
   const input = document.createElement('input');
   input.type = 'number';
   input.value = feeValue;
-  input.style.width = '100px';
-  input.style.fontSize = '32px';
+  input.style.width = '60px';
+  input.style.fontSize = '20px';
   input.style.color = getComputedStyle(document.body).getPropertyValue('--label-color');
   feeValueSpan.replaceWith(input);
   input.focus();

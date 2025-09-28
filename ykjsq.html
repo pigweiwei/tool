@@ -6,7 +6,6 @@
 <title>盈亏计算器</title>
 <style>
 body {
-  --bg-gradient: linear-gradient(135deg, #1a1a1a, #2b2b2b);
   --bar-left1-bg: rgba(255,99,132,0.35);
   --bar-left1-border: rgba(255,99,132,0.6);
   --bar-left2-bg: rgba(54,162,235,0.35);
@@ -26,7 +25,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: var(--bg-gradient);
+  background: #2b2b2b; /* Solid deep gray background */
   overflow: hidden;
 }
 .panel {
@@ -174,7 +173,7 @@ body {
   font-size: 20px;
 }
 
-/* Mobile adaptations (already applied, kept for clarity) */
+/* Mobile adaptations */
 @media (max-width: 768px) {
   body {
     font-size: 16px;
@@ -357,7 +356,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
     updateFinalResult();
   });
 
@@ -378,7 +377,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
     updateFinalResult();
   });
 
@@ -395,7 +394,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, b.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
     updateFinalResult();
   });
 }

@@ -87,7 +87,7 @@ body {
   flex-direction: row;
   box-shadow: inset -5px 0 15px rgba(0,0,0,0.1), 8px 0 20px rgba(0,0,0,0.2);
   backdrop-filter: blur(15px);
-  transition: width 0.3s;
+  transition: width 0.1s ease-out; /* 缩短过渡时间，优化滑动感 */
   overflow: visible;
   position: relative;
 }
@@ -157,7 +157,7 @@ body {
 }
 #feeValueWrap span,
 #feeMinWrap label {
-  font-size: 20px; 
+  font-size: 20px;
   color: var(--label-color);
   line-height: 20px;
   user-select: none;
@@ -286,6 +286,11 @@ function throttle(fn, wait) {
   };
 }
 
+// 线性插值函数
+function lerp(start, end, alpha) {
+  return start + (end - start) * alpha;
+}
+
 // 更新柱子宽度
 function updateHeight(bar, valueDisplay, value, maxVal, type, isHorizontal = false) {
   requestAnimationFrame(() => {
@@ -300,9 +305,9 @@ function updateHeight(bar, valueDisplay, value, maxVal, type, isHorizontal = fal
         bar.style.height = `${dimension}px`;
       }
       if (type === 'int') {
-        valueDisplay.textContent = formatTenThousand(value);
+        valueDisplay.textContent = formatTenThousand(Math.round(value));
       } else if (type === 'percent') {
-        valueDisplay.textContent = `${value}%`;
+        valueDisplay.textContent = `${Math.round(value)}%`;
       } else if (type === 'float') {
         valueDisplay.textContent = value.toFixed(1);
       }
@@ -360,7 +365,7 @@ function updateFinalResult() {
     if (JSON.stringify(newResult) !== JSON.stringify(lastResult)) {
       document.getElementById('calcResult').textContent = newResult.total;
       profitLossSpan.textContent = `盈亏: ${profitPercent}%`;
-      feeDisplaySpan.textContent = `手续费: ${Math.round(totalFee)}`;
+      feeDisplaySpan.textContent = `手续费: ${newResult.totalFee}`;
       lastResult = newResult;
     }
   } catch (e) {
@@ -384,6 +389,25 @@ function addDragHandler(barObj, isHorizontal = false) {
     let isDragging = false;
     let startX = 0;
     let startValue = 0;
+    let velocity = 0;
+    let lastTime = 0;
+    let lastX = 0;
+    let animationFrame = null;
+
+    // 惯性动画
+    function animateInertia() {
+      if (Math.abs(velocity) < 0.1) return;
+      const friction = 0.95; // 摩擦系数
+      barObj.value += velocity;
+      barObj.value = Math.max(0, Math.min(barObj.max, barObj.value));
+      barObj.value = Math.round(barObj.value / barObj.step) * barObj.step;
+      updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+      updateFinalResult();
+      velocity *= friction;
+      if (Math.abs(velocity) >= 0.1) {
+        animationFrame = requestAnimationFrame(animateInertia);
+      }
+    }
 
     wrapper.addEventListener('mousedown', (e) => {
       if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
@@ -392,32 +416,52 @@ function addDragHandler(barObj, isHorizontal = false) {
       bar.classList.add('dragging');
       startX = e.clientX;
       startValue = barObj.value;
+      lastX = startX;
+      lastTime = performance.now();
+      velocity = 0;
+      if (animationFrame) cancelAnimationFrame(animationFrame);
       e.preventDefault();
     });
 
     document.addEventListener('mouseup', () => {
-      isDragging = false;
-      wrapper.style.cursor = 'grab';
-      bar.classList.remove('dragging');
+      if (isDragging) {
+        isDragging = false;
+        wrapper.style.cursor = 'grab';
+        bar.classList.remove('dragging');
+        if (Math.abs(velocity) >= 0.1) {
+          animationFrame = requestAnimationFrame(animateInertia);
+        }
+      }
     });
 
-    document.addEventListener('mousemove', (e) => {
+    document.addEventListener('mousemove', throttle((e) => {
       if (!isDragging) return;
       try {
-        const deltaX = e.clientX - startX;
+        const currentX = e.clientX;
+        const deltaX = currentX - startX;
         const container = wrapper.getBoundingClientRect();
         const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
-        const sensitivity = barObj.max / maxDimension / 10; // 调整敏感度，/10 以使滑动更慢，更精确
+        const sensitivity = barObj.max / maxDimension * 0.5; // 调整敏感度
         let newValue = startValue + deltaX * sensitivity;
         newValue = Math.max(0, Math.min(barObj.max, newValue));
+        newValue = lerp(barObj.value, newValue, 0.2); // 平滑插值
         newValue = Math.round(newValue / barObj.step) * barObj.step;
         barObj.value = newValue;
         updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
         updateFinalResult();
+
+        // 计算速度
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - lastTime) / 1000;
+        if (deltaTime > 0) {
+          velocity = (currentX - lastX) * sensitivity / deltaTime;
+        }
+        lastX = currentX;
+        lastTime = currentTime;
       } catch (e) {
         console.error('Error in mousemove:', e);
       }
-    });
+    }, 10));
 
     wrapper.addEventListener('touchstart', (e) => {
       if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
@@ -425,6 +469,10 @@ function addDragHandler(barObj, isHorizontal = false) {
       bar.classList.add('dragging');
       startX = e.touches[0].clientX;
       startValue = barObj.value;
+      lastX = startX;
+      lastTime = performance.now();
+      velocity = 0;
+      if (animationFrame) cancelAnimationFrame(animationFrame);
       e.preventDefault();
     }, { passive: false });
 
@@ -432,24 +480,40 @@ function addDragHandler(barObj, isHorizontal = false) {
       if (!isDragging) return;
       e.preventDefault();
       try {
-        const deltaX = e.touches[0].clientX - startX;
+        const currentX = e.touches[0].clientX;
+        const deltaX = currentX - startX;
         const container = wrapper.getBoundingClientRect();
         const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
-        const sensitivity = barObj.max / maxDimension / 10; // 调整敏感度，/10 以使滑动更慢，更精确
+        const sensitivity = barObj.max / maxDimension * 0.5; // 调整敏感度
         let newValue = startValue + deltaX * sensitivity;
         newValue = Math.max(0, Math.min(barObj.max, newValue));
+        newValue = lerp(barObj.value, newValue, 0.2); // 平滑插值
         newValue = Math.round(newValue / barObj.step) * barObj.step;
         barObj.value = newValue;
         updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
         updateFinalResult();
+
+        // 计算速度
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - lastTime) / 1000;
+        if (deltaTime > 0) {
+          velocity = (currentX - lastX) * sensitivity / deltaTime;
+        }
+        lastX = currentX;
+        lastTime = currentTime;
       } catch (e) {
         console.error('Error in touchmove:', e);
       }
-    }, 16), { passive: false });
+    }, 10), { passive: false });
 
     document.addEventListener('touchend', () => {
-      isDragging = false;
-      bar.classList.remove('dragging');
+      if (isDragging) {
+        isDragging = false;
+        bar.classList.remove('dragging');
+        if (Math.abs(velocity) >= 0.1) {
+          animationFrame = requestAnimationFrame(animateInertia);
+        }
+      }
     });
 
     wrapper.addEventListener('wheel', (e) => {
@@ -461,7 +525,7 @@ function addDragHandler(barObj, isHorizontal = false) {
         newValue = Math.max(0, Math.min(barObj.max, newValue));
         newValue = Math.round(newValue / barObj.step) * barObj.step;
         barObj.value = newValue;
-        updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
         updateFinalResult();
       } catch (e) {
         console.error('Error in wheel:', e);

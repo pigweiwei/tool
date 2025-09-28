@@ -23,20 +23,16 @@ body {
   font-family: Arial;
   height: 100%; /* Ensures body takes full height */
   background: #2b2b2b;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start; /* Align to top to avoid viewport issues */
+  display: block;
   overflow: auto; /* Allow scrolling */
 }
 .panel {
   width: 100%;
-  max-height: 100%; /* Ensures the container can scroll */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  height: 100%;
+  max-height: 100%;
+  display: block;
   padding-top: 10px;
   overflow-y: auto; /* Allow vertical scroll */
-  flex-grow: 1; /* Allow expansion if content is more */
 }
 #calcResult {
   position: absolute;
@@ -63,8 +59,7 @@ body {
   justify-content: center;
   gap: 20px;
   width: calc(100% - 20px);
-  height: 100%;
-  user-select: none;
+  height: auto; /* Ensure bar container can adjust its height */
   padding-left: 42px;
 }
 .bar-wrapper-horizontal {

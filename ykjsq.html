@@ -104,13 +104,13 @@ body {
   padding-left: 3px;
 }
 .label-horizontal {
-  font-size: 20px;
+  font-size: 14px; /* Reduced by 30% (from 20px) */
   font-weight: bold;
   color: var(--label-color);
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: -28px; /* Moved right by 2px (from -30px) */
+  left: -28px;
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -139,8 +139,8 @@ body {
 }
 #feeWrap {
   position: absolute;
-  left: 5px; /* Moved to left side */
-  bottom: 25px; /* Moved up by 20px (from 5px) */
+  left: 5px;
+  bottom: 30px; /* Moved up by 5px (from 25px) */
 }
 #feeWrap div {
   display: flex;
@@ -205,8 +205,8 @@ body {
     padding-left: 3px;
   }
   .label-horizontal {
-    font-size: 20px;
-    left: -28px; /* Moved right by 2px (from -30px) */
+    font-size: 14px; /* Reduced by 30% (from 20px) */
+    left: -28px;
   }
   #profitLoss {
     left: 5px;
@@ -219,8 +219,8 @@ body {
     font-size: 14px; /* 30% reduction from 20px */
   }
   #feeWrap {
-    left: 5px; /* Moved to left side */
-    bottom: 25px; /* Moved up by 20px (from 5px) */
+    left: 5px;
+    bottom: 30px; /* Moved up by 5px (from 25px) */
   }
   #feeWrap div > div span {
     font-size: 20px;
@@ -357,7 +357,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     if (!isDragging) return;
     const container = wrapper.getBoundingClientRect();
     const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
-    let dimension = isHorizontal ? e.clientX - container.left : container.bottom - e.clientY;
+    let dimension = isHorizontal ? container.right - e.clientX : container.bottom - e.clientY; /* Reverse for left=decrease, right=increase */
     dimension = Math.max(0, Math.min(maxDimension, dimension));
     let newValue = (dimension / maxDimension) * barObj.max;
     newValue = Math.round(newValue / barObj.step) * barObj.step;
@@ -378,7 +378,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     e.preventDefault(); /* Prevent browser scrolling */
     const container = wrapper.getBoundingClientRect();
     const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
-    let dimension = isHorizontal ? e.touches[0].clientX - container.left : container.bottom - e.touches[0].clientY;
+    let dimension = isHorizontal ? container.right - e.touches[0].clientX : container.bottom - e.touches[0].clientY; /* Reverse for left=decrease, right=increase */
     dimension = Math.max(0, Math.min(maxDimension, dimension));
     let newValue = (dimension / maxDimension) * barObj.max;
     newValue = Math.round(newValue / barObj.step) * barObj.step;

@@ -133,7 +133,7 @@ body {
 #profitLoss {
   position: absolute;
   right: 5px;
-  top: 65px;
+  top: 95px; /* 与 feeValueWrap 纵向对齐 */
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -142,7 +142,7 @@ body {
 #feeDisplay {
   position: absolute;
   right: 5px;
-  top: 90px;
+  top: 125px; /* 与 feeMinWrap 纵向对齐 */
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -151,12 +151,12 @@ body {
 #feeValueWrap {
   position: absolute;
   left: 5px;
-  top: 95px; /* 下移 30px */
+  top: 95px;
 }
 #feeMinWrap {
   position: absolute;
   left: 5px;
-  top: 125px; /* 下移 30px */
+  top: 125px;
 }
 #feeValueWrap div, #feeMinWrap div {
   display: flex;
@@ -231,19 +231,19 @@ body {
   }
   #profitLoss {
     right: 5px;
-    top: 65px;
+    top: 95px; /* 与 feeValueWrap 纵向对齐 */
   }
   #feeDisplay {
     right: 5px;
-    top: 90px;
+    top: 125px; /* 与 feeMinWrap 纵向对齐 */
   }
   #feeValueWrap {
     left: 5px;
-    top: 95px; /* 下移 30px */
+    top: 95px;
   }
   #feeMinWrap {
     left: 5px;
-    top: 125px; /* 下移 30px */
+    top: 125px;
   }
   #feeValueWrap span,
   #feeMinWrap label {

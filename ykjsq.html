@@ -38,7 +38,7 @@ body {
 }
 #calcResult {
   position: absolute;
-  top: 10px;
+  top: -5px; /* Moved up by 15px (from 10px) */
   left: 50%;
   transform: translateX(-50%);
   font-size: 20px;
@@ -110,7 +110,7 @@ body {
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: -35px; /* Moved left by additional 15px (from -20px) */
+  left: -30px; /* Moved right by 5px (from -35px) */
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -181,7 +181,7 @@ body {
     font-size: 16px;
   }
   #calcResult {
-    top: 10px;
+    top: -5px; /* Moved up by 15px (from 10px) */
     font-size: 20px;
     padding: 8px 20px;
     min-width: 120px;
@@ -206,7 +206,7 @@ body {
   }
   .label-horizontal {
     font-size: 20px;
-    left: -35px; /* Moved left by additional 15px (from -20px) */
+    left: -30px; /* Moved right by 5px (from -35px) */
   }
   #profitLoss {
     left: 5px;
@@ -363,7 +363,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
     updateFinalResult();
   });
 
@@ -384,7 +384,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
     updateFinalResult();
   }, { passive: false }); /* Ensure preventDefault works */
 
@@ -400,7 +400,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
     updateFinalResult();
   });
 }

@@ -64,7 +64,7 @@ body {
   width: calc(100% - 20px);
   height: 100%;
   user-select: none;
-  padding-left: 45px; /* Shifted right by 25px (from 20px) */
+  padding-left: 45px; /* Bars stay in place */
 }
 .bar-wrapper-horizontal {
   position: relative;
@@ -110,7 +110,7 @@ body {
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: 0;
+  left: -20px; /* Moved left by 20px */
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -189,7 +189,7 @@ body {
   }
   .bar-container-horizontal {
     gap: 20px;
-    padding-left: 25px; /* Shifted right by 25px (from 0px) */
+    padding-left: 25px; /* Bars stay in place */
     width: calc(100% - 20px);
   }
   .bar-wrapper-horizontal {
@@ -206,6 +206,7 @@ body {
   }
   .label-horizontal {
     font-size: 20px;
+    left: -20px; /* Moved left by 20px */
   }
   #profitLoss {
     left: 5px;

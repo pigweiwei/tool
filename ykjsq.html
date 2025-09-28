@@ -133,7 +133,7 @@ body {
 #profitLoss {
   position: absolute;
   right: 5px;
-  top: 65px; /* 移动到手续费上方 */
+  top: 65px;
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -142,7 +142,7 @@ body {
 #feeDisplay {
   position: absolute;
   right: 5px;
-  top: 90px; /* 保持在盈亏下方 */
+  top: 90px;
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -151,12 +151,12 @@ body {
 #feeValueWrap {
   position: absolute;
   left: 5px;
-  top: 65px;
+  top: 95px; /* 下移 30px */
 }
 #feeMinWrap {
   position: absolute;
-  left: 5px; /* 与 feeValueWrap 左侧对齐 */
-  top: 95px; /* 移动到 feeValueWrap 下方 */
+  left: 5px;
+  top: 125px; /* 下移 30px */
 }
 #feeValueWrap div, #feeMinWrap div {
   display: flex;
@@ -232,20 +232,18 @@ body {
   #profitLoss {
     right: 5px;
     top: 65px;
-    font-size: 14px;
   }
   #feeDisplay {
     right: 5px;
     top: 90px;
-    font-size: 14px;
   }
   #feeValueWrap {
     left: 5px;
-    top: 65px;
+    top: 95px; /* 下移 30px */
   }
   #feeMinWrap {
     left: 5px;
-    top: 95px;
+    top: 125px; /* 下移 30px */
   }
   #feeValueWrap span,
   #feeMinWrap label {

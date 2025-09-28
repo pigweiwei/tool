@@ -143,10 +143,11 @@ body {
   left: 5px;
   top: 65px;
 }
+/* 将 免五 向下移动：把 top 从 55px 改为 75px */
 #feeMinWrap {
   position: absolute;
   right: 15px; /* Moved right by 5px (from 20px) */
-  top: 55px;
+  top: 75px; /* ← 调整这里（原来是 55px），向下移动 */
 }
 #feeValueWrap div, #feeMinWrap div {
   display: flex;
@@ -219,9 +220,10 @@ body {
     left: 5px;
     top: 65px;
   }
+  /* Mobile 下也把 免五 向下（与桌面同步） */
   #feeMinWrap {
-    right: 15px; /* Moved right by 5px (from 20px) */
-    top: 55px;
+    right: 15px;
+    top: 75px; /* ← 这里也同步调整 */
   }
   #feeValueWrap span,
   #feeMinWrap label {

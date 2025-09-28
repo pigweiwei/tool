@@ -110,7 +110,7 @@ body {
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: -20px; /* Moved left by 20px */
+  left: -35px; /* Moved left by additional 15px (from -20px) */
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -206,7 +206,7 @@ body {
   }
   .label-horizontal {
     font-size: 20px;
-    left: -20px; /* Moved left by 20px */
+    left: -35px; /* Moved left by additional 15px (from -20px) */
   }
   #profitLoss {
     left: 5px;
@@ -363,7 +363,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
     updateFinalResult();
   });
 
@@ -384,7 +384,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
     updateFinalResult();
   }, { passive: false }); /* Ensure preventDefault works */
 
@@ -400,7 +400,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
     updateFinalResult();
   });
 }

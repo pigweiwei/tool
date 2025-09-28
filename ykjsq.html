@@ -388,6 +388,21 @@ function addDragHandler(barObj, isHorizontal = false) {
       isDragging = true;
       wrapper.style.cursor = 'grabbing';
       bar.classList.add('dragging');
+      // 立即处理点击位置
+      try {
+        const container = wrapper.getBoundingClientRect();
+        const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
+        let dimension = isHorizontal ? e.clientX - container.left : container.bottom - e.clientY;
+        dimension = Math.max(0, Math.min(maxDimension, dimension));
+        let newValue = (dimension / maxDimension) * barObj.max;
+        newValue = Math.round(newValue / barObj.step) * barObj.step;
+        newValue = Math.max(0, Math.min(barObj.max, newValue));
+        barObj.value = newValue;
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+        updateFinalResult();
+      } catch (e) {
+        console.error('Error in mousedown:', e);
+      }
       e.preventDefault();
     });
 
@@ -419,6 +434,21 @@ function addDragHandler(barObj, isHorizontal = false) {
       if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
       isDragging = true;
       bar.classList.add('dragging');
+      // 立即处理触摸位置
+      try {
+        const container = wrapper.getBoundingClientRect();
+        const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
+        let dimension = isHorizontal ? e.touches[0].clientX - container.left : container.bottom - e.touches[0].clientY;
+        dimension = Math.max(0, Math.min(maxDimension, dimension));
+        let newValue = (dimension / maxDimension) * barObj.max;
+        newValue = Math.round(newValue / barObj.step) * barObj.step;
+        newValue = Math.max(0, Math.min(barObj.max, newValue));
+        barObj.value = newValue;
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+        updateFinalResult();
+      } catch (e) {
+        console.error('Error in touchstart:', e);
+      }
       e.preventDefault();
     }, { passive: false });
 

@@ -64,7 +64,7 @@ body {
   width: calc(100% - 20px);
   height: 100%;
   user-select: none;
-  padding-left: 20px;
+  padding-left: 45px; /* Shifted right by 25px (from 20px) */
 }
 .bar-wrapper-horizontal {
   position: relative;
@@ -119,22 +119,23 @@ body {
 #leftBar3 { background: var(--bar-left3-bg); border: 1px solid var(--bar-left3-border); }
 #leftBar4 { background: var(--bar-left4-bg); border: 1px solid var(--bar-left4-border); }
 #leftBar5 { background: var(--bar-left5-bg); border: 1px solid var(--bar-left5-border); }
-#feeTopRight {
+#profitLoss {
+  position: absolute;
+  left: 5px;
+  top: 50px;
+  font-weight: bold;
+  font-size: 14px; /* 30% reduction from 20px */
+  color: var(--label-color);
+  pointer-events: none;
+}
+#feeDisplay {
   position: absolute;
   right: 5px;
   top: 50px;
   font-weight: bold;
-  font-size: 14px; /* Reduced by 30% from 20px */
+  font-size: 14px; /* 30% reduction from 20px */
   color: var(--label-color);
   pointer-events: none;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-#feeTopRight .separator {
-  width: 2px;
-  height: 14px; /* Match font size */
-  border-right: 2px dashed #888;
 }
 #feeWrap {
   position: absolute;
@@ -188,7 +189,7 @@ body {
   }
   .bar-container-horizontal {
     gap: 20px;
-    padding-left: 0px; /* Moved left by 20px */
+    padding-left: 25px; /* Shifted right by 25px (from 0px) */
     width: calc(100% - 20px);
   }
   .bar-wrapper-horizontal {
@@ -206,13 +207,15 @@ body {
   .label-horizontal {
     font-size: 20px;
   }
-  #feeTopRight {
+  #profitLoss {
+    left: 5px;
     top: 50px;
-    right: 5px;
-    font-size: 14px; /* Reduced by 30% from 20px */
+    font-size: 14px; /* 30% reduction from 20px */
   }
-  #feeTopRight .separator {
-    height: 14px; /* Match font size */
+  #feeDisplay {
+    right: 5px;
+    top: 50px;
+    font-size: 14px; /* 30% reduction from 20px */
   }
   #feeWrap {
     bottom: 5px;
@@ -246,11 +249,8 @@ body {
     <div class="bar-wrapper-horizontal"><div class="bar-horizontal" id="leftBar5"><div class="bar-value-horizontal" id="valLeft5">50%</div></div><div class="label-horizontal">胜率</div></div>
   </div>
   <div class="calc-result" id="calcResult">0</div>
-  <div id="feeTopRight">
-    <span>盈亏：0%</span>
-    <span class="separator"></span>
-    <span>Fee: 1</span>
-  </div>
+  <div id="profitLoss">盈亏：0%</div>
+  <div id="feeDisplay">手续费: 1</div>
   <div id="feeWrap">
     <div>
       <div><span id="feeValue">1</span><span class="feeText">/万</span></div>
@@ -300,7 +300,8 @@ const leftBars = [
 // 费用相关
 const feeValueSpan = document.getElementById('feeValue');
 const feeTextSpan = document.querySelector('.feeText');
-const feeTopRightSpan = document.getElementById('feeTopRight');
+const profitLossSpan = document.getElementById('profitLoss');
+const feeDisplaySpan = document.getElementById('feeDisplay');
 let feeValue = 1;
 
 // 计算最终盈亏结果
@@ -325,7 +326,8 @@ function updateFinalResult() {
   }
   document.getElementById('calcResult').textContent = formatTenThousand(total);
   const profitPercent = ((total - capital) / capital * 100).toFixed(1);
-  feeTopRightSpan.innerHTML = `<span>盈亏: ${profitPercent}%</span><span class="separator"></span><span>手续费: ${Math.round(totalFee)}</span>`;
+  profitLossSpan.textContent = `盈亏: ${profitPercent}%`;
+  feeDisplaySpan.textContent = `手续费: ${Math.round(totalFee)}`;
 }
 
 // 初始化柱子宽度

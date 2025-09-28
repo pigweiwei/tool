@@ -35,10 +35,11 @@ body {
   flex-direction: row;
   position: relative;
   overflow: hidden;
+  padding-top: 40px; /* Move all content down by 40px */
 }
 #calcResult {
   position: absolute;
-  top: -5px;
+  top: 35px; /* Adjusted: -5px + 40px */
   left: 50%;
   transform: translateX(-50%);
   font-size: 20px;
@@ -94,7 +95,7 @@ body {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 14px; /* Reduced by 30% (from 20px) */
+  font-size: 14px;
   font-weight: bold;
   color: var(--bar-value-color);
   z-index: 2;
@@ -110,7 +111,7 @@ body {
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: -25px; /* Moved right by 3px (from -28px) */
+  left: -25px;
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -122,7 +123,7 @@ body {
 #profitLoss {
   position: absolute;
   left: 5px;
-  top: 50px;
+  top: 90px; /* Adjusted: 50px + 40px */
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -131,7 +132,7 @@ body {
 #feeDisplay {
   position: absolute;
   right: 5px;
-  top: 50px;
+  top: 90px; /* Adjusted: 50px + 40px */
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -140,7 +141,7 @@ body {
 #feeWrap {
   position: absolute;
   left: 5px;
-  bottom: 35px; /* Moved up by 5px (from 30px) */
+  bottom: -5px; /* Adjusted: 35px - 40px */
 }
 #feeWrap div {
   display: flex;
@@ -180,8 +181,11 @@ body {
   body {
     font-size: 16px;
   }
+  .panel {
+    padding-top: 40px; /* Move all content down by 40px */
+  }
   #calcResult {
-    top: -5px;
+    top: 35px; /* Adjusted: -5px + 40px */
     font-size: 20px;
     padding: 8px 20px;
     min-width: 120px;
@@ -200,27 +204,27 @@ body {
     border-radius: 0 10px 10px 0;
   }
   .bar-value-horizontal {
-    font-size: 14px; /* Reduced by 30% (from 20px) */
+    font-size: 14px;
     min-width: 80px;
     padding-left: 3px;
   }
   .label-horizontal {
     font-size: 14px;
-    left: -25px; /* Moved right by 3px (from -28px) */
+    left: -25px;
   }
   #profitLoss {
     left: 5px;
-    top: 50px;
+    top: 90px; /* Adjusted: 50px + 40px */
     font-size: 14px;
   }
   #feeDisplay {
     right: 5px;
-    top: 50px;
+    top: 90px; /* Adjusted: 50px + 40px */
     font-size: 14px;
   }
   #feeWrap {
     left: 5px;
-    bottom: 35px; /* Moved up by 5px (from 30px) */
+    bottom: -5px; /* Adjusted: 35px - 40px */
   }
   #feeWrap div > div span {
     font-size: 20px;
@@ -363,7 +367,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
     updateFinalResult();
   });
 

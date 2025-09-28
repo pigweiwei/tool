@@ -73,7 +73,8 @@ body {
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  cursor: grab;
+  cursor: grab; /* For desktop */
+  touch-action: none; /* Prevent default touch behaviors */
 }
 .bar-horizontal {
   height: 80px;
@@ -190,8 +191,11 @@ body {
     padding-left: 20px;
     width: calc(100% - 20px);
   }
+  .bar-wrapper-horizontal {
+    cursor: auto; /* Remove grab cursor for touch devices */
+  }
   .bar-horizontal {
-    height: 80px;
+    height: 90px; /* Slightly larger for better touch target */
     border-radius: 0 10px 10px 0;
   }
   .bar-value-horizontal {
@@ -356,19 +360,19 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
     updateFinalResult();
   });
 
   wrapper.addEventListener('touchstart', (e) => {
     if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
     isDragging = true;
-    wrapper.style.cursor = 'grabbing';
     e.preventDefault();
   });
 
   document.addEventListener('touchmove', (e) => {
     if (!isDragging) return;
+    e.preventDefault(); /* Prevent browser scrolling */
     const container = wrapper.getBoundingClientRect();
     const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
     let dimension = isHorizontal ? e.touches[0].clientX - container.left : container.bottom - e.touches[0].clientY;
@@ -377,16 +381,15 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
     updateFinalResult();
-  });
+  }, { passive: false }); /* Ensure preventDefault works */
 
   document.addEventListener('touchend', () => {
     isDragging = false;
-    wrapper.style.cursor = 'grab';
   });
 
-  document.addEventListener('wheel', (e) => {
+  wrapper.addEventListener('wheel', (e) => {
     if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
     e.preventDefault();
     const delta = Math.sign(e.deltaY) * barObj.step;
@@ -394,7 +397,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     newValue = Math.max(0, Math.min(barObj.max, newValue));
     newValue = Math.round(newValue / barObj.step) * barObj.step;
     barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
+    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
     updateFinalResult();
   });
 }

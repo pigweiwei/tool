@@ -145,8 +145,8 @@ body {
 }
 #feeMinWrap {
   position: absolute;
-  right: 5px;
-  top: 65px;
+  right: 20px; /* Moved left by 15px (from 5px) */
+  top: 55px; /* Moved up by 10px (from 65px) */
 }
 #feeValueWrap div, #feeMinWrap div {
   display: flex;
@@ -158,7 +158,7 @@ body {
 }
 #feeValueWrap div > div span, #feeMinWrap div > div span {
   font-weight: bold;
-  font-size: 20px;
+  font-size: 20px; /* Consistent with #feeMinCheck + label */
   color: var(--label-color);
   line-height: 20px;
   user-select: none;
@@ -172,7 +172,7 @@ body {
   accent-color: #ccc;
 }
 #feeMinCheck + label {
-  font-size: 20px;
+  font-size: 20px; /* Matches #feeValueWrap span */
 }
 
 /* Mobile adaptations */
@@ -226,11 +226,11 @@ body {
     top: 65px;
   }
   #feeMinWrap {
-    right: 5px;
-    top: 65px;
+    right: 20px; /* Moved left by 15px (from 5px) */
+    top: 55px; /* Moved up by 10px (from 65px) */
   }
   #feeValueWrap div > div span, #feeMinWrap div > div span {
-    font-size: 20px;
+    font-size: 20px; /* Consistent with #feeMinCheck + label */
     line-height: 20px;
   }
   #feeMinCheck {
@@ -239,7 +239,7 @@ body {
     accent-color: #ccc;
   }
   #feeMinCheck + label {
-    font-size: 20px;
+    font-size: 20px; /* Matches #feeValueWrap span */
   }
 }
 </style>
@@ -388,7 +388,7 @@ function addDragHandler(barObj, isHorizontal = false) {
         newValue = Math.round(newValue / barObj.step) * barObj.step;
         newValue = Math.max(0, Math.min(barObj.max, newValue));
         barObj.value = newValue;
-        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
         updateFinalResult();
       } catch (e) {
         console.error('Error in mousemove:', e);

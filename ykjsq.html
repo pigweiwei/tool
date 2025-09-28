@@ -21,21 +21,22 @@ body {
   margin: 0;
   padding: 0;
   font-family: Arial;
-  height: 100%;
+  height: 100%; /* Ensures body takes full height */
   background: #2b2b2b;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Align to top to avoid viewport issues */
   overflow: auto; /* Allow scrolling */
 }
 .panel {
   width: 100%;
-  max-height: 100vh; /* Ensure the container fits within the screen */
+  max-height: 100%; /* Ensures the container can scroll */
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-top: 10px;
-  overflow-y: auto; /* Allow vertical scrolling */
+  overflow-y: auto; /* Allow vertical scroll */
+  flex-grow: 1; /* Allow expansion if content is more */
 }
 #calcResult {
   position: absolute;
@@ -252,7 +253,7 @@ body {
   </div>
 </div>
 <script>
-// 添加相关的JavaScript代码（保持不变）
+// 保留原本的脚本内容
 </script>
 </body>
 </html>

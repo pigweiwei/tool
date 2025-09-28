@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>盈亏计算器</title>
 <style>
-body {
+:root {
   --bar-left1-bg: rgba(255,99,132,0.35);
   --bar-left1-border: rgba(255,99,132,0.6);
   --bar-left2-bg: rgba(54,162,235,0.35);
@@ -20,6 +20,12 @@ body {
   --bar-value-color: #fff;
   --checkbox-bg: #666;
   --checkbox-checked-bg: var(--bar-left4-bg);
+  --bg-color: #1e1e1e;
+  --text-color: #eee;
+  --input-bg: #2c2c2c;
+  --input-border: #555;
+}
+body {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
@@ -133,7 +139,7 @@ body {
 #profitLoss {
   position: absolute;
   right: 5px;
-  top: 95px; /* 与 feeValueWrap 纵向对齐 */
+  top: 95px;
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -142,7 +148,7 @@ body {
 #feeDisplay {
   position: absolute;
   right: 5px;
-  top: 125px; /* 与 feeMinWrap 纵向对齐 */
+  top: 125px;
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -194,6 +200,67 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
 }
+.right-nav {
+  position: fixed;
+  top: 0;
+  right: -35%;
+  width: 35%;
+  max-width: 300px;
+  height: 100%;
+  background: var(--input-bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: right 0.3s ease;
+  z-index: 200;
+  box-shadow: -2px 2px 8px rgba(0,0,0,0.5);
+  border-radius: 8px 0 0 8px;
+  touch-action: none;
+}
+.right-nav.expanded {
+  right: 0;
+}
+.right-nav .nav-item {
+  color: var(--text-color);
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  border-bottom: 1px solid var(--input-border);
+}
+.right-nav .nav-item:hover {
+  background: var(--bg-color);
+}
+.right-nav .nav-item a {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.3);
+  display: none;
+  z-index: 150;
+  touch-action: none;
+}
+.overlay.show {
+  display: block;
+}
+.gesture-right {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 100%;
+  z-index: 250;
+  background: transparent;
+  touch-action: none;
+}
 @media (max-width: 768px) {
   body {
     font-size: 16px;
@@ -231,11 +298,11 @@ body {
   }
   #profitLoss {
     right: 5px;
-    top: 95px; /* 与 feeValueWrap 纵向对齐 */
+    top: 95px;
   }
   #feeDisplay {
     right: 5px;
-    top: 125px; /* 与 feeMinWrap 纵向对齐 */
+    top: 125px;
   }
   #feeValueWrap {
     left: 5px;
@@ -278,6 +345,13 @@ body {
   <div id="feeMinWrap">
     <div><input type="checkbox" id="feeMinCheck"><label for="feeMinCheck">免五</label></div>
   </div>
+  <div class="right-nav" id="rightNav">
+    <div class="nav-item"><a href="index.html">首页</a></div>
+    <div class="nav-item"><a href="yingkui.html">盈亏计算器</a></div>
+    <div class="nav-item"><a href="cangwei.html">仓位计算器</a></div>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <div class="gesture-right" id="gestureRight"></div>
 </div>
 <script>
 try {
@@ -469,7 +543,7 @@ function addDragHandler(barObj, isHorizontal = false) {
           newValue = Math.round(newValue / barObj.step) * barObj.step;
         }
         barObj.value = newValue;
-        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal, bar.id);
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal, bar.id);
         updateFinalResult();
         if (newValue <= 0 || newValue >= barObj.max) {
           if (navigator.vibrate) navigator.vibrate(50);
@@ -603,6 +677,69 @@ try {
 } catch (e) {
   console.error('Error in setting up event listeners:', e);
 }
+
+// 右侧导航逻辑
+const rightNav = document.getElementById('rightNav');
+const overlay = document.getElementById('overlay');
+
+function openNav() {
+  rightNav.classList.add('expanded');
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeNav() {
+  rightNav.classList.remove('expanded');
+  overlay.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+overlay.addEventListener('click', closeNav);
+
+rightNav.addEventListener('click', (e) => {
+  if (!e.target.closest('.nav-item')) {
+    closeNav();
+  }
+});
+
+document.querySelectorAll('.right-nav a').forEach(a => {
+  a.addEventListener('click', closeNav);
+});
+
+const gestureRight = document.getElementById('gestureRight');
+let startX = 0, startY = 0;
+gestureRight.addEventListener('touchstart', e => {
+  if (e.touches.length !== 1) return;
+  e.preventDefault();
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+}, { passive: false });
+gestureRight.addEventListener('touchmove', e => {
+  if (e.touches.length !== 1) return;
+  e.preventDefault();
+}, { passive: false });
+gestureRight.addEventListener('touchend', e => {
+  const deltaX = startX - e.changedTouches[0].clientX;
+  if (Math.abs(deltaX) > 30) {
+    deltaX > 0 ? openNav() : closeNav();
+  }
+  startX = 0; startY = 0;
+});
+
+let navStartX = 0;
+rightNav.addEventListener('touchstart', e => {
+  if (e.touches.length !== 1) return;
+  navStartX = e.touches[0].clientX;
+}, { passive: false });
+rightNav.addEventListener('touchmove', e => {
+  if (e.touches.length !== 1) return;
+  e.preventDefault();
+}, { passive: false });
+rightNav.addEventListener('touchend', e => {
+  const deltaX = e.changedTouches[0].clientX - navStartX;
+  if (deltaX > 30) closeNav();
+  navStartX = 0;
+});
 } catch (e) {
   console.error('Error in main script:', e);
 }

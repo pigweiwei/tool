@@ -39,7 +39,7 @@ body {
 }
 #calcResult {
   position: absolute;
-  top: 45px; /* Moved down by 10px (from 35px) */
+  top: 45px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 20px;
@@ -65,7 +65,7 @@ body {
   width: calc(100% - 20px);
   height: 100%;
   user-select: none;
-  padding-left: 42px;
+  padding-left: 42px; /* Unchanged, scrollbars stay in place */
 }
 .bar-wrapper-horizontal {
   position: relative;
@@ -111,7 +111,7 @@ body {
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: -25px;
+  left: -20px; /* Moved right by 5px (from -25px) */
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -141,7 +141,7 @@ body {
 #feeWrap {
   position: absolute;
   left: 5px;
-  bottom: 15px; /* Moved up by 20px (from -5px) */
+  bottom: 15px;
 }
 #feeWrap div {
   display: flex;
@@ -185,7 +185,7 @@ body {
     padding-top: 40px;
   }
   #calcResult {
-    top: 45px; /* Moved down by 10px (from 35px) */
+    top: 45px;
     font-size: 20px;
     padding: 8px 20px;
     min-width: 120px;
@@ -193,7 +193,7 @@ body {
   }
   .bar-container-horizontal {
     gap: 20px;
-    padding-left: 22px;
+    padding-left: 22px; /* Unchanged, scrollbars stay in place */
     width: calc(100% - 20px);
   }
   .bar-wrapper-horizontal {
@@ -210,7 +210,7 @@ body {
   }
   .label-horizontal {
     font-size: 14px;
-    left: -25px;
+    left: -20px; /* Moved right by 5px (from -25px) */
   }
   #profitLoss {
     left: 5px;
@@ -224,7 +224,7 @@ body {
   }
   #feeWrap {
     left: 5px;
-    bottom: 15px; /* Moved up by 20px (from -5px) */
+    bottom: 15px;
   }
   #feeWrap div > div span {
     font-size: 20px;

@@ -94,7 +94,7 @@ body {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 20px;
+  font-size: 14px; /* Reduced by 30% (from 20px) */
   font-weight: bold;
   color: var(--bar-value-color);
   z-index: 2;
@@ -104,13 +104,13 @@ body {
   padding-left: 3px;
 }
 .label-horizontal {
-  font-size: 14px; /* Reduced by 30% (from 20px) */
+  font-size: 14px;
   font-weight: bold;
   color: var(--label-color);
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: -28px;
+  left: -25px; /* Moved right by 3px (from -28px) */
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -124,7 +124,7 @@ body {
   left: 5px;
   top: 50px;
   font-weight: bold;
-  font-size: 14px; /* 30% reduction from 20px */
+  font-size: 14px;
   color: var(--label-color);
   pointer-events: none;
 }
@@ -133,14 +133,14 @@ body {
   right: 5px;
   top: 50px;
   font-weight: bold;
-  font-size: 14px; /* 30% reduction from 20px */
+  font-size: 14px;
   color: var(--label-color);
   pointer-events: none;
 }
 #feeWrap {
   position: absolute;
   left: 5px;
-  bottom: 30px; /* Moved up by 5px (from 25px) */
+  bottom: 35px; /* Moved up by 5px (from 30px) */
 }
 #feeWrap div {
   display: flex;
@@ -200,27 +200,27 @@ body {
     border-radius: 0 10px 10px 0;
   }
   .bar-value-horizontal {
-    font-size: 20px;
+    font-size: 14px; /* Reduced by 30% (from 20px) */
     min-width: 80px;
     padding-left: 3px;
   }
   .label-horizontal {
-    font-size: 14px; /* Reduced by 30% (from 20px) */
-    left: -28px;
+    font-size: 14px;
+    left: -25px; /* Moved right by 3px (from -28px) */
   }
   #profitLoss {
     left: 5px;
     top: 50px;
-    font-size: 14px; /* 30% reduction from 20px */
+    font-size: 14px;
   }
   #feeDisplay {
     right: 5px;
     top: 50px;
-    font-size: 14px; /* 30% reduction from 20px */
+    font-size: 14px;
   }
   #feeWrap {
     left: 5px;
-    bottom: 30px; /* Moved up by 5px (from 25px) */
+    bottom: 35px; /* Moved up by 5px (from 30px) */
   }
   #feeWrap div > div span {
     font-size: 20px;
@@ -357,7 +357,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     if (!isDragging) return;
     const container = wrapper.getBoundingClientRect();
     const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
-    let dimension = isHorizontal ? container.right - e.clientX : container.bottom - e.clientY; /* Reverse for left=decrease, right=increase */
+    let dimension = isHorizontal ? container.right - e.clientX : container.bottom - e.clientY; /* Left=decrease, right=increase */
     dimension = Math.max(0, Math.min(maxDimension, dimension));
     let newValue = (dimension / maxDimension) * barObj.max;
     newValue = Math.round(newValue / barObj.step) * barObj.step;
@@ -378,7 +378,7 @@ function addDragHandler(barObj, isHorizontal = false) {
     e.preventDefault(); /* Prevent browser scrolling */
     const container = wrapper.getBoundingClientRect();
     const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
-    let dimension = isHorizontal ? container.right - e.touches[0].clientX : container.bottom - e.touches[0].clientY; /* Reverse for left=decrease, right=increase */
+    let dimension = isHorizontal ? container.right - e.touches[0].clientX : container.bottom - e.touches[0].clientY; /* Left=decrease, right=increase */
     dimension = Math.max(0, Math.min(maxDimension, dimension));
     let newValue = (dimension / maxDimension) * barObj.max;
     newValue = Math.round(newValue / barObj.step) * barObj.step;

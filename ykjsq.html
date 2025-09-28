@@ -20,7 +20,7 @@ body {
   --bar-value-color: #fff;
   margin: 0;
   padding: 0;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   height: 100vh;
   display: flex;
   justify-content: center;
@@ -78,7 +78,7 @@ body {
   touch-action: none;
   background: rgba(255,255,255,0.05);
   border-radius: 10px;
-  pointer-events: auto; /* 确保可交互 */
+  pointer-events: auto;
 }
 .bar-horizontal {
   height: 80px;
@@ -109,7 +109,7 @@ body {
   text-align: left;
   min-width: 80px;
   padding-left: 3px;
-  pointer-events: none; /* 防止值显示干扰事件 */
+  pointer-events: none;
 }
 .label-horizontal {
   font-size: 14px;
@@ -121,7 +121,7 @@ body {
   left: -20px;
   writing-mode: vertical-rl;
   text-orientation: upright;
-  pointer-events: none; /* 防止标签干扰事件 */
+  pointer-events: none;
 }
 #leftBar1 { background: var(--bar-left1-bg); border: 1px solid var(--bar-left1-border); }
 #leftBar2 { background: var(--bar-left2-bg); border: 1px solid var(--bar-left2-border); }
@@ -291,16 +291,19 @@ function throttle(fn, wait) {
   };
 }
 
-// 线性插值函数
-function lerp(start, end, alpha) {
-  return start + (end - start) * alpha;
-}
-
 // 更新柱子宽度
 function updateHeight(bar, valueDisplay, value, maxVal, type, isHorizontal = false) {
   requestAnimationFrame(() => {
     try {
+      if (!bar || !valueDisplay) {
+        console.error('Invalid bar or valueDisplay:', { bar, valueDisplay });
+        return;
+      }
       const container = bar.parentElement;
+      if (!container) {
+        console.error('Container not found for bar:', bar);
+        return;
+      }
       const maxDimension = isHorizontal ? container.clientWidth * 0.7 : container.clientHeight * 0.7;
       const dimension = Math.min((value / maxVal) * maxDimension, maxDimension);
       if (isHorizontal) {
@@ -331,13 +334,26 @@ const leftBars = [
   { bar: document.getElementById('leftBar5'), display: document.getElementById('valLeft5'), value: 50, step: 1, max: 100, type: 'percent' }
 ];
 
+// 验证 DOM 元素
+leftBars.forEach((b, i) => {
+  if (!b.bar || !b.display) {
+    console.error(`Invalid DOM element for bar ${i + 1}:`, { bar: b.bar, display: b.display });
+  }
+});
+
 // 费用相关
 const feeValueSpan = document.getElementById('feeValue');
 const feeTextSpan = document.querySelector('.feeText');
 const profitLossSpan = document.getElementById('profitLoss');
 const feeDisplaySpan = document.getElementById('feeDisplay');
+const feeMinCheck = document.getElementById('feeMinCheck');
 let feeValue = 1;
 let lastResult = null;
+
+// 验证费用相关 DOM
+if (!feeValueSpan || !feeTextSpan || !profitLossSpan || !feeDisplaySpan || !feeMinCheck) {
+  console.error('Missing fee-related DOM elements:', { feeValueSpan, feeTextSpan, profitLossSpan, feeDisplaySpan, feeMinCheck });
+}
 
 // 计算最终盈亏结果
 function updateFinalResult() {
@@ -347,7 +363,7 @@ function updateFinalResult() {
     const trades = leftBars[2].value;
     const profitLossRatio = leftBars[3].value;
     const winRate = leftBars[4].value / 100;
-    const feeMin = document.getElementById('feeMinCheck').checked;
+    const feeMin = feeMinCheck.checked;
     const feeRate = feeValue / 10000;
 
     let total = capital;
@@ -380,7 +396,13 @@ function updateFinalResult() {
 
 // 初始化柱子宽度
 try {
-  leftBars.forEach(b => updateHeight(b.bar, b.display, b.value, b.max, b.type, true));
+  leftBars.forEach(b => {
+    if (b.bar && b.display) {
+      updateHeight(b.bar, b.display, b.value, b.max, b.type, true);
+    } else {
+      console.error('Skipping initialization for invalid bar:', b);
+    }
+  });
   updateFinalResult();
 } catch (e) {
   console.error('Error in initialization:', e);
@@ -403,6 +425,7 @@ function addDragHandler(barObj, isHorizontal = false) {
       startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
       startValue = barObj.value;
       e.preventDefault();
+      console.log('startDrag:', bar.id);
     };
 
     const moveDrag = (e) => {
@@ -415,7 +438,7 @@ function addDragHandler(barObj, isHorizontal = false) {
         const sensitivity = barObj.max / maxDimension * 0.4;
         let newValue = startValue + deltaX * sensitivity;
         newValue = Math.max(0, Math.min(barObj.max, newValue));
-        newValue = lerp(barObj.value, newValue, 0.3);
+        newValue = Math.round(newValue / barObj.step) * barObj.step; // 滑动时对齐步长
         barObj.value = newValue;
         updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
         updateFinalResult();
@@ -433,8 +456,9 @@ function addDragHandler(barObj, isHorizontal = false) {
         wrapper.style.cursor = 'grab';
         bar.classList.remove('dragging');
         barObj.value = Math.round(barObj.value / barObj.step) * barObj.step;
-        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal);
         updateFinalResult();
+        console.log('endDrag:', bar.id, 'value:', barObj.value);
       }
     };
 
@@ -472,7 +496,13 @@ function addDragHandler(barObj, isHorizontal = false) {
 
 // 为所有柱子添加拖动和滚轮功能
 try {
-  leftBars.forEach(b => addDragHandler(b, true));
+  leftBars.forEach(b => {
+    if (b.bar && b.display) {
+      addDragHandler(b, true);
+    } else {
+      console.error('Skipping addDragHandler for invalid bar:', b);
+    }
+  });
 } catch (e) {
   console.error('Error in adding drag handlers:', e);
 }
@@ -509,34 +539,38 @@ function handleFeeInput() {
 }
 
 try {
-  feeValueSpan.addEventListener('click', handleFeeInput);
-  feeTextSpan.addEventListener('click', handleFeeInput);
+  if (feeValueSpan && feeTextSpan && feeMinCheck) {
+    feeValueSpan.addEventListener('click', handleFeeInput);
+    feeTextSpan.addEventListener('click', handleFeeInput);
 
-  feeValueSpan.addEventListener('wheel', (e) => {
-    try {
-      e.preventDefault();
-      const delta = -Math.sign(e.deltaY) * 0.1;
-      feeValue = Math.max(0, parseFloat((feeValue + delta).toFixed(1)));
-      feeValueSpan.textContent = feeValue.toFixed(1);
-      updateFinalResult();
-    } catch (e) {
-      console.error('Error in feeValueSpan wheel:', e);
-    }
-  });
+    feeValueSpan.addEventListener('wheel', (e) => {
+      try {
+        e.preventDefault();
+        const delta = -Math.sign(e.deltaY) * 0.1;
+        feeValue = Math.max(0, parseFloat((feeValue + delta).toFixed(1)));
+        feeValueSpan.textContent = feeValue.toFixed(1);
+        updateFinalResult();
+      } catch (e) {
+        console.error('Error in feeValueSpan wheel:', e);
+      }
+    });
 
-  feeTextSpan.addEventListener('wheel', (e) => {
-    try {
-      e.preventDefault();
-      const delta = -Math.sign(e.deltaY) * 0.1;
-      feeValue = Math.max(0, parseFloat((feeValue + delta).toFixed(1)));
-      feeValueSpan.textContent = feeValue.toFixed(1);
-      updateFinalResult();
-    } catch (e) {
-      console.error('Error in feeTextSpan wheel:', e);
-    }
-  });
+    feeTextSpan.addEventListener('wheel', (e) => {
+      try {
+        e.preventDefault();
+        const delta = -Math.sign(e.deltaY) * 0.1;
+        feeValue = Math.max(0, parseFloat((feeValue + delta).toFixed(1)));
+        feeValueSpan.textContent = feeValue.toFixed(1);
+        updateFinalResult();
+      } catch (e) {
+        console.error('Error in feeTextSpan wheel:', e);
+      }
+    });
 
-  document.getElementById('feeMinCheck').addEventListener('change', updateFinalResult);
+    feeMinCheck.addEventListener('change', updateFinalResult);
+  } else {
+    console.error('Cannot attach fee event listeners due to missing elements');
+  }
 } catch (e) {
   console.error('Error in setting up event listeners:', e);
 }

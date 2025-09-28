@@ -124,7 +124,7 @@ body {
   right: 5px;
   top: 50px;
   font-weight: bold;
-  font-size: 20px;
+  font-size: 14px; /* Reduced by 30% from 20px */
   color: var(--label-color);
   pointer-events: none;
   display: flex;
@@ -133,7 +133,7 @@ body {
 }
 #feeTopRight .separator {
   width: 2px;
-  height: 20px;
+  height: 14px; /* Match font size */
   border-right: 2px dashed #888;
 }
 #feeWrap {
@@ -188,14 +188,14 @@ body {
   }
   .bar-container-horizontal {
     gap: 20px;
-    padding-left: 20px;
+    padding-left: 0px; /* Moved left by 20px */
     width: calc(100% - 20px);
   }
   .bar-wrapper-horizontal {
     cursor: auto; /* Remove grab cursor for touch devices */
   }
   .bar-horizontal {
-    height: 90px; /* Slightly larger for better touch target */
+    height: 90px; /* Larger for touch target */
     border-radius: 0 10px 10px 0;
   }
   .bar-value-horizontal {
@@ -209,10 +209,10 @@ body {
   #feeTopRight {
     top: 50px;
     right: 5px;
-    font-size: 20px;
+    font-size: 14px; /* Reduced by 30% from 20px */
   }
   #feeTopRight .separator {
-    height: 20px;
+    height: 14px; /* Match font size */
   }
   #feeWrap {
     bottom: 5px;

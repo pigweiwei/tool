@@ -611,11 +611,13 @@ try {
   console.error('Error in adding drag handlers:', e);
 }
 
-// 费用输入处理函数
+// 费用输入处理函数（修改后版本，支持手机纯数字键盘）
 function handleFeeInput() {
   try {
     const input = document.createElement('input');
-    input.type = 'number';
+    input.type = 'tel'; // 使用 'tel' 以触发数字键盘
+    input.inputMode = 'numeric'; // 强制数字输入模式
+    input.pattern = '[0-9]*'; // 限制仅输入数字
     input.value = '';
     input.style.width = '60px';
     input.style.fontSize = '20px';

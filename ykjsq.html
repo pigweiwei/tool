@@ -28,7 +28,6 @@ body {
   background: #2b2b2b;
   overflow: hidden;
 }
-
 .panel {
   width: 100%;
   height: 100%;
@@ -38,7 +37,6 @@ body {
   overflow: hidden;
   padding-top: 40px;
 }
-
 #calcResult {
   position: absolute;
   top: 45px;
@@ -58,7 +56,6 @@ body {
   pointer-events: none;
   z-index: 100;
 }
-
 .bar-container-horizontal {
   display: flex;
   flex-direction: column;
@@ -70,7 +67,6 @@ body {
   user-select: none;
   padding-left: 42px;
 }
-
 .bar-wrapper-horizontal {
   position: relative;
   display: flex;
@@ -81,7 +77,6 @@ body {
   cursor: grab;
   touch-action: none;
 }
-
 .bar-horizontal {
   height: 80px;
   width: 0;
@@ -96,7 +91,6 @@ body {
   overflow: visible;
   position: relative;
 }
-
 .bar-value-horizontal {
   position: absolute;
   top: 50%;
@@ -110,7 +104,6 @@ body {
   min-width: 80px;
   padding-left: 3px;
 }
-
 .label-horizontal {
   font-size: 14px;
   font-weight: bold;
@@ -122,13 +115,11 @@ body {
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
-
 #leftBar1 { background: var(--bar-left1-bg); border: 1px solid var(--bar-left1-border); }
 #leftBar2 { background: var(--bar-left2-bg); border: 1px solid var(--bar-left2-border); }
 #leftBar3 { background: var(--bar-left3-bg); border: 1px solid var(--bar-left3-border); }
 #leftBar4 { background: var(--bar-left4-bg); border: 1px solid var(--bar-left4-border); }
 #leftBar5 { background: var(--bar-left5-bg); border: 1px solid var(--bar-left5-border); }
-
 #profitLoss {
   position: absolute;
   left: 5px;
@@ -138,7 +129,6 @@ body {
   color: var(--label-color);
   pointer-events: none;
 }
-
 #feeDisplay {
   position: absolute;
   right: 5px;
@@ -148,52 +138,103 @@ body {
   color: var(--label-color);
   pointer-events: none;
 }
-
-.feeTopRight {
+#feeValueWrap {
   position: absolute;
-  right: 5px;
+  left: 5px;
   top: 65px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
 }
-
-.feeTopRight div {
+/* 将 免五 向下移动：把 top 从 55px 改为 75px */
+#feeMinWrap {
+  position: absolute;
+  right: 15px; /* Moved right by 5px (from 20px) */
+  top: 75px; /* ← 调整这里（原来是 55px），向下移动 */
+}
+#feeValueWrap div, #feeMinWrap div {
   display: flex;
   align-items: center;
-  color: var(--label-color);
-  font-size: 20px; /* 字体大小 */
 }
-
-.feeBottomRight {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.feeBottomRight .feeText {
-  display: inline-block;
+/* 统一 /万 与 免五 的字体大小和颜色（更稳健的选择器） */
+#feeValueWrap span,
+#feeMinWrap label {
+  font-size: 20px; 
   color: var(--label-color);
-  font-size: 20px;
-  margin-top: -4px; /* 调整免五位置 */
+  line-height: 20px;
   user-select: none;
   cursor: default;
+}
+#feeMinCheck {
+  transform: scale(0.85);
+  transform-origin: center;
+  width: 20px;
+  height: 20px;
+  accent-color: #ccc;
 }
 
 /* Mobile adaptations */
 @media (max-width: 768px) {
-  body { font-size: 16px; }
-  .panel { padding-top: 40px; }
-  #calcResult { top: 45px; font-size: 20px; padding: 8px 20px; min-width: 120px; border-radius: 10px; }
-  .bar-container-horizontal { gap: 20px; padding-left: 22px; width: calc(100% - 20px); }
-  .bar-wrapper-horizontal { cursor: auto; }
-  .bar-horizontal { height: 90px; border-radius: 0 10px 10px 0; }
-  .bar-value-horizontal { font-size: 14px; min-width: 80px; padding-left: 3px; }
-  .label-horizontal { font-size: 14px; left: -20px; }
-  #profitLoss { left: 5px; top: 90px; font-size: 14px; }
-  #feeDisplay { right: 5px; top: 90px; font-size: 14px; }
-  .feeTopRight { top: 65px; }
-  .feeTopRight div, .feeBottomRight .feeText { font-size: 20px; }
-  .feeBottomRight .feeText { margin-top: -4px; }
+  body {
+    font-size: 16px;
+  }
+  .panel {
+    padding-top: 40px;
+  }
+  #calcResult {
+    top: 45px;
+    font-size: 20px;
+    padding: 8px 20px;
+    min-width: 120px;
+    border-radius: 10px;
+  }
+  .bar-container-horizontal {
+    gap: 20px;
+    padding-left: 22px;
+    width: calc(100% - 20px);
+  }
+  .bar-wrapper-horizontal {
+    cursor: auto;
+  }
+  .bar-horizontal {
+    height: 90px;
+    border-radius: 0 10px 10px 0;
+  }
+  .bar-value-horizontal {
+    font-size: 14px;
+    min-width: 80px;
+    padding-left: 3px;
+  }
+  .label-horizontal {
+    font-size: 14px;
+    left: -20px;
+  }
+  #profitLoss {
+    left: 5px;
+    top: 90px;
+    font-size: 14px;
+  }
+  #feeDisplay {
+    right: 5px;
+    top: 90px;
+    font-size: 14px;
+  }
+  #feeValueWrap {
+    left: 5px;
+    top: 65px;
+  }
+  /* Mobile 下也把 免五 向下（与桌面同步） */
+  #feeMinWrap {
+    right: 15px;
+    top: 75px; /* ← 这里也同步调整 */
+  }
+  #feeValueWrap span,
+  #feeMinWrap label {
+    font-size: 20px;
+    line-height: 20px;
+  }
+  #feeMinCheck {
+    width: 20px;
+    height: 20px;
+    accent-color: #ccc;
+  }
 }
 </style>
 </head>
@@ -209,16 +250,271 @@ body {
   <div class="calc-result" id="calcResult">0</div>
   <div id="profitLoss">盈亏：0%</div>
   <div id="feeDisplay">手续费: 1</div>
-
-  <div class="feeTopRight">
+  <div id="feeValueWrap">
     <div><span id="feeValue">1</span><span class="feeText">/万</span></div>
-    <div class="feeBottomRight"><span class="feeText">免五</span></div>
+  </div>
+  <div id="feeMinWrap">
+    <div><input type="checkbox" id="feeMinCheck"><label for="feeMinCheck">免五</label></div>
   </div>
 </div>
-
 <script>
-// 省略原有 JS 逻辑，保持拖动、滚轮、手续费输入等功能
-// 初始化、updateHeight、addDragHandler、updateFinalResult 等都和原代码一致
+try {
+// 格式化数字为万分位
+function formatTenThousand(num) {
+  try {
+    const parts = Math.round(num).toString().split('');
+    let result = '';
+    let len = parts.length;
+    for (let i = 0; i < len; i++) {
+      result += parts[i];
+      if ((len - i - 1) % 4 === 0 && i !== len - 1) result += ',';
+    }
+    return result;
+  } catch (e) {
+    console.error('Error in formatTenThousand:', e);
+    return num.toString();
+  }
+}
+
+// 更新柱子宽度
+function updateHeight(bar, valueDisplay, value, maxVal, type, isHorizontal = false) {
+  try {
+    const container = bar.parentElement;
+    const maxDimension = isHorizontal ? container.clientWidth * 0.7 : container.clientHeight * 0.7;
+    const dimension = Math.min((value / maxVal) * maxDimension, maxDimension);
+    if (isHorizontal) {
+      bar.style.width = dimension + 'px';
+      valueDisplay.style.left = dimension + 'px';
+    } else {
+      bar.style.height = dimension + 'px';
+    }
+    if (type === 'int') valueDisplay.textContent = formatTenThousand(value);
+    else if (type === 'percent') valueDisplay.textContent = value + '%';
+    else if (type === 'float') valueDisplay.textContent = value.toFixed(1);
+  } catch (e) {
+    console.error('Error in updateHeight:', e);
+  }
+}
+
+// 左侧柱子数据
+const leftBars = [
+  { bar: document.getElementById('leftBar1'), display: document.getElementById('valLeft1'), value: 10000, step: 10000, max: 1000000, type: 'int' },
+  { bar: document.getElementById('leftBar2'), display: document.getElementById('valLeft2'), value: 5, step: 1, max: 50, type: 'percent' },
+  { bar: document.getElementById('leftBar3'), display: document.getElementById('valLeft3'), value: 10, step: 1, max: 100, type: 'int' },
+  { bar: document.getElementById('leftBar4'), display: document.getElementById('valLeft4'), value: 2, step: 0.5, max: 10, type: 'float' },
+  { bar: document.getElementById('leftBar5'), display: document.getElementById('valLeft5'), value: 50, step: 1, max: 100, type: 'percent' }
+];
+
+// 费用相关
+const feeValueSpan = document.getElementById('feeValue');
+const feeTextSpan = document.querySelector('.feeText');
+const profitLossSpan = document.getElementById('profitLoss');
+const feeDisplaySpan = document.getElementById('feeDisplay');
+let feeValue = 1;
+
+// 计算最终盈亏结果
+function updateFinalResult() {
+  try {
+    let capital = leftBars[0].value;
+    const stopLoss = leftBars[1].value / 100;
+    const trades = leftBars[2].value;
+    const profitLossRatio = leftBars[3].value;
+    const winRate = leftBars[4].value / 100;
+    const feeMin = document.getElementById('feeMinCheck').checked;
+    const feeRate = feeValue / 10000;
+
+    let total = capital;
+    let totalFee = 0;
+    for (let i = 0; i < trades; i++) {
+      const pl = winRate * total * stopLoss * profitLossRatio + (1 - winRate) * -total * stopLoss;
+      total += pl;
+      let fee = total * feeRate * 2;
+      if (!feeMin && fee < 5) fee = 5;
+      total -= fee;
+      totalFee += fee;
+    }
+    document.getElementById('calcResult').textContent = formatTenThousand(total);
+    const profitPercent = ((total - capital) / capital * 100).toFixed(1);
+    profitLossSpan.textContent = `盈亏: ${profitPercent}%`;
+    feeDisplaySpan.textContent = `手续费: ${Math.round(totalFee)}`;
+  } catch (e) {
+    console.error('Error in updateFinalResult:', e);
+  }
+}
+
+// 初始化柱子宽度
+try {
+  leftBars.forEach(b => updateHeight(b.bar, b.display, b.value, b.max, b.type, true));
+  updateFinalResult();
+} catch (e) {
+  console.error('Error in initialization:', e);
+}
+
+// 为柱子添加拖动和滚轮功能
+function addDragHandler(barObj, isHorizontal = false) {
+  try {
+    const bar = barObj.bar;
+    const wrapper = bar.parentElement;
+    let isDragging = false;
+    let lastClientX = null;
+
+    wrapper.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
+      isDragging = true;
+      wrapper.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      wrapper.style.cursor = 'grab';
+      lastClientX = null;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      try {
+        const container = wrapper.getBoundingClientRect();
+        const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
+        let dimension = isHorizontal ? container.right - e.clientX : container.bottom - e.clientY;
+        dimension = Math.max(0, Math.min(maxDimension, dimension));
+        let newValue = (dimension / maxDimension) * barObj.max;
+        newValue = Math.round(newValue / barObj.step) * barObj.step;
+        newValue = Math.max(0, Math.min(barObj.max, newValue));
+        barObj.value = newValue;
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+        updateFinalResult();
+      } catch (e) {
+        console.error('Error in mousemove:', e);
+      }
+    });
+
+    wrapper.addEventListener('touchstart', (e) => {
+      if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
+      isDragging = true;
+      lastClientX = e.touches[0].clientX;
+      e.preventDefault();
+    });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      try {
+        const currentClientX = e.touches[0].clientX;
+        if (lastClientX !== null) {
+          const deltaX = currentClientX - lastClientX;
+          const stepSize = barObj.step * (isHorizontal ? 1 : -1);
+          let newValue = barObj.value + (deltaX < 0 ? -stepSize : stepSize);
+          newValue = Math.max(0, Math.min(barObj.max, newValue));
+          newValue = Math.round(newValue / barObj.step) * barObj.step;
+          barObj.value = newValue;
+          updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+          updateFinalResult();
+        }
+        lastClientX = currentClientX;
+      } catch (e) {
+        console.error('Error in touchmove:', e);
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => {
+      isDragging = false;
+      lastClientX = null;
+    });
+
+    wrapper.addEventListener('wheel', (e) => {
+      if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
+      e.preventDefault();
+      try {
+        const delta = Math.sign(e.deltaY) * barObj.step;
+        let newValue = barObj.value - delta;
+        newValue = Math.max(0, Math.min(barObj.max, newValue));
+        newValue = Math.round(newValue / barObj.step) * barObj.step;
+        barObj.value = newValue;
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+        updateFinalResult();
+      } catch (e) {
+        console.error('Error in wheel:', e);
+      }
+    });
+  } catch (e) {
+    console.error('Error in addDragHandler:', e);
+  }
+}
+
+// 为所有柱子添加拖动和滚轮功能
+try {
+  leftBars.forEach(b => addDragHandler(b, true));
+} catch (e) {
+  console.error('Error in adding drag handlers:', e);
+}
+
+// 费用输入处理函数
+function handleFeeInput() {
+  try {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = '';
+    input.style.width = '60px';
+    input.style.fontSize = '20px';
+    input.style.color = getComputedStyle(document.body).getPropertyValue('--label-color');
+    feeValueSpan.replaceWith(input);
+    input.focus();
+
+    input.addEventListener('blur', () => {
+      try {
+        feeValue = Math.max(0, parseFloat(input.value) || 1);
+        input.replaceWith(feeValueSpan);
+        feeValueSpan.textContent = feeValue.toFixed(1);
+        updateFinalResult();
+      } catch (e) {
+        console.error('Error in fee input blur:', e);
+      }
+    });
+
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') input.blur();
+    });
+  } catch (e) {
+    console.error('Error in handleFeeInput:', e);
+  }
+}
+
+try {
+  feeValueSpan.addEventListener('click', handleFeeInput);
+  feeTextSpan.addEventListener('click', handleFeeInput);
+
+  feeValueSpan.addEventListener('wheel', (e) => {
+    try {
+      e.preventDefault();
+      const delta = -Math.sign(e.deltaY) * 0.1;
+      feeValue = Math.max(0, parseFloat((feeValue + delta).toFixed(1)));
+      feeValueSpan.textContent = feeValue.toFixed(1);
+      updateFinalResult();
+    } catch (e) {
+      console.error('Error in feeValueSpan wheel:', e);
+    }
+  });
+
+  feeTextSpan.addEventListener('wheel', (e) => {
+    try {
+      e.preventDefault();
+      const delta = -Math.sign(e.deltaY) * 0.1;
+      feeValue = Math.max(0, parseFloat((feeValue + delta).toFixed(1)));
+      feeValueSpan.textContent = feeValue.toFixed(1);
+      updateFinalResult();
+    } catch (e) {
+      console.error('Error in feeTextSpan wheel:', e);
+    }
+  });
+
+  document.getElementById('feeMinCheck').addEventListener('change', updateFinalResult);
+} catch (e) {
+  console.error('Error in setting up event listeners:', e);
+}
+} catch (e) {
+  console.error('Error in main script:', e);
+}
 </script>
 </body>
 </html>

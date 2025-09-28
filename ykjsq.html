@@ -18,8 +18,8 @@ body {
   --bar-left5-border: rgba(153,102,255,0.6);
   --label-color: #eee;
   --bar-value-color: #fff;
-  --checkbox-bg: #666; /* 深色模式勾选框背景 */
-  --checkbox-checked-bg: var(--bar-left4-bg); /* 选中时使用盈亏比主题色 */
+  --checkbox-bg: #666;
+  --checkbox-checked-bg: var(--bar-left4-bg);
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
@@ -132,8 +132,8 @@ body {
 #leftBar5 { background: var(--bar-left5-bg); border: 1px solid var(--bar-left5-border); }
 #profitLoss {
   position: absolute;
-  left: 5px;
-  top: 90px;
+  right: 5px;
+  top: 65px; /* 移动到手续费上方 */
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -142,7 +142,7 @@ body {
 #feeDisplay {
   position: absolute;
   right: 5px;
-  top: 90px;
+  top: 90px; /* 保持在盈亏下方 */
   font-weight: bold;
   font-size: 14px;
   color: var(--label-color);
@@ -155,17 +155,17 @@ body {
 }
 #feeMinWrap {
   position: absolute;
-  right: 15px;
-  top: 65px;
+  left: 5px; /* 与 feeValueWrap 左侧对齐 */
+  top: 95px; /* 移动到 feeValueWrap 下方 */
 }
 #feeValueWrap div, #feeMinWrap div {
   display: flex;
   align-items: center;
-  gap: 5px; /* 增加勾选框和标签间距 */
+  gap: 5px;
 }
 #feeValueWrap span,
 #feeMinWrap label {
-  font-size: 16px; /* 减小标签字体，增强协调性 */
+  font-size: 16px;
   color: var(--label-color);
   line-height: 20px;
   user-select: none;
@@ -174,7 +174,7 @@ body {
 #feeMinCheck {
   width: 16px;
   height: 16px;
-  appearance: none; /* 移除默认样式 */
+  appearance: none;
   background: var(--checkbox-bg);
   border: 1px solid rgba(255,255,255,0.3);
   border-radius: 4px;
@@ -230,8 +230,8 @@ body {
     left: -20px;
   }
   #profitLoss {
-    left: 5px;
-    top: 90px;
+    right: 5px;
+    top: 65px;
     font-size: 14px;
   }
   #feeDisplay {
@@ -244,8 +244,8 @@ body {
     top: 65px;
   }
   #feeMinWrap {
-    right: 15px;
-    top: 65px;
+    left: 5px;
+    top: 95px;
   }
   #feeValueWrap span,
   #feeMinWrap label {

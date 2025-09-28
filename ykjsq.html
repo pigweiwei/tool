@@ -65,7 +65,7 @@ body {
   width: calc(100% - 20px);
   height: 100%;
   user-select: none;
-  padding-left: 42px; /* Unchanged, scrollbars stay in place */
+  padding-left: 42px;
 }
 .bar-wrapper-horizontal {
   position: relative;
@@ -111,7 +111,7 @@ body {
   user-select: none;
   transition: color 0.3s;
   position: absolute;
-  left: -20px; /* Moved right by 5px (from -25px) */
+  left: -20px;
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -141,7 +141,7 @@ body {
 #feeWrap {
   position: absolute;
   left: 5px;
-  bottom: 15px;
+  bottom: 25px; /* Moved up by 10px (from 15px) */
 }
 #feeWrap div {
   display: flex;
@@ -170,7 +170,7 @@ body {
   transform-origin: center;
   width: 20px;
   height: 20px;
-  accent-color: var(--label-color);
+  accent-color: #ccc; /* Light gray checkbox */
 }
 #feeMinCheck + label {
   font-size: 20px;
@@ -193,7 +193,7 @@ body {
   }
   .bar-container-horizontal {
     gap: 20px;
-    padding-left: 22px; /* Unchanged, scrollbars stay in place */
+    padding-left: 22px;
     width: calc(100% - 20px);
   }
   .bar-wrapper-horizontal {
@@ -210,7 +210,7 @@ body {
   }
   .label-horizontal {
     font-size: 14px;
-    left: -20px; /* Moved right by 5px (from -25px) */
+    left: -20px;
   }
   #profitLoss {
     left: 5px;
@@ -224,7 +224,7 @@ body {
   }
   #feeWrap {
     left: 5px;
-    bottom: 15px;
+    bottom: 25px; /* Moved up by 10px (from 15px) */
   }
   #feeWrap div > div span {
     font-size: 20px;
@@ -237,6 +237,7 @@ body {
   #feeMinCheck {
     width: 20px;
     height: 20px;
+    accent-color: #ccc; /* Light gray checkbox */
   }
   #feeMinCheck + label {
     font-size: 20px;
@@ -344,6 +345,7 @@ function addDragHandler(barObj, isHorizontal = false) {
   const bar = barObj.bar;
   const wrapper = bar.parentElement;
   let isDragging = false;
+  let lastClientX = null;
 
   wrapper.addEventListener('mousedown', (e) => {
     if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
@@ -355,13 +357,14 @@ function addDragHandler(barObj, isHorizontal = false) {
   document.addEventListener('mouseup', () => {
     isDragging = false;
     wrapper.style.cursor = 'grab';
+    lastClientX = null;
   });
 
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
     const container = wrapper.getBoundingClientRect();
     const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
-    let dimension = isHorizontal ? container.right - e.clientX : container.bottom - e.clientY; /* Left=decrease, right=increase */
+    let dimension = isHorizontal ? container.right - e.clientX : container.bottom - e.clientY;
     dimension = Math.max(0, Math.min(maxDimension, dimension));
     let newValue = (dimension / maxDimension) * barObj.max;
     newValue = Math.round(newValue / barObj.step) * barObj.step;
@@ -374,26 +377,30 @@ function addDragHandler(barObj, isHorizontal = false) {
   wrapper.addEventListener('touchstart', (e) => {
     if (e.target.classList.contains('label-horizontal') || e.target.classList.contains('bar-value-horizontal')) return;
     isDragging = true;
+    lastClientX = e.touches[0].clientX;
     e.preventDefault();
   });
 
   document.addEventListener('touchmove', (e) => {
     if (!isDragging) return;
-    e.preventDefault(); /* Prevent browser scrolling */
-    const container = wrapper.getBoundingClientRect();
-    const maxDimension = isHorizontal ? container.width * 0.7 : container.height * 0.7;
-    let dimension = isHorizontal ? container.right - e.touches[0].clientX : container.bottom - e.touches[0].clientY; /* Left=decrease, right=increase */
-    dimension = Math.max(0, Math.min(maxDimension, dimension));
-    let newValue = (dimension / maxDimension) * barObj.max;
-    newValue = Math.round(newValue / barObj.step) * barObj.step;
-    newValue = Math.max(0, Math.min(barObj.max, newValue));
-    barObj.value = newValue;
-    updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
-    updateFinalResult();
-  }, { passive: false }); /* Ensure preventDefault works */
+    e.preventDefault();
+    const currentClientX = e.touches[0].clientX;
+    if (lastClientX !== null) {
+      const deltaX = currentClientX - lastClientX;
+      const stepSize = barObj.step * (isHorizontal ? 1 : -1); /* Adjust for horizontal */
+      let newValue = barObj.value + (deltaX < 0 ? -stepSize : stepSize); /* Right-to-left decreases, left-to-right increases */
+      newValue = Math.max(0, Math.min(barObj.max, newValue));
+      newValue = Math.round(newValue / barObj.step) * barObj.step;
+      barObj.value = newValue;
+      updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal);
+      updateFinalResult();
+    }
+    lastClientX = currentClientX;
+  }, { passive: false });
 
   document.addEventListener('touchend', () => {
     isDragging = false;
+    lastClientX = null;
   });
 
   wrapper.addEventListener('wheel', (e) => {
@@ -412,10 +419,11 @@ function addDragHandler(barObj, isHorizontal = false) {
 // 为所有柱子添加拖动和滚轮功能
 leftBars.forEach(b => addDragHandler(b, true));
 
-feeValueSpan.addEventListener('click', () => {
+// 费用输入处理函数
+function handleFeeInput() {
   const input = document.createElement('input');
   input.type = 'number';
-  input.value = feeValue;
+  input.value = ''; /* Clear value on click */
   input.style.width = '60px';
   input.style.fontSize = '20px';
   input.style.color = getComputedStyle(document.body).getPropertyValue('--label-color');
@@ -432,7 +440,11 @@ feeValueSpan.addEventListener('click', () => {
   input.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') input.blur();
   });
-});
+}
+
+feeValueSpan.addEventListener('click', handleFeeInput);
+
+feeTextSpan.addEventListener('click', handleFeeInput);
 
 feeValueSpan.addEventListener('wheel', (e) => {
   e.preventDefault();

@@ -18,6 +18,8 @@ body {
   --bar-left5-border: rgba(153,102,255,0.6);
   --label-color: #eee;
   --bar-value-color: #fff;
+  --checkbox-bg: #666; /* 深色模式勾选框背景 */
+  --checkbox-checked-bg: var(--bar-left4-bg); /* 选中时使用盈亏比主题色 */
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
@@ -90,7 +92,7 @@ body {
   flex-direction: row;
   box-shadow: inset -5px 0 15px rgba(0,0,0,0.1), 8px 0 20px rgba(0,0,0,0.2);
   backdrop-filter: blur(15px);
-  transition: width 0.05s ease-out; /* 缩短过渡时间，增强平滑感 */
+  transition: width 0.05s ease-out;
   overflow: visible;
   position: relative;
 }
@@ -159,21 +161,38 @@ body {
 #feeValueWrap div, #feeMinWrap div {
   display: flex;
   align-items: center;
+  gap: 5px; /* 增加勾选框和标签间距 */
 }
 #feeValueWrap span,
 #feeMinWrap label {
-  font-size: 20px;
+  font-size: 16px; /* 减小标签字体，增强协调性 */
   color: var(--label-color);
   line-height: 20px;
   user-select: none;
   cursor: default;
 }
 #feeMinCheck {
-  transform: scale(0.85);
-  transform-origin: center;
-  width: 20px;
-  height: 20px;
-  accent-color: #ccc;
+  width: 16px;
+  height: 16px;
+  appearance: none; /* 移除默认样式 */
+  background: var(--checkbox-bg);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+}
+#feeMinCheck:checked {
+  background: var(--checkbox-checked-bg);
+  border-color: var(--bar-left4-border);
+}
+#feeMinCheck:checked::after {
+  content: '✔';
+  color: var(--bar-value-color);
+  font-size: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 @media (max-width: 768px) {
   body {
@@ -230,13 +249,15 @@ body {
   }
   #feeValueWrap span,
   #feeMinWrap label {
-    font-size: 20px;
+    font-size: 16px;
     line-height: 20px;
   }
   #feeMinCheck {
-    width: 20px;
-    height: 20px;
-    accent-color: #ccc;
+    width: 16px;
+    height: 16px;
+  }
+  #feeMinCheck:checked::after {
+    font-size: 12px;
   }
 }
 </style>
@@ -310,7 +331,6 @@ function updateHeight(bar, valueDisplay, value, maxVal, type, isHorizontal = fal
         return;
       }
       const maxDimension = isHorizontal ? container.clientWidth * 0.7 : container.clientHeight * 0.7;
-      // 为盈亏比（leftBar4）在滑动时显示对齐值，但使用连续值计算宽度
       const displayValue = barId === 'leftBar4' ? Math.round(value / 0.5) * 0.5 : value;
       const dimension = Math.min((value / maxVal) * maxDimension, maxDimension);
       if (isHorizontal) {
@@ -445,11 +465,10 @@ function addDragHandler(barObj, isHorizontal = false) {
         const sensitivity = barObj.max / maxDimension * 0.4;
         let newValue = startValue + deltaX * sensitivity;
         newValue = Math.max(0, Math.min(barObj.max, newValue));
-        // 为盈亏比（leftBar4）添加插值平滑
         if (bar.id === 'leftBar4') {
-          newValue = lerp(barObj.value, newValue, 0.2); // 轻量插值
+          newValue = lerp(barObj.value, newValue, 0.2);
         } else {
-          newValue = Math.round(newValue / barObj.step) * barObj.step; // 其他滚动条对齐步长
+          newValue = Math.round(newValue / barObj.step) * barObj.step;
         }
         barObj.value = newValue;
         updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal, bar.id);
@@ -467,7 +486,7 @@ function addDragHandler(barObj, isHorizontal = false) {
         isDragging = false;
         wrapper.style.cursor = 'grab';
         bar.classList.remove('dragging');
-        barObj.value = Math.round(barObj.value / barObj.step) * barObj.step; // 释放时对齐步长
+        barObj.value = Math.round(barObj.value / barObj.step) * barObj.step;
         updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal, bar.id);
         updateFinalResult();
         console.log('endDrag:', bar.id, 'value:', barObj.value);

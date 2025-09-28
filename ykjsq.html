@@ -122,7 +122,7 @@ body {
 .label-horizontal {
   font-size: 14px;
   font-weight: bold;
-  color: var(--label-color);
+ amore color: var(--label-color);
   user-select: none;
   transition: color 0.3s;
   position: absolute;
@@ -543,7 +543,7 @@ function addDragHandler(barObj, isHorizontal = false) {
           newValue = Math.round(newValue / barObj.step) * barObj.step;
         }
         barObj.value = newValue;
-        updateHeight(bar, barObj.display, barObj.value, barObj.max, b.type, isHorizontal, bar.id);
+        updateHeight(bar, barObj.display, barObj.value, barObj.max, barObj.type, isHorizontal, bar.id);
         updateFinalResult();
         if (newValue <= 0 || newValue >= barObj.max) {
           if (navigator.vibrate) navigator.vibrate(50);
